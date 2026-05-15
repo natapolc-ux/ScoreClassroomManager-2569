@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+<meta charset="UTF-8">
+<title>Matrix Student System</title>
+
+<style>
+
+body{
+  margin:0;
+  overflow-x:hidden;
+  background:black;
+  color:#00ff41;
+  font-family:monospace;
+}
+
+canvas{
+  position:fixed;
+  top:0;
+  left:0;
+  z-index:-1;
+}
+
+.login-box{
+  width:320px;
+  margin:100px auto;
+  background:rgba(0,0,0,0.88);
+  border:1px solid #00ff41;
+  padding:22px;
+  box-shadow:0 0 20px #00ff41;
+}
+
+.panel{
+  display:none;
+  padding:20px;
+  max-width:1100px;
+  margin:auto;
+}
+
+input,
+select,
+button{
+  width:100%;
+  box-sizing:border-box;
+  margin-top:10px;
+  padding:11px;
+  background:black;
+  color:#00ff41;
+  border:1px solid #00ff41;
+  font-family:monospace;
+}
+
+button{
+  cursor:pointer;
+}
+
+button:hover{
+  background:#00ff41;
+  color:black;
+}
+
+h2,h3,h4{
+  text-shadow:0 0 8px #00ff41;
+}
+
+.toolbar{
+  display:grid;
+  grid-template-columns:2fr 1fr 1fr;
+  gap:10px;
+  margin-bottom:10px;
+}
+
+.toolbar-button{
+  margin-top:10px;
+}
+
+.status-box{
+  margin-top:15px;
+  padding:12px;
+  border:1px solid #00ff41;
+  background:rgba(0,0,0,0.88);
+}
+
+.card{
+  border:1px solid #00ff41;
+  margin:20px 0;
+  padding:20px;
+  background:rgba(17,17,17,0.96);
+  box-shadow:0 0 15px #00ff41;
+}
+
+.meta{
+  line-height:1.7;
+}
+
+.work-box{
+  margin-top:16px;
+  padding:14px;
+  border:1px dashed #00ff41;
+  background:rgba(0,0,0,0.72);
+}
+
+.text-work{
+  white-space:pre-wrap;
+  line-height:1.7;
+  word-break:break-word;
+}
+
+.drive-preview{
+  width:100%;
+  max-width:620px;
+  height:520px;
+  border:1px solid #00ff41;
+  background:#000;
+  display:block;
+  margin-top:10px;
+}
+
+.direct-image{
+  width:100%;
+  max-width:620px;
+  max-height:520px;
+  object-fit:contain;
+  border:1px solid #00ff41;
+  background:#000;
+  display:block;
+  margin-top:10px;
+}
+
+.file-link{
+  display:inline-block;
+  margin-top:10px;
+  padding:8px 12px;
+  border:1px solid #00ff41;
+  color:#00ff41;
+  text-decoration:none;
+}
+
+.file-link:hover{
+  background:#00ff41;
+  color:#000;
+}
+
+.score-area{
+  margin-top:18px;
+}
+
+.empty-text{
+  opacity:0.9;
+}
+
+@media(max-width:700px){
+  .toolbar{
+    grid-template-columns:1fr;
+  }
+
+  .login-box{
+    width:auto;
+    margin:70px 20px;
+  }
+
+  .drive-preview{
+    height:420px;
+  }
+}
+
+</style>
+
+</head>
+
+<body>
+
+<canvas id="matrix"></canvas>
+
+<div class="login-box" id="loginBox">
+
+  <h2>LOGIN</h2>
+
+  <input id="id" placeholder="Student ID">
+
+  <input
+    id="pass"
+    type="password"
+    placeholder="Password"
+  >
+
+  <button onclick="login()">
+    เข้าสู่ระบบ
+  </button>
+
+  <p id="msg"></p>
+
+</div>
+
+
+<div id="teacherPanel" class="panel">
+
+  <h2>Teacher Dashboard</h2>
+
+  <div class="toolbar">
+
+    <select id="topic">
+      <option value="">กำลังโหลดหัวข้องาน...</option>
+    </select>
+
+    <select id="classFilter">
+      <option value="">ทุกห้อง</option>
+    </select>
+
+    <input
+      id="noFilter"
+      type="number"
+      placeholder="กรองเลขที่"
+    >
+
+  </div>
+
+  <button class="toolbar-button" onclick="loadWork()">
+    โหลดงาน
+  </button>
+
+  <div id="workStatus"></div>
+  <div id="work"></div>
+
+</div>
+
+
+<div id="studentPanel" class="panel">
+
+  <h2>Student Dashboard</h2>
+  <div id="studentData"></div>
+
+</div>
+
+
+<script>
+
+// ใช้ API URL เดิมของคุณ
+const API_URL =
+  "https://script.google.com/macros/s/AKfycbzjia1ZqJQgOPBQV4NYi-vIahSbCQYp5XALW7iHpYnOyx0_UtR_v43r4wrYCrGQeTFm/exec";
+
+let currentWorkData = [];
+let currentSheetUrl = "";
+
+
+// ======================================
+// LOGIN
+// ======================================
+function login(){
+
+  const id = document
+    .getElementById("id")
+    .value
+    .trim();
+
+  const pass = document
+    .getElementById("pass")
+    .value
+    .trim();
+
+  const msg = document.getElementById("msg");
+
+  if(!id || !pass){
+    msg.innerHTML = "❌ กรุณากรอก ID และ Password";
+    return;
+  }
+
+  msg.innerHTML = "กำลังเข้าสู่ระบบ...";
+
+  fetch(
+    API_URL
+    + "?action=login"
+    + "&id=" + encodeURIComponent(id)
+    + "&pass=" + encodeURIComponent(pass)
+  )
+
+  .then(res => res.json())
+
+  .then(data => {
+
+    if(data.status === "success"){
+
+      document
+        .getElementById("loginBox")
+        .style.display = "none";
+
+      if(String(data.role).trim() === "teacher"){
+
+        document
+          .getElementById("teacherPanel")
+          .style.display = "block";
+
+        loadTopics();
+      }
+
+      else{
+
+        document
+          .getElementById("studentPanel")
+          .style.display = "block";
+
+        document
+          .getElementById("studentData")
+          .innerHTML =
+          `<div class="status-box">Welcome ${escapeHtml(data.name)}</div>`;
+      }
+    }
+
+    else{
+      msg.innerHTML =
+        "❌ " + escapeHtml(data.message || "Login Failed");
+    }
+  })
+
+  .catch(error => {
+    console.error(error);
+    msg.innerHTML = "❌ เชื่อมต่อ API ไม่สำเร็จ";
+  });
+}
+
+
+// ======================================
+// โหลดหัวข้องาน
+// ======================================
+function loadTopics(){
+
+  const topicSelect = document.getElementById("topic");
+
+  topicSelect.innerHTML =
+    `<option value="">กำลังโหลดหัวข้องาน...</option>`;
+
+  fetch(API_URL + "?action=topics")
+
+  .then(res => res.json())
+
+  .then(response => {
+
+    let topics = [];
+
+    // รองรับ API เวอร์ชันใหม่
+    if(
+      response &&
+      response.status === "success" &&
+      Array.isArray(response.data)
+    ){
+      topics = response.data;
+    }
+
+    // รองรับ API เก่าที่ส่ง array ตรง ๆ
+    else if(Array.isArray(response)){
+      topics = response;
+    }
+
+    else{
+      topicSelect.innerHTML =
+        `<option value="">โหลดหัวข้องานไม่สำเร็จ</option>`;
+
+      console.log("Topics API Response:", response);
+      return;
+    }
+
+    if(topics.length === 0){
+      topicSelect.innerHTML =
+        `<option value="">ยังไม่มีหัวข้องาน</option>`;
+      return;
+    }
+
+    let html =
+      `<option value="">-- เลือกหัวข้องาน --</option>`;
+
+    topics.forEach(t => {
+
+      html += `
+        <option value="${escapeAttribute(t.url)}">
+          ${escapeHtml(t.level)} - ${escapeHtml(t.topic)}
+        </option>
+      `;
+    });
+
+    topicSelect.innerHTML = html;
+  })
+
+  .catch(error => {
+    console.error(error);
+    topicSelect.innerHTML =
+      `<option value="">โหลดหัวข้องานไม่สำเร็จ</option>`;
+  });
+}
+
+
+// ======================================
+// โหลดงานนักเรียน
+// ======================================
+function loadWork(){
+
+  const url = document
+    .getElementById("topic")
+    .value;
+
+  const workBox = document.getElementById("work");
+  const workStatus = document.getElementById("workStatus");
+
+  if(!url){
+    workStatus.innerHTML =
+      `<div class="status-box">❌ กรุณาเลือกหัวข้องานก่อน</div>`;
+    workBox.innerHTML = "";
+    return;
+  }
+
+  currentSheetUrl = url;
+
+  workStatus.innerHTML =
+    `<div class="status-box">กำลังโหลดงาน...</div>`;
+
+  workBox.innerHTML = "";
+
+  fetch(
+    API_URL
+    + "?action=studentWork"
+    + "&url="
+    + encodeURIComponent(url)
+  )
+
+  .then(res => res.json())
+
+  .then(response => {
+
+    let data = [];
+
+    // API ใหม่
+    if(
+      response &&
+      response.status === "success" &&
+      Array.isArray(response.data)
+    ){
+      data = response.data;
+    }
+
+    // เผื่อ API เก่าที่ยังส่ง array ตรง ๆ
+    else if(Array.isArray(response)){
+      data = response;
+    }
+
+    else{
+      workStatus.innerHTML =
+        `<div class="status-box">
+          ❌ โหลดงานไม่สำเร็จ:
+          ${escapeHtml(response.message || "รูปแบบข้อมูลจาก API ไม่ถูกต้อง")}
+        </div>`;
+
+      console.log("StudentWork API Response:", response);
+      return;
+    }
+
+    currentWorkData = data;
+
+    if(currentWorkData.length === 0){
+
+      workStatus.innerHTML =
+        `<div class="status-box">ยังไม่มีข้อมูลงานนักเรียนในชีทนี้</div>`;
+
+      return;
+    }
+
+    populateClassFilter(currentWorkData);
+
+    workStatus.innerHTML =
+      `<div class="status-box">
+        พบงานทั้งหมด ${currentWorkData.length} รายการ
+      </div>`;
+
+    renderWorkCards();
+  })
+
+  .catch(error => {
+
+    console.error(error);
+
+    workStatus.innerHTML =
+      `<div class="status-box">
+        ❌ เกิดข้อผิดพลาดในการเชื่อมต่อ API
+      </div>`;
+  });
+}
+
+
+// ======================================
+// สร้างตัวเลือกห้องเรียน
+// ======================================
+function populateClassFilter(data){
+
+  const classSelect = document.getElementById("classFilter");
+
+  const classes = [
+    ...new Set(
+      data
+        .map(item => String(item.class || "").trim())
+        .filter(Boolean)
+    )
+  ];
+
+  let html = `<option value="">ทุกห้อง</option>`;
+
+  classes.forEach(className => {
+    html += `
+      <option value="${escapeAttribute(className)}">
+        ${escapeHtml(className)}
+      </option>
+    `;
+  });
+
+  classSelect.innerHTML = html;
+
+  classSelect.onchange = renderWorkCards;
+  document.getElementById("noFilter").oninput = renderWorkCards;
+}
+
+
+// ======================================
+// แสดงการ์ดงาน พร้อมกรองห้อง/เลขที่
+// ======================================
+function renderWorkCards(){
+
+  const workBox = document.getElementById("work");
+
+  const selectedClass =
+    document
+    .getElementById("classFilter")
+    .value;
+
+  const selectedNo =
+    document
+    .getElementById("noFilter")
+    .value
+    .trim();
+
+  let html = "";
+  let visibleCount = 0;
+
+  currentWorkData.forEach(s => {
+
+    const studentClass = String(s.class || "").trim();
+    const studentNo = String(s.no || "").trim();
+
+    if(
+      selectedClass &&
+      studentClass !== selectedClass
+    ){
+      return;
+    }
+
+    if(
+      selectedNo &&
+      studentNo !== selectedNo
+    ){
+      return;
+    }
+
+    visibleCount++;
+
+    const workValue =
+      s.work !== undefined
+      ? s.work
+      : (s.image !== undefined ? s.image : "");
+
+    html += `
+
+      <div class="card">
+
+        <h3>
+          ${escapeHtml(studentClass)}
+          เลขที่ ${escapeHtml(studentNo)}
+        </h3>
+
+        <div class="meta">
+          <div>ชื่อ: ${escapeHtml(s.name || "")}</div>
+          <div>รหัสนักเรียน: ${escapeHtml(s.id || "")}</div>
+        </div>
+
+        <div class="work-box">
+          <h4>งานที่ส่ง</h4>
+          ${renderWorkContent(workValue)}
+        </div>
+
+        <div class="score-area">
+
+          <input
+            type="number"
+            id="score_${escapeAttribute(s.rowIndex || s.id)}"
+            value="${escapeAttribute(s.score || "")}"
+            placeholder="คะแนน"
+          >
+
+          <button
+            onclick="saveScore(
+              '${escapeJsString(currentSheetUrl)}',
+              '${escapeJsString(s.id || "")}',
+              '${escapeJsString(s.rowIndex || "")}'
+            )"
+          >
+            บันทึกคะแนน
+          </button>
+
+        </div>
+
+      </div>
+    `;
+  });
+
+  if(visibleCount === 0){
+    html =
+      `<div class="status-box">ไม่พบข้อมูลตามตัวกรอง</div>`;
+  }
+
+  workBox.innerHTML = html;
+}
+
+
+// ======================================
+// แสดงงานในช่อง Work
+// ถ้าเป็น Drive URL = พรีวิวไฟล์
+// ถ้าเป็น image URL โดยตรง = แสดงรูป
+// ถ้าเป็น URL ทั่วไป = แสดงลิงก์
+// ถ้าไม่ใช่ URL = แสดงข้อความ
+// ======================================
+function renderWorkContent(work){
+
+  const value = String(work || "").trim();
+
+  if(!value){
+    return `<p class="empty-text">ยังไม่มีข้อมูลงานที่ส่ง</p>`;
+  }
+
+  const driveFileId = extractDriveFileId(value);
+
+  if(driveFileId){
+
+    const previewUrl =
+      "https://drive.google.com/file/d/"
+      + driveFileId
+      + "/preview";
+
+    return `
+      <iframe
+        class="drive-preview"
+        src="${escapeAttribute(previewUrl)}"
+        allow="autoplay"
+      ></iframe>
+
+      <a
+        class="file-link"
+        href="${escapeAttribute(value)}"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        เปิดไฟล์ในแท็บใหม่
+      </a>
+    `;
+  }
+
+  if(isDirectImageUrl(value)){
+
+    return `
+      <img
+        class="direct-image"
+        src="${escapeAttribute(value)}"
+        alt="Student work"
+        onerror="this.outerHTML='<p>❌ ไม่สามารถแสดงรูปได้</p>';"
+      >
+    `;
+  }
+
+  if(isUrl(value)){
+
+    return `
+      <a
+        class="file-link"
+        href="${escapeAttribute(value)}"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        เปิดลิงก์งาน
+      </a>
+    `;
+  }
+
+  return `
+    <div class="text-work">
+      ${escapeHtml(value)}
+    </div>
+  `;
+}
+
+
+// ======================================
+// บันทึกคะแนน
+// ======================================
+function saveScore(url, studentId, rowIndex){
+
+  const inputId =
+    "score_" + (rowIndex || studentId);
+
+  const scoreInput =
+    document.getElementById(inputId);
+
+  if(!scoreInput){
+    alert("ไม่พบช่องกรอกคะแนน");
+    return;
+  }
+
+  const score = scoreInput.value;
+
+  fetch(
+    API_URL
+    + "?action=updateScore"
+    + "&url=" + encodeURIComponent(url)
+    + "&studentId=" + encodeURIComponent(studentId)
+    + "&rowIndex=" + encodeURIComponent(rowIndex)
+    + "&score=" + encodeURIComponent(score)
+  )
+
+  .then(res => res.json())
+
+  .then(data => {
+
+    if(data.status === "success"){
+      alert("✅ บันทึกคะแนนแล้ว");
+    }
+
+    else{
+      alert("❌ " + (data.message || "บันทึกคะแนนไม่สำเร็จ"));
+    }
+  })
+
+  .catch(error => {
+    console.error(error);
+    alert("❌ เชื่อมต่อ API ไม่สำเร็จ");
+  });
+}
+
+
+// ======================================
+// แยก FILE ID จากลิงก์ Google Drive
+// รองรับ:
+// - open?id=...
+// - /file/d/.../view
+// - uc?id=...
+// ======================================
+function extractDriveFileId(url){
+
+  const value = String(url || "").trim();
+
+  const matchById =
+    value.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+
+  if(matchById && matchById[1]){
+    return matchById[1];
+  }
+
+  const matchByD =
+    value.match(/\/d\/([a-zA-Z0-9_-]+)/);
+
+  if(matchByD && matchByD[1]){
+    return matchByD[1];
+  }
+
+  return "";
+}
+
+
+// ======================================
+// ตรวจ URL
+// ======================================
+function isUrl(value){
+  return /^https?:\/\/\S+$/i.test(String(value || "").trim());
+}
+
+
+// ======================================
+// ตรวจ direct image url
+// ======================================
+function isDirectImageUrl(value){
+  return /^https?:\/\/\S+\.(png|jpg|jpeg|gif|webp|bmp|svg)(\?\S*)?$/i
+    .test(String(value || "").trim());
+}
+
+
+// ======================================
+// ป้องกัน HTML แตก
+// ======================================
+function escapeHtml(value){
+
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function escapeAttribute(value){
+  return escapeHtml(value);
+}
+
+function escapeJsString(value){
+
+  return String(value ?? "")
+    .replace(/\\/g, "\\\\")
+    .replace(/'/g, "\\'")
+    .replace(/"/g, '\\"')
+    .replace(/\n/g, "\\n")
+    .replace(/\r/g, "\\r");
+}
+
+
+// ======================================
+// Matrix Background
+// ======================================
+const canvas =
+  document.getElementById("matrix");
+
+const ctx =
+  canvas.getContext("2d");
+
+canvas.width =
+  window.innerWidth;
+
+canvas.height =
+  window.innerHeight;
+
+const letters =
+  "アイウエオ0123456789";
+
+const fontSize = 16;
+
+let columns =
+  Math.floor(canvas.width / fontSize);
+
+let drops = [];
+
+function initMatrix(){
+
+  columns =
+    Math.floor(canvas.width / fontSize);
+
+  drops = [];
+
+  for(let i = 0; i < columns; i++){
+    drops[i] = 1;
+  }
+}
+
+initMatrix();
+
+function draw(){
+
+  ctx.fillStyle =
+    "rgba(0,0,0,0.05)";
+
+  ctx.fillRect(
+    0,
+    0,
+    canvas.width,
+    canvas.height
+  );
+
+  ctx.fillStyle =
+    "#00ff41";
+
+  ctx.font =
+    fontSize + "px monospace";
+
+  for(let i = 0; i < drops.length; i++){
+
+    const text =
+      letters[
+        Math.floor(
+          Math.random() * letters.length
+        )
+      ];
+
+    ctx.fillText(
+      text,
+      i * fontSize,
+      drops[i] * fontSize
+    );
+
+    if(
+      drops[i] * fontSize > canvas.height &&
+      Math.random() > 0.975
+    ){
+      drops[i] = 0;
+    }
+
+    drops[i]++;
+  }
+}
+
+setInterval(draw, 33);
+
+window.addEventListener("resize", () => {
+
+  canvas.width =
+    window.innerWidth;
+
+  canvas.height =
+    window.innerHeight;
+
+  initMatrix();
+});
+
+</script>
+
+</body>
+</html>
