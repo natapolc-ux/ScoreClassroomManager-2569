@@ -229,7 +229,10 @@ h2,h3,h4{
 <div id="studentPanel" class="panel">
 
   <h2>Student Dashboard</h2>
+
   <div id="studentData"></div>
+  <div id="myWorkStatus"></div>
+  <div id="myWork"></div>
 
 </div>
 
@@ -238,10 +241,13 @@ h2,h3,h4{
 
 // ใช้ API URL เดิมของคุณ
 const API_URL =
-  "https://script.google.com/macros/s/AKfycbyhBbkP_-j4E98RIdq_hUlhQFtpz0_NvLfCMplRcuqfZKd6HsZyoJ04AKZ9vWyyF9DDhg/exec";
+  "https://script.google.com/macros/s/AKfycbxdv31nj4A8G6lpMednY9ckvZL02iL15X-Y2fn5AKeSTarDiOhkfhsGEDnmROVp4VxwMA/exec";
 
 let currentWorkData = [];
 let currentSheetUrl = "";
+
+let currentStudentId = "";
+let currentStudentName = "";
 
 
 // ======================================
@@ -296,15 +302,22 @@ function login(){
 
       else{
 
-        document
-          .getElementById("studentPanel")
-          .style.display = "block";
+  currentStudentId = data.id;
+  currentStudentName = data.name;
 
-        document
-          .getElementById("studentData")
-          .innerHTML =
-          `<div class="status-box">Welcome ${escapeHtml(data.name)}</div>`;
-      }
+  document
+    .getElementById("studentPanel")
+    .style.display = "block";
+
+  document
+    .getElementById("studentData")
+    .innerHTML =
+    `<div class="status-box">
+      ยินดีต้อนรับ ${escapeHtml(data.name)}
+    </div>`;
+
+  loadMyWork();
+}
     }
 
     else{
@@ -837,7 +850,123 @@ function formatTimestamp(value){
     minute: "2-digit"
   }).format(date);
 }
+// ======================================
+// โหลดงานและคะแนนของนักเรียนที่ล็อกอิน
+// ======================================
+function loadMyWork(){
 
+  const statusBox =
+    document.getElementById("myWorkStatus");
+
+  const workBox =
+    document.getElementById("myWork");
+
+  statusBox.innerHTML =
+    `<div class="status-box">กำลังโหลดข้อมูลงานของคุณ...</div>`;
+
+  workBox.innerHTML = "";
+
+  fetch(
+    API_URL
+    + "?action=myWork"
+    + "&studentId="
+    + encodeURIComponent(currentStudentId)
+  )
+
+  .then(res => res.json())
+
+  .then(response => {
+
+    if(
+      response.status !== "success" ||
+      !Array.isArray(response.data)
+    ){
+
+      statusBox.innerHTML =
+        `<div class="status-box">
+          ❌ โหลดข้อมูลไม่สำเร็จ:
+          ${escapeHtml(response.message || "รูปแบบข้อมูลไม่ถูกต้อง")}
+        </div>`;
+
+      return;
+    }
+
+    const data = response.data;
+
+    if(data.length === 0){
+
+      statusBox.innerHTML =
+        `<div class="status-box">
+          ยังไม่พบข้อมูลงานที่ส่งของคุณ
+        </div>`;
+
+      return;
+    }
+
+    statusBox.innerHTML =
+      `<div class="status-box">
+        พบข้อมูลงานของคุณ ${data.length} รายการ
+      </div>`;
+
+    renderMyWorkCards(data);
+  })
+
+  .catch(error => {
+
+    console.error(error);
+
+    statusBox.innerHTML =
+      `<div class="status-box">
+        ❌ เชื่อมต่อ API ไม่สำเร็จ
+      </div>`;
+  });
+}
+  // ======================================
+// แสดงรายการงานของนักเรียน
+// ======================================
+function renderMyWorkCards(data){
+
+  const workBox =
+    document.getElementById("myWork");
+
+  let html = "";
+
+  data.forEach(item => {
+
+    html += `
+
+      <div class="card">
+
+        <h3>
+          ${escapeHtml(item.level || "")}
+          - ${escapeHtml(item.topic || "")}
+        </h3>
+
+        <div class="meta">
+          <div>ห้อง: ${escapeHtml(item.class || "")}</div>
+          <div>เลขที่: ${escapeHtml(item.no || "")}</div>
+          <div>เวลาส่งงาน: ${escapeHtml(formatTimestamp(item.timestamp))}</div>
+          <div>
+            คะแนน:
+            <strong>
+              ${item.score !== "" && item.score !== null
+                ? escapeHtml(item.score)
+                : "ยังไม่ตรวจ"}
+            </strong>
+          </div>
+        </div>
+
+        <div class="work-box">
+          <h4>งานที่ส่ง</h4>
+          ${renderWorkContent(item.work)}
+        </div>
+
+      </div>
+    `;
+  });
+
+  workBox.innerHTML = html;
+}
 // ======================================
 // Matrix Background
 // ======================================
