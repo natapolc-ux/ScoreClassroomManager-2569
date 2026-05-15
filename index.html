@@ -946,14 +946,6 @@ function renderMyWorkCards(data){
           <div>ห้อง: ${escapeHtml(item.class || "")}</div>
           <div>เลขที่: ${escapeHtml(item.no || "")}</div>
           <div>เวลาส่งงาน: ${escapeHtml(formatTimestamp(item.timestamp))}</div>
-          <div>
-            คะแนน:
-            <strong>
-              ${item.score !== "" && item.score !== null
-                ? escapeHtml(item.score)
-                : "ยังไม่ตรวจ"}
-            </strong>
-          </div>
         </div>
 
         <div class="work-box">
