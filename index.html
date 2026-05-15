@@ -576,6 +576,7 @@ function renderWorkCards(){
         <div class="meta">
           <div>ชื่อ: ${escapeHtml(s.name || "")}</div>
           <div>รหัสนักเรียน: ${escapeHtml(s.id || "")}</div>
+          <div>เวลาส่งงาน: ${escapeHtml(formatTimestamp(s.timestamp))}</div>
         </div>
 
         <div class="work-box">
