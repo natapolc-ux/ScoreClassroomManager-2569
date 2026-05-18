@@ -149,7 +149,40 @@ h2,h3,h4{
 .empty-text{
   opacity:0.9;
 }
+.submit-time{
+  display:inline-block;
+  margin-top:8px;
+  padding:8px 12px;
+  border:1px solid #00ff41;
+  background:rgba(0,0,0,0.75);
+}
 
+.normal-time{
+  border:1px solid #00ff41;
+}
+
+.late-time{
+  border:1px solid #ff3b3b;
+  background:#8b0000;
+  color:#ffffff;
+  box-shadow:0 0 10px #ff3b3b;
+}
+
+.late-label{
+  display:inline-block;
+  margin-left:8px;
+  padding:3px 8px;
+  border-radius:999px;
+  background:#ff3b3b;
+  color:#ffffff;
+  font-weight:bold;
+}
+
+.due-date{
+  margin-top:6px;
+  font-size:0.95em;
+  opacity:0.95;
+}
 @media(max-width:700px){
   .toolbar{
     grid-template-columns:1fr;
@@ -587,10 +620,25 @@ function renderWorkCards(){
         </h3>
 
         <div class="meta">
-          <div>ชื่อ: ${escapeHtml(s.name || "")}</div>
-          <div>รหัสนักเรียน: ${escapeHtml(s.id || "")}</div>
-          <div>เวลาส่งงาน: ${escapeHtml(formatTimestamp(s.timestamp))}</div>
-        </div>
+  <div>ชื่อ: ${escapeHtml(s.name || "")}</div>
+  <div>รหัสนักเรียน: ${escapeHtml(s.id || "")}</div>
+
+  <div class="submit-time ${s.isLate ? "late-time" : "normal-time"}">
+    เวลาส่งงาน: ${escapeHtml(formatTimestamp(s.timestamp))}
+    ${s.isLate ? `<span class="late-label">ส่งช้า</span>` : ``}
+  </div>
+
+  ${
+    s.dueDate
+    ? `
+      <div class="due-date">
+        กำหนดส่งของห้องนี้:
+        ${escapeHtml(formatTimestamp(s.dueDate))}
+      </div>
+    `
+    : ``
+  }
+</div>
 
         <div class="work-box">
           <h4>งานที่ส่ง</h4>
