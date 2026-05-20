@@ -269,7 +269,28 @@ h2,h3,h4{
     height:420px;
   }
 }
+.work-status{
+  display:inline-block;
+  margin-top:10px;
+  margin-bottom:10px;
+  padding:6px 14px;
+  border-radius:999px;
+  font-weight:bold;
+}
 
+.submitted-status{
+  background:#006b2d;
+  color:#ffffff;
+  border:1px solid #00ff41;
+  box-shadow:0 0 8px #00ff41;
+}
+
+.missing-status{
+  background:#8b0000;
+  color:#ffffff;
+  border:1px solid #ff3b3b;
+  box-shadow:0 0 10px #ff3b3b;
+}
 </style>
 
 </head>
@@ -1047,7 +1068,7 @@ function loadMyWork(){
 
     statusBox.innerHTML =
       `<div class="status-box">
-        พบข้อมูลงานของคุณ ${data.length} รายการ
+        พบรายการงานของคุณ ${data.length} งาน
       </div>`;
 
     renderMyWorkCards(data);
@@ -1063,8 +1084,9 @@ function loadMyWork(){
       </div>`;
   });
 }
-  // ======================================
+// ======================================
 // แสดงรายการงานของนักเรียน
+// ทั้ง "ส่งแล้ว" และ "ยังไม่ได้ส่ง"
 // ======================================
 function renderMyWorkCards(data){
 
@@ -1075,6 +1097,9 @@ function renderMyWorkCards(data){
 
   data.forEach(item => {
 
+    const isSubmitted =
+      item.status === "submitted";
+
     html += `
 
       <div class="card">
@@ -1084,16 +1109,37 @@ function renderMyWorkCards(data){
           - ${escapeHtml(item.topic || "")}
         </h3>
 
-        <div class="meta">
-          <div>ห้อง: ${escapeHtml(item.class || "")}</div>
-          <div>เลขที่: ${escapeHtml(item.no || "")}</div>
-          <div>เวลาส่งงาน: ${escapeHtml(formatTimestamp(item.timestamp))}</div>
+        <div class="work-status ${isSubmitted ? "submitted-status" : "missing-status"}">
+          ${isSubmitted ? "✅ ส่งแล้ว" : "❌ ยังไม่ได้ส่ง"}
         </div>
 
-        <div class="work-box">
-          <h4>งานที่ส่ง</h4>
-          ${renderWorkContent(item.work)}
-        </div>
+        ${
+          isSubmitted
+          ? `
+            <div class="meta">
+              <div>ห้อง: ${escapeHtml(item.class || "")}</div>
+              <div>เลขที่: ${escapeHtml(item.no || "")}</div>
+              <div>เวลาส่งงาน: ${escapeHtml(formatTimestamp(item.timestamp))}</div>
+            </div>
+
+            <div class="work-box">
+              <h4>งานที่ส่ง</h4>
+              ${renderWorkContent(item.work)}
+            </div>
+          `
+          : `
+            <div class="meta">
+              <div>ห้อง: ${escapeHtml(item.class || "")}</div>
+              <div>เลขที่: ${escapeHtml(item.no || "")}</div>
+            </div>
+
+            <div class="work-box">
+              <p class="empty-text">
+                ยังไม่พบการส่งงานของคุณในหัวข้อนี้
+              </p>
+            </div>
+          `
+        }
 
       </div>
     `;
