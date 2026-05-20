@@ -370,6 +370,11 @@ h2,h3,h4{
 
 <div id="scoreTableStatus"></div>
 <div id="scoreTableWrap" class="score-table-wrap"></div>
+<button class="toolbar-button" onclick="exportScoreSummary()">
+  บันทึกตารางคะแนนลง Sheet
+</button>
+
+<div id="exportSummaryStatus"></div>
 </div>
 
 
@@ -388,7 +393,7 @@ h2,h3,h4{
 
 // ใช้ API URL เดิมของคุณ
 const API_URL =
-  "https://script.google.com/macros/s/AKfycbweDTjfk0rv1M8emUKiSNJ0WZ9nFlsbMfUvCI3LkQTgZ63xFSsYkVFiAUWyOKz5Ob3OXA/exec";
+  "https://script.google.com/macros/s/AKfycbylgSG8iJJvR9VI6DnMci7MVjiWiAkGg9XExfmz3-m-YqgFjiNXFv9PK78O1pS76y4GNA/exec";
 
 let currentWorkData = [];
 let currentSheetUrl = "";
@@ -1332,6 +1337,78 @@ function loadScoreTable(){
       </div>`;
   });
 }
+// ======================================
+// บันทึกตารางคะแนนรายงานลงชีต ScoreSummary
+// ======================================
+function exportScoreSummary(){
+
+  const level =
+    document.getElementById("scoreLevel").value;
+
+  const className =
+    document.getElementById("scoreClass").value;
+
+  const statusBox =
+    document.getElementById("exportSummaryStatus");
+
+  if(!level){
+    statusBox.innerHTML =
+      `<div class="status-box">
+        ❌ กรุณาเลือกระดับชั้นก่อน
+      </div>`;
+    return;
+  }
+
+  statusBox.innerHTML =
+    `<div class="status-box">
+      กำลังบันทึกตารางคะแนนลง Sheet...
+    </div>`;
+
+  fetch(
+    API_URL
+    + "?action=exportScoreSummary"
+    + "&level=" + encodeURIComponent(level)
+    + "&className=" + encodeURIComponent(className)
+  )
+
+  .then(res => res.json())
+
+  .then(response => {
+
+    if(response.status !== "success"){
+
+      statusBox.innerHTML =
+        `<div class="status-box">
+          ❌ บันทึกไม่สำเร็จ:
+          ${escapeHtml(response.message || "เกิดข้อผิดพลาด")}
+        </div>`;
+
+      return;
+    }
+
+    statusBox.innerHTML =
+      `<div class="status-box">
+        ✅ บันทึกลงชีต ${escapeHtml(response.data.sheetName)} แล้ว
+        <br>
+        ระดับชั้น: ${escapeHtml(response.data.level)}
+        |
+        ห้อง: ${escapeHtml(response.data.className)}
+        |
+        นักเรียน: ${escapeHtml(response.data.studentCount)} คน
+      </div>`;
+  })
+
+  .catch(error => {
+
+    console.error(error);
+
+    statusBox.innerHTML =
+      `<div class="status-box">
+        ❌ เชื่อมต่อ API ไม่สำเร็จ
+      </div>`;
+  });
+}
+  
 // ======================================
 // แสดงตารางคะแนนรายงาน
 // ======================================
