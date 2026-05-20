@@ -183,11 +183,83 @@ h2,h3,h4{
   font-size:0.95em;
   opacity:0.95;
 }
+.panel-divider{
+  border:0;
+  border-top:1px solid #00ff41;
+  margin:40px 0 30px;
+}
+
+.score-toolbar{
+  display:grid;
+  grid-template-columns:1fr 1fr 1fr;
+  gap:10px;
+  margin-bottom:10px;
+}
+
+.score-table-wrap{
+  margin-top:15px;
+  overflow-x:auto;
+  border:1px solid #00ff41;
+  background:rgba(0,0,0,0.88);
+}
+
+.score-table{
+  width:100%;
+  min-width:900px;
+  border-collapse:collapse;
+}
+
+.score-table th,
+.score-table td{
+  border:1px solid #00ff41;
+  padding:10px;
+  text-align:center;
+  vertical-align:middle;
+  white-space:nowrap;
+}
+
+.score-table th{
+  background:rgba(0,255,65,0.12);
+}
+
+.score-table td.student-name{
+  text-align:left;
+  min-width:180px;
+}
+
+.score-value{
+  font-weight:bold;
+  font-size:1.05em;
+}
+
+.score-pending{
+  display:inline-block;
+  padding:4px 8px;
+  border:1px solid #ffd43b;
+  color:#ffd43b;
+}
+
+.score-missing{
+  display:inline-block;
+  padding:4px 8px;
+  border:1px solid #ff3b3b;
+  background:#8b0000;
+  color:#fff;
+}
+
+.score-error{
+  display:inline-block;
+  padding:4px 8px;
+  border:1px solid #ff9800;
+  color:#ffcc80;
+}  
 @media(max-width:700px){
   .toolbar{
     grid-template-columns:1fr;
   }
-
+.score-toolbar{
+  grid-template-columns:1fr;
+}
   .login-box{
     width:auto;
     margin:70px 20px;
@@ -255,7 +327,28 @@ h2,h3,h4{
 
   <div id="workStatus"></div>
   <div id="work"></div>
+<hr class="panel-divider">
 
+<h2>ตารางคะแนนรายงาน</h2>
+
+<div class="score-toolbar">
+
+  <select id="scoreLevel">
+    <option value="">กำลังโหลดระดับชั้น...</option>
+  </select>
+
+  <select id="scoreClass">
+    <option value="">ทุกห้อง</option>
+  </select>
+
+  <button onclick="loadScoreTable()">
+    โหลดตารางคะแนน
+  </button>
+
+</div>
+
+<div id="scoreTableStatus"></div>
+<div id="scoreTableWrap" class="score-table-wrap"></div>
 </div>
 
 
@@ -281,7 +374,7 @@ let currentSheetUrl = "";
 
 let currentStudentId = "";
 let currentStudentName = "";
-
+let scoreOptionsData = [];
 
 // ======================================
 // LOGIN
@@ -331,6 +424,7 @@ function login(){
           .style.display = "block";
 
         loadTopics();
+        loadScoreOptions();
       }
 
       else{
@@ -1006,6 +1100,326 @@ function renderMyWorkCards(data){
   });
 
   workBox.innerHTML = html;
+}
+// ======================================
+// โหลดตัวเลือกระดับชั้น / ห้อง
+// สำหรับตารางคะแนนรายงาน
+// ======================================
+function loadScoreOptions(){
+
+  const levelSelect =
+    document.getElementById("scoreLevel");
+
+  const classSelect =
+    document.getElementById("scoreClass");
+
+  levelSelect.innerHTML =
+    `<option value="">กำลังโหลดระดับชั้น...</option>`;
+
+  classSelect.innerHTML =
+    `<option value="">ทุกห้อง</option>`;
+
+  fetch(API_URL + "?action=scoreOptions")
+
+  .then(res => res.json())
+
+  .then(response => {
+
+    if(
+      response.status !== "success" ||
+      !Array.isArray(response.data)
+    ){
+      levelSelect.innerHTML =
+        `<option value="">โหลดระดับชั้นไม่สำเร็จ</option>`;
+      return;
+    }
+
+    scoreOptionsData = response.data;
+
+    if(scoreOptionsData.length === 0){
+      levelSelect.innerHTML =
+        `<option value="">ยังไม่มีข้อมูลระดับชั้น</option>`;
+      return;
+    }
+
+    let html =
+      `<option value="">-- เลือกระดับชั้น --</option>`;
+
+    scoreOptionsData.forEach(item => {
+      html += `
+        <option value="${escapeAttribute(item.level)}">
+          ${escapeHtml(item.level)}
+        </option>
+      `;
+    });
+
+    levelSelect.innerHTML = html;
+
+    levelSelect.onchange =
+      updateScoreClassOptions;
+  })
+
+  .catch(error => {
+    console.error(error);
+    levelSelect.innerHTML =
+      `<option value="">โหลดระดับชั้นไม่สำเร็จ</option>`;
+  });
+}
+
+
+// ======================================
+// เปลี่ยนรายการห้องตามระดับชั้นที่เลือก
+// ======================================
+function updateScoreClassOptions(){
+
+  const selectedLevel =
+    document.getElementById("scoreLevel").value;
+
+  const classSelect =
+    document.getElementById("scoreClass");
+
+  let html =
+    `<option value="">ทุกห้อง</option>`;
+
+  const selectedData =
+    scoreOptionsData.find(item =>
+      String(item.level) === String(selectedLevel)
+    );
+
+  if(
+    selectedData &&
+    Array.isArray(selectedData.classes)
+  ){
+    selectedData.classes.forEach(className => {
+      html += `
+        <option value="${escapeAttribute(className)}">
+          ${escapeHtml(className)}
+        </option>
+      `;
+    });
+  }
+
+  classSelect.innerHTML = html;
+}
+// ======================================
+// โหลดตารางคะแนนรายงาน
+// ======================================
+function loadScoreTable(){
+
+  const level =
+    document.getElementById("scoreLevel").value;
+
+  const className =
+    document.getElementById("scoreClass").value;
+
+  const statusBox =
+    document.getElementById("scoreTableStatus");
+
+  const tableWrap =
+    document.getElementById("scoreTableWrap");
+
+  if(!level){
+    statusBox.innerHTML =
+      `<div class="status-box">❌ กรุณาเลือกระดับชั้นก่อน</div>`;
+    tableWrap.innerHTML = "";
+    return;
+  }
+
+  statusBox.innerHTML =
+    `<div class="status-box">กำลังโหลดตารางคะแนน...</div>`;
+
+  tableWrap.innerHTML = "";
+
+  fetch(
+    API_URL
+    + "?action=scoreTable"
+    + "&level=" + encodeURIComponent(level)
+    + "&className=" + encodeURIComponent(className)
+  )
+
+  .then(res => res.json())
+
+  .then(response => {
+
+    if(
+      response.status !== "success" ||
+      !response.data
+    ){
+      statusBox.innerHTML =
+        `<div class="status-box">
+          ❌ โหลดตารางคะแนนไม่สำเร็จ:
+          ${escapeHtml(response.message || "รูปแบบข้อมูลไม่ถูกต้อง")}
+        </div>`;
+      return;
+    }
+
+    renderScoreTable(response.data);
+
+    const studentCount =
+      Array.isArray(response.data.students)
+      ? response.data.students.length
+      : 0;
+
+    statusBox.innerHTML =
+      `<div class="status-box">
+        แสดงตารางคะแนน ${studentCount} คน
+      </div>`;
+
+    if(
+      Array.isArray(response.data.warnings) &&
+      response.data.warnings.length > 0
+    ){
+      statusBox.innerHTML += `
+        <div class="status-box">
+          ⚠️ บางชีตเปิดไม่ได้:
+          ${escapeHtml(response.data.warnings.join(" | "))}
+        </div>
+      `;
+    }
+  })
+
+  .catch(error => {
+    console.error(error);
+    statusBox.innerHTML =
+      `<div class="status-box">
+        ❌ เชื่อมต่อ API ไม่สำเร็จ
+      </div>`;
+  });
+}
+// ======================================
+// แสดงตารางคะแนนรายงาน
+// ======================================
+function renderScoreTable(data){
+
+  const tableWrap =
+    document.getElementById("scoreTableWrap");
+
+  const assignments =
+    Array.isArray(data.assignments)
+    ? data.assignments
+    : [];
+
+  const students =
+    Array.isArray(data.students)
+    ? data.students
+    : [];
+
+  if(assignments.length === 0){
+    tableWrap.innerHTML =
+      `<div class="status-box">
+        ยังไม่มีหัวข้องานในระดับชั้นนี้
+      </div>`;
+    return;
+  }
+
+  if(students.length === 0){
+    tableWrap.innerHTML =
+      `<div class="status-box">
+        ยังไม่มีรายชื่อนักเรียนตามเงื่อนไขที่เลือก
+      </div>`;
+    return;
+  }
+
+  let html = `
+
+    <table class="score-table">
+
+      <thead>
+        <tr>
+          <th>เลขที่</th>
+          <th>ห้อง</th>
+          <th>รหัส</th>
+          <th>ชื่อ</th>
+  `;
+
+  assignments.forEach(item => {
+    html += `
+      <th>${escapeHtml(item.topic || "")}</th>
+    `;
+  });
+
+  html += `
+        </tr>
+      </thead>
+      <tbody>
+  `;
+
+  students.forEach(student => {
+
+    html += `
+      <tr>
+        <td>${escapeHtml(student.no || "")}</td>
+        <td>${escapeHtml(student.class || "")}</td>
+        <td>${escapeHtml(student.id || "")}</td>
+        <td class="student-name">${escapeHtml(student.name || "")}</td>
+    `;
+
+    const scores =
+      Array.isArray(student.scores)
+      ? student.scores
+      : [];
+
+    assignments.forEach((assignment, index) => {
+
+      const cell =
+        scores[index] || {
+          status: "missing",
+          score: ""
+        };
+
+      html += `
+        <td>${renderScoreCell(cell)}</td>
+      `;
+    });
+
+    html += `
+      </tr>
+    `;
+  });
+
+  html += `
+      </tbody>
+    </table>
+  `;
+
+  tableWrap.innerHTML = html;
+}
+
+
+// ======================================
+// แสดงค่าในช่องคะแนน
+// ======================================
+function renderScoreCell(cell){
+
+  if(cell.status === "scored"){
+    return `
+      <span class="score-value">
+        ${escapeHtml(cell.score)}
+      </span>
+    `;
+  }
+
+  if(cell.status === "pending"){
+    return `
+      <span class="score-pending">
+        รอตรวจ
+      </span>
+    `;
+  }
+
+  if(cell.status === "error"){
+    return `
+      <span class="score-error">
+        เปิดชีตไม่ได้
+      </span>
+    `;
+  }
+
+  return `
+    <span class="score-missing">
+      ยังไม่ส่ง
+    </span>
+  `;
 }
 // ======================================
 // Matrix Background
