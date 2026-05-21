@@ -93,7 +93,49 @@ h2,h3,h4{
 .meta{
   line-height:1.7;
 }
+.score-tools{
+  margin-top:15px;
+  padding:12px;
+  border:1px dashed #00ff41;
+  background:rgba(0,0,0,0.75);
+}
 
+.score-tools-row{
+  display:grid;
+  grid-template-columns:1fr 1fr 1fr;
+  gap:10px;
+  margin-top:10px;
+}
+
+.hide-score-box{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  margin-top:10px;
+}
+
+.hide-score-box input{
+  width:auto;
+  margin-top:0;
+}
+
+.score-input{
+  width:90px;
+  text-align:center;
+}
+
+.changed-score{
+  border:2px solid #ffd43b !important;
+  box-shadow:0 0 8px #ffd43b;
+}
+
+.hidden-score{
+  display:inline-block;
+  padding:4px 10px;
+  border:1px solid #00ff41;
+  background:rgba(0,0,0,0.8);
+  letter-spacing:3px;
+}
 .work-box{
   margin-top:16px;
   padding:14px;
@@ -257,6 +299,9 @@ h2,h3,h4{
   .toolbar{
     grid-template-columns:1fr;
   }
+.score-tools-row{
+  grid-template-columns:1fr;
+}
 .score-toolbar{
   grid-template-columns:1fr;
 }
@@ -369,6 +414,44 @@ h2,h3,h4{
 </div>
 
 <div id="scoreTableStatus"></div>
+
+<div class="score-tools">
+
+  <label class="hide-score-box">
+    <input
+      type="checkbox"
+      id="hideScoresToggle"
+      onchange="toggleHideScores()"
+    >
+    ซ่อนคะแนนในตาราง
+  </label>
+
+  <div class="score-tools-row">
+
+    <select id="bulkAssignment">
+      <option value="">เลือกงานที่ต้องการให้คะแนน</option>
+    </select>
+
+    <input
+      id="bulkScore"
+      type="number"
+      placeholder="คะแนน"
+    >
+
+    <button onclick="applyBulkScoreToColumn()">
+      ใส่คะแนนให้ผู้ที่ส่งงานแล้ว
+    </button>
+
+  </div>
+
+  <button class="toolbar-button" onclick="saveAllScoreChanges()">
+    บันทึกคะแนนทั้งหมดลงชีตงาน
+  </button>
+
+  <div id="bulkScoreStatus"></div>
+
+</div>
+
 <div id="scoreTableWrap" class="score-table-wrap"></div>
 <button class="toolbar-button" onclick="exportScoreSummary()">
   บันทึกตารางคะแนนลง Sheet
@@ -393,7 +476,7 @@ h2,h3,h4{
 
 // ใช้ API URL เดิมของคุณ
 const API_URL =
-  "https://script.google.com/macros/s/AKfycbylgSG8iJJvR9VI6DnMci7MVjiWiAkGg9XExfmz3-m-YqgFjiNXFv9PK78O1pS76y4GNA/exec";
+  "https://script.google.com/macros/s/AKfycbyrVDta-ZPzVWYdkLpmg4ShLH_z3eZwZg34eG9azpLM-WVLvVCw5yHeds-JMfnK2jDohQ/exec";
 
 let currentWorkData = [];
 let currentSheetUrl = "";
@@ -401,6 +484,9 @@ let currentSheetUrl = "";
 let currentStudentId = "";
 let currentStudentName = "";
 let scoreOptionsData = [];
+let lastScoreTableData = null;
+let hideScoreValues = false;
+let changedScoreMap = {};
 
 // ======================================
 // LOGIN
@@ -1304,7 +1390,10 @@ function loadScoreTable(){
       return;
     }
 
-    renderScoreTable(response.data);
+   lastScoreTableData = response.data;
+changedScoreMap = {};
+renderScoreTable(lastScoreTableData);
+populateBulkAssignmentOptions(lastScoreTableData);
 
     const studentCount =
       Array.isArray(response.data.students)
@@ -1491,7 +1580,9 @@ function renderScoreTable(data){
         };
 
       html += `
-        <td>${renderScoreCell(cell)}</td>
+        <td>
+          ${renderEditableScoreCell(cell, index)}
+        </td>
       `;
     });
 
@@ -1507,8 +1598,255 @@ function renderScoreTable(data){
 
   tableWrap.innerHTML = html;
 }
+// ======================================
+// แสดงช่องคะแนนแบบแก้ไขได้
+// ======================================
+function renderEditableScoreCell(cell, assignmentIndex){
 
+  const status =
+    cell.status || "missing";
 
+  const score =
+    cell.score ?? "";
+
+  const rowIndex =
+    cell.rowIndex || "";
+
+  const studentId =
+    cell.studentId || "";
+
+  const sheetUrl =
+    cell.sheetUrl || "";
+
+  const key =
+    sheetUrl + "|" + rowIndex + "|" + studentId + "|" + assignmentIndex;
+
+  // ถ้าซ่อนคะแนน ให้บังเฉพาะคะแนนที่มี
+  if(
+    hideScoreValues &&
+    status === "scored"
+  ){
+    return `
+      <span class="hidden-score">••••</span>
+    `;
+  }
+
+  // ส่งแล้ว มีแถวในชีตแล้ว ให้แก้คะแนนได้
+  if(
+    status === "scored" ||
+    status === "pending"
+  ){
+    return `
+      <input
+        class="score-input"
+        type="number"
+        value="${escapeAttribute(score)}"
+        placeholder="${status === "pending" ? "รอตรวจ" : ""}"
+        data-key="${escapeAttribute(key)}"
+        data-url="${escapeAttribute(sheetUrl)}"
+        data-row-index="${escapeAttribute(rowIndex)}"
+        data-student-id="${escapeAttribute(studentId)}"
+        data-assignment-index="${escapeAttribute(assignmentIndex)}"
+        onchange="markScoreChanged(this)"
+      >
+    `;
+  }
+
+  if(status === "error"){
+    return `
+      <span class="score-error">
+        เปิดชีตไม่ได้
+      </span>
+    `;
+  }
+
+  return `
+    <span class="score-missing">
+      ยังไม่ส่ง
+    </span>
+  `;
+}
+// ======================================
+// ซ่อน / แสดงคะแนนในตาราง
+// ======================================
+function toggleHideScores(){
+
+  hideScoreValues =
+    document.getElementById("hideScoresToggle").checked;
+
+  if(lastScoreTableData){
+    renderScoreTable(lastScoreTableData);
+  }
+}
+  // ======================================
+// จำคะแนนที่มีการแก้ไข
+// ======================================
+function markScoreChanged(input){
+
+  const key =
+    input.getAttribute("data-key");
+
+  changedScoreMap[key] = {
+    url: input.getAttribute("data-url"),
+    rowIndex: input.getAttribute("data-row-index"),
+    studentId: input.getAttribute("data-student-id"),
+    score: input.value
+  };
+
+  input.classList.add("changed-score");
+}
+// ======================================
+// เติมตัวเลือกงานสำหรับให้คะแนนหลายคนพร้อมกัน
+// ======================================
+function populateBulkAssignmentOptions(data){
+
+  const select =
+    document.getElementById("bulkAssignment");
+
+  const assignments =
+    Array.isArray(data.assignments)
+    ? data.assignments
+    : [];
+
+  let html =
+    `<option value="">เลือกงานที่ต้องการให้คะแนน</option>`;
+
+  assignments.forEach((item, index) => {
+    html += `
+      <option value="${escapeAttribute(index)}">
+        ${escapeHtml(item.topic || "")}
+      </option>
+    `;
+  });
+
+  select.innerHTML = html;
+}
+// ======================================
+// ใส่คะแนนเดียวกันให้ผู้ที่ส่งงานแล้วในงานที่เลือก
+// ======================================
+function applyBulkScoreToColumn(){
+
+  const assignmentIndex =
+    document.getElementById("bulkAssignment").value;
+
+  const score =
+    document.getElementById("bulkScore").value;
+
+  const statusBox =
+    document.getElementById("bulkScoreStatus");
+
+  if(assignmentIndex === ""){
+    statusBox.innerHTML =
+      `<div class="status-box">❌ กรุณาเลือกงานก่อน</div>`;
+    return;
+  }
+
+  if(score === ""){
+    statusBox.innerHTML =
+      `<div class="status-box">❌ กรุณากรอกคะแนนก่อน</div>`;
+    return;
+  }
+
+  const inputs =
+    document.querySelectorAll(
+      `.score-input[data-assignment-index="${assignmentIndex}"]`
+    );
+
+  if(inputs.length === 0){
+    statusBox.innerHTML =
+      `<div class="status-box">
+        ไม่พบผู้ที่ส่งงานแล้วในงานนี้
+      </div>`;
+    return;
+  }
+
+  inputs.forEach(input => {
+    input.value = score;
+    markScoreChanged(input);
+  });
+
+  statusBox.innerHTML =
+    `<div class="status-box">
+      ใส่คะแนน ${escapeHtml(score)}
+      ให้ ${inputs.length} คนแล้ว
+      กรุณากด “บันทึกคะแนนทั้งหมดลงชีตงาน”
+    </div>`;
+}
+// ======================================
+// บันทึกคะแนนทั้งหมดที่แก้ลงชีตงานจริง
+// ======================================
+function saveAllScoreChanges(){
+
+  const statusBox =
+    document.getElementById("bulkScoreStatus");
+
+  const updates =
+    Object.values(changedScoreMap);
+
+  if(updates.length === 0){
+    statusBox.innerHTML =
+      `<div class="status-box">
+        ยังไม่มีคะแนนที่แก้ไข
+      </div>`;
+    return;
+  }
+
+  statusBox.innerHTML =
+    `<div class="status-box">
+      กำลังบันทึกคะแนน ${updates.length} รายการ...
+    </div>`;
+
+  fetch(
+    API_URL + "?action=batchUpdateScores",
+    {
+      method: "POST",
+      body: JSON.stringify({
+        updates: updates
+      })
+    }
+  )
+
+  .then(res => res.json())
+
+  .then(response => {
+
+    if(response.status !== "success"){
+
+      statusBox.innerHTML =
+        `<div class="status-box">
+          ❌ บันทึกไม่สำเร็จ:
+          ${escapeHtml(response.message || "เกิดข้อผิดพลาด")}
+        </div>`;
+
+      return;
+    }
+
+    statusBox.innerHTML =
+      `<div class="status-box">
+        ✅ บันทึกสำเร็จ
+        ${escapeHtml(response.data.successCount)} รายการ
+        ${
+          response.data.failCount
+          ? ` | ไม่สำเร็จ ${escapeHtml(response.data.failCount)} รายการ`
+          : ``
+        }
+      </div>`;
+
+    changedScoreMap = {};
+
+    loadScoreTable();
+  })
+
+  .catch(error => {
+
+    console.error(error);
+
+    statusBox.innerHTML =
+      `<div class="status-box">
+        ❌ เชื่อมต่อ API ไม่สำเร็จ
+      </div>`;
+  });
+}
 // ======================================
 // แสดงค่าในช่องคะแนน
 // ======================================
