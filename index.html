@@ -346,6 +346,22 @@ h2,h3,h4{
   box-shadow:0 0 8px #ff3b3b;
   font-weight:bold;
 }
+.select-score-box{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+}
+
+.select-score-box input[type="checkbox"]{
+  width:auto;
+  margin-top:0;
+}
+
+.selected-score-cell{
+  outline:2px solid #ffd43b;
+  box-shadow:0 0 8px #ffd43b;
+}
 </style>
 
 </head>
@@ -448,9 +464,9 @@ h2,h3,h4{
       placeholder="คะแนน"
     >
 
-    <button onclick="applyBulkScoreToColumn()">
-      ใส่คะแนนให้ผู้ที่ส่งงานแล้ว
-    </button>
+   <button onclick="applyScoreToSelectedCells()">
+  ใส่คะแนนให้ช่องที่เลือก
+</button>
 
   </div>
 
@@ -1613,76 +1629,129 @@ function renderScoreTable(data){
 // ======================================
 function renderEditableScoreCell(cell, assignmentIndex){
 
-  const status =
-    cell.status || "missing";
-
-  const score =
-    cell.score ?? "";
-
-  const rowIndex =
-    cell.rowIndex || "";
-
-  const studentId =
-    cell.studentId || "";
-
-  const sheetUrl =
-    cell.sheetUrl || "";
+  const status = cell.status || "missing";
+  const score = cell.score ?? "";
+  const rowIndex = cell.rowIndex || "";
+  const studentId = cell.studentId || "";
+  const sheetUrl = cell.sheetUrl || "";
 
   const key =
     sheetUrl + "|" + rowIndex + "|" + studentId + "|" + assignmentIndex;
 
-  // ถ้าซ่อนคะแนน ให้บังเฉพาะคะแนนที่มี
   if(
     hideScoreValues &&
     status === "scored"
   ){
-    return `
-      <span class="hidden-score">••••</span>
-    `;
+    return `<span class="hidden-score">••••</span>`;
   }
 
-  // ส่งแล้ว มีแถวในชีตแล้ว ให้แก้คะแนนได้
   if(
     status === "scored" ||
     status === "pending"
   ){
     return `
-  <div>
-    <input
-      class="score-input"
-      type="number"
-      value="${escapeAttribute(score)}"
-      placeholder="${status === "pending" ? (cell.isLate ? "ส่งช้า/รอตรวจ" : "รอตรวจ") : ""}"
-      data-key="${escapeAttribute(key)}"
-      data-url="${escapeAttribute(sheetUrl)}"
-      data-row-index="${escapeAttribute(rowIndex)}"
-      data-student-id="${escapeAttribute(studentId)}"
-      data-assignment-index="${escapeAttribute(assignmentIndex)}"
-      onchange="markScoreChanged(this)"
-    >
+      <div class="select-score-box">
 
-    ${
-      cell.isLate
-      ? `<div class="score-late">ส่งช้า</div>`
-      : ``
-    }
-  </div>
-`;
-  }
+        <input
+          type="checkbox"
+          class="score-check"
+          data-input-id="score_input_${escapeAttribute(key)}"
+          onchange="toggleScoreCellSelected(this)"
+        >
 
-  if(status === "error"){
-    return `
-      <span class="score-error">
-        เปิดชีตไม่ได้
-      </span>
+        <div>
+          <input
+            id="score_input_${escapeAttribute(key)}"
+            class="score-input"
+            type="number"
+            value="${escapeAttribute(score)}"
+            placeholder="${status === "pending" ? (cell.isLate ? "ส่งช้า/รอตรวจ" : "รอตรวจ") : ""}"
+            data-key="${escapeAttribute(key)}"
+            data-url="${escapeAttribute(sheetUrl)}"
+            data-row-index="${escapeAttribute(rowIndex)}"
+            data-student-id="${escapeAttribute(studentId)}"
+            data-assignment-index="${escapeAttribute(assignmentIndex)}"
+            onchange="markScoreChanged(this)"
+          >
+
+          ${
+            cell.isLate
+            ? `<div class="score-late">ส่งช้า</div>`
+            : ``
+          }
+        </div>
+
+      </div>
     `;
   }
 
-  return `
-    <span class="score-missing">
-      ยังไม่ส่ง
-    </span>
-  `;
+  if(status === "error"){
+    return `<span class="score-error">เปิดชีตไม่ได้</span>`;
+  }
+
+  return `<span class="score-missing">ยังไม่ส่ง</span>`;
+}
+function toggleScoreCellSelected(checkbox){
+
+  const inputId =
+    checkbox.getAttribute("data-input-id");
+
+  const input =
+    document.getElementById(inputId);
+
+  if(!input){
+    return;
+  }
+
+  if(checkbox.checked){
+    input.classList.add("selected-score-cell");
+  } else {
+    input.classList.remove("selected-score-cell");
+  }
+}
+function applyScoreToSelectedCells(){
+
+  const score =
+    document.getElementById("bulkScore").value;
+
+  const statusBox =
+    document.getElementById("bulkScoreStatus");
+
+  if(score === ""){
+    statusBox.innerHTML =
+      `<div class="status-box">❌ กรุณากรอกคะแนนก่อน</div>`;
+    return;
+  }
+
+  const checks =
+    document.querySelectorAll(".score-check:checked");
+
+  if(checks.length === 0){
+    statusBox.innerHTML =
+      `<div class="status-box">❌ กรุณาติ๊กเลือกนักเรียนก่อน</div>`;
+    return;
+  }
+
+  checks.forEach(check => {
+
+    const inputId =
+      check.getAttribute("data-input-id");
+
+    const input =
+      document.getElementById(inputId);
+
+    if(input){
+      input.value = score;
+      markScoreChanged(input);
+    }
+  });
+
+  statusBox.innerHTML =
+    `<div class="status-box">
+      ใส่คะแนน ${escapeHtml(score)}
+      ให้ช่องที่เลือก ${checks.length} ช่องแล้ว
+      กรุณากด “บันทึกคะแนนทั้งหมดลงชีตงาน”
+    </div>`;
 }
 // ======================================
 // ซ่อน / แสดงคะแนนในตาราง
