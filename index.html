@@ -463,7 +463,13 @@ h2,h3,h4{
       type="number"
       placeholder="คะแนน"
     >
+<button onclick="selectAllScoreCells()">
+  เลือกทั้งหมด
+</button>
 
+<button onclick="clearSelectedScoreCells()">
+  ยกเลิกทั้งหมด
+</button>
    <button onclick="applyScoreToSelectedCells()">
   ใส่คะแนนให้ช่องที่เลือก
 </button>
@@ -1708,6 +1714,56 @@ function toggleScoreCellSelected(checkbox){
   } else {
     input.classList.remove("selected-score-cell");
   }
+}
+function selectAllScoreCells(){
+
+  const checks =
+    document.querySelectorAll(".score-check");
+
+  checks.forEach(check => {
+
+    check.checked = true;
+
+    const inputId =
+      check.getAttribute("data-input-id");
+
+    const input =
+      document.getElementById(inputId);
+
+    if(input){
+      input.classList.add("selected-score-cell");
+    }
+  });
+
+  document.getElementById("bulkScoreStatus").innerHTML =
+    `<div class="status-box">
+      เลือกทั้งหมดแล้ว (${checks.length} ช่อง)
+    </div>`;
+}
+function clearSelectedScoreCells(){
+
+  const checks =
+    document.querySelectorAll(".score-check");
+
+  checks.forEach(check => {
+
+    check.checked = false;
+
+    const inputId =
+      check.getAttribute("data-input-id");
+
+    const input =
+      document.getElementById(inputId);
+
+    if(input){
+      input.classList.remove("selected-score-cell");
+    }
+  });
+
+  document.getElementById("bulkScoreStatus").innerHTML =
+    `<div class="status-box">
+      ยกเลิกการเลือกทั้งหมดแล้ว
+    </div>`;
 }
 function applyScoreToSelectedCells(){
 
