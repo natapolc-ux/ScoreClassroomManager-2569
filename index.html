@@ -336,6 +336,16 @@ h2,h3,h4{
   border:1px solid #ff3b3b;
   box-shadow:0 0 10px #ff3b3b;
 }
+.score-late{
+  display:inline-block;
+  margin-top:5px;
+  padding:4px 8px;
+  border:1px solid #ff3b3b;
+  background:#8b0000;
+  color:#ffffff;
+  box-shadow:0 0 8px #ff3b3b;
+  font-weight:bold;
+}
 </style>
 
 </head>
@@ -476,7 +486,7 @@ h2,h3,h4{
 
 // ใช้ API URL เดิมของคุณ
 const API_URL =
-  "https://script.google.com/macros/s/AKfycbyrVDta-ZPzVWYdkLpmg4ShLH_z3eZwZg34eG9azpLM-WVLvVCw5yHeds-JMfnK2jDohQ/exec";
+  "https://script.google.com/macros/s/AKfycbzGOmtfCKlNSJTbzoPOyw-xadC-bbxaFyxqVptxinBA8H1J919iDGlu52xa6yzKQTIMIw/exec";
 
 let currentWorkData = [];
 let currentSheetUrl = "";
@@ -1637,19 +1647,27 @@ function renderEditableScoreCell(cell, assignmentIndex){
     status === "pending"
   ){
     return `
-      <input
-        class="score-input"
-        type="number"
-        value="${escapeAttribute(score)}"
-        placeholder="${status === "pending" ? "รอตรวจ" : ""}"
-        data-key="${escapeAttribute(key)}"
-        data-url="${escapeAttribute(sheetUrl)}"
-        data-row-index="${escapeAttribute(rowIndex)}"
-        data-student-id="${escapeAttribute(studentId)}"
-        data-assignment-index="${escapeAttribute(assignmentIndex)}"
-        onchange="markScoreChanged(this)"
-      >
-    `;
+  <div>
+    <input
+      class="score-input"
+      type="number"
+      value="${escapeAttribute(score)}"
+      placeholder="${status === "pending" ? (cell.isLate ? "ส่งช้า/รอตรวจ" : "รอตรวจ") : ""}"
+      data-key="${escapeAttribute(key)}"
+      data-url="${escapeAttribute(sheetUrl)}"
+      data-row-index="${escapeAttribute(rowIndex)}"
+      data-student-id="${escapeAttribute(studentId)}"
+      data-assignment-index="${escapeAttribute(assignmentIndex)}"
+      onchange="markScoreChanged(this)"
+    >
+
+    ${
+      cell.isLate
+      ? `<div class="score-late">ส่งช้า</div>`
+      : ``
+    }
+  </div>
+`;
   }
 
   if(status === "error"){
