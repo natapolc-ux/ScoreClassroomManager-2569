@@ -455,19 +455,21 @@ h2,h3,h4{
   <div class="score-tools-row">
 
     <select id="bulkAssignment">
-      <option value="">เลือกงานที่ต้องการให้คะแนน</option>
-    </select>
+  <option value="">เลือกงานที่ต้องการให้คะแนน</option>
+</select>
 
-    <input
-      id="bulkScore"
-      type="number"
-      placeholder="คะแนน"
-    >
-    <button onclick="applyScoreToSelectedCells()">
-  ใส่คะแนนให้ช่องที่เลือก
+<input
+  id="bulkScore"
+  type="number"
+  placeholder="คะแนน"
+>
+
+<button onclick="selectScoreCellsByAssignment()">
+  เลือกทั้งหมดในงานนี้
 </button>
-<button onclick="selectAllScoreCells()">
-  เลือกทั้งหมด
+
+<button onclick="applyScoreToSelectedCells()">
+  ใส่คะแนนให้ช่องที่เลือก
 </button>
 
 <button onclick="clearSelectedScoreCells()">
@@ -2025,6 +2027,56 @@ function renderScoreCell(cell){
       ยังไม่ส่ง
     </span>
   `;
+}
+function selectScoreCellsByAssignment(){
+
+  const assignmentIndex =
+    document.getElementById("bulkAssignment").value;
+
+  const statusBox =
+    document.getElementById("bulkScoreStatus");
+
+  if(assignmentIndex === ""){
+    statusBox.innerHTML =
+      `<div class="status-box">❌ กรุณาเลือกงานก่อน</div>`;
+    return;
+  }
+
+  clearSelectedScoreCells();
+
+  const inputs =
+    document.querySelectorAll(
+      `.score-input[data-assignment-index="${assignmentIndex}"]`
+    );
+
+  if(inputs.length === 0){
+    statusBox.innerHTML =
+      `<div class="status-box">
+        ไม่พบผู้ที่ส่งงานแล้วในงานนี้
+      </div>`;
+    return;
+  }
+
+  inputs.forEach(input => {
+
+    input.classList.add("selected-score-cell");
+
+    const inputId = input.id;
+
+    const checkbox =
+      document.querySelector(
+        `.score-check[data-input-id="${CSS.escape(inputId)}"]`
+      );
+
+    if(checkbox){
+      checkbox.checked = true;
+    }
+  });
+
+  statusBox.innerHTML =
+    `<div class="status-box">
+      เลือกผู้ที่ส่งงานแล้วในงานนี้ ${inputs.length} ช่อง
+    </div>`;
 }
 // ======================================
 // Matrix Background
