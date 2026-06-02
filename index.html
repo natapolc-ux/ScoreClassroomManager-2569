@@ -2147,9 +2147,19 @@ function getScoreTextForImage(cell){
   }
 
   if(cell.status === "scored"){
+
+    const scoreValue =
+      Number(cell.score);
+
+    if(scoreValue === 0){
+      return cell.isLate
+        ? "รอแก้ไข (ส่งช้า)"
+        : "รอแก้ไข";
+    }
+
     return cell.isLate
-      ? String(cell.score || "") + " (ส่งช้า)"
-      : String(cell.score || "");
+      ? "ตรวจแล้ว (ส่งช้า)"
+      : "ตรวจแล้ว";
   }
 
   if(cell.status === "pending"){
