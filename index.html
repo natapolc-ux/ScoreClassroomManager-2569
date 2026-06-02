@@ -491,6 +491,9 @@ h2,h3,h4{
 <button class="toolbar-button" onclick="exportScoreSummary()">
   บันทึกตารางคะแนนลง Sheet
 </button>
+<button class="toolbar-button" onclick="downloadScoreTableImage()">
+  บันทึกตารางเป็นรูปภาพ
+</button>
 
 <div id="exportSummaryStatus"></div>
 </div>
@@ -511,7 +514,7 @@ h2,h3,h4{
 
 // ใช้ API URL เดิมของคุณ
 const API_URL =
-  "https://script.google.com/macros/s/AKfycby8O-pR0tldFrn3EW4IchW8H2oib7v6JPU_gmBDDx_ZZYmxb_O93_7J9j78QsmJZU32-g/exec";
+  "https://script.google.com/macros/s/AKfycbx6IP27LeBE9zzAaQKllPFEf9HNf5zco8TtK0Fjh-IS9VC_kYmdpa8pWyzARJ9fKoEzNA/exec";
 
 let currentWorkData = [];
 let currentSheetUrl = "";
@@ -1510,16 +1513,19 @@ function exportScoreSummary(){
       return;
     }
 
-    statusBox.innerHTML =
-      `<div class="status-box">
-        ✅ บันทึกลงชีต ${escapeHtml(response.data.sheetName)} แล้ว
-        <br>
-        ระดับชั้น: ${escapeHtml(response.data.level)}
-        |
-        ห้อง: ${escapeHtml(response.data.className)}
-        |
-        นักเรียน: ${escapeHtml(response.data.studentCount)} คน
-      </div>`;
+   statusBox.innerHTML =
+  `<div class="status-box">
+    ✅ บันทึกตารางคะแนนแยกตามห้องแล้ว
+    <br>
+    ระดับชั้น: ${escapeHtml(response.data.level)}
+    |
+    ห้อง: ${escapeHtml(response.data.className)}
+    <br>
+    จำนวนชีตที่สร้าง/อัปเดต: ${escapeHtml(response.data.sheetCount)}
+    <br>
+    ชีต:
+    ${escapeHtml(response.data.sheetNames.join(", "))}
+  </div>`;
   })
 
   .catch(error => {
@@ -2077,6 +2083,197 @@ function selectScoreCellsByAssignment(){
     `<div class="status-box">
       เลือกผู้ที่ส่งงานแล้วในงานนี้ ${inputs.length} ช่อง
     </div>`;
+}
+function downloadScoreTableImage(){
+
+  if(!lastScoreTableData){
+    alert("กรุณาโหลดตารางคะแนนก่อน");
+    return;
+  }
+
+  const assignments =
+    Array.isArray(lastScoreTableData.assignments)
+    ? lastScoreTableData.assignments
+    : [];
+
+  const students =
+    Array.isArray(lastScoreTableData.students)
+    ? lastScoreTableData.students
+    : [];
+
+  if(assignments.length === 0 || students.length === 0){
+    alert("ไม่มีข้อมูลสำหรับสร้างรูปภาพ");
+    return;
+  }
+
+  const headers = [
+    "เลขที่",
+    "ห้อง",
+    "รหัส",
+    "ชื่อ",
+    ...assignments.map(a => a.topic || "")
+  ];
+
+  const rows = students.map(student => {
+
+    const row = [
+      student.no || "",
+      student.class || "",
+      student.id || "",
+      student.name || ""
+    ];
+
+    assignments.forEach((assignment, index) => {
+
+      const cell =
+        Array.isArray(student.scores)
+        ? student.scores[index]
+        : null;
+
+      row.push(getScoreTextForImage(cell));
+    });
+
+    return row;
+  });
+
+  drawTableImage(headers, rows);
+}
+
+
+function getScoreTextForImage(cell){
+
+  if(!cell){
+    return "ยังไม่ส่ง";
+  }
+
+  if(cell.status === "scored"){
+    return cell.isLate
+      ? String(cell.score || "") + " (ส่งช้า)"
+      : String(cell.score || "");
+  }
+
+  if(cell.status === "pending"){
+    return cell.isLate
+      ? "รอตรวจ (ส่งช้า)"
+      : "รอตรวจ";
+  }
+
+  if(cell.status === "error"){
+    return "เปิดชีตไม่ได้";
+  }
+
+  return "ยังไม่ส่ง";
+}
+
+
+function drawTableImage(headers, rows){
+
+  const padding = 18;
+  const rowHeight = 42;
+  const fontSize = 18;
+  const titleHeight = 60;
+
+  const colWidths = headers.map((header, colIndex) => {
+
+    let maxLength = String(header).length;
+
+    rows.forEach(row => {
+      maxLength = Math.max(
+        maxLength,
+        String(row[colIndex] || "").length
+      );
+    });
+
+    return Math.min(
+      Math.max(maxLength * 12 + 30, 90),
+      260
+    );
+  });
+
+  const tableWidth =
+    colWidths.reduce((sum, w) => sum + w, 0);
+
+  const canvas = document.createElement("canvas");
+
+  canvas.width = tableWidth + padding * 2;
+  canvas.height =
+    titleHeight +
+    rowHeight * (rows.length + 1) +
+    padding * 2;
+
+  const ctx = canvas.getContext("2d");
+
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  ctx.fillStyle = "#000000";
+  ctx.font = "bold 22px Arial";
+  ctx.fillText(
+    "ตารางคะแนนรายงาน",
+    padding,
+    38
+  );
+
+  ctx.font = `${fontSize}px Arial`;
+  ctx.strokeStyle = "#000000";
+  ctx.lineWidth = 1;
+
+  let y = titleHeight;
+
+  drawImageRow(ctx, headers, colWidths, padding, y, rowHeight, true);
+
+  y += rowHeight;
+
+  rows.forEach(row => {
+    drawImageRow(ctx, row, colWidths, padding, y, rowHeight, false);
+    y += rowHeight;
+  });
+
+  const link = document.createElement("a");
+
+  const level =
+    document.getElementById("scoreLevel").value || "score";
+
+  const className =
+    document.getElementById("scoreClass").value || "all";
+
+  link.download =
+    "ScoreTable_" +
+    level.replace(/[^\wก-๙]/g, "") +
+    "_" +
+    className.replace(/[^\wก-๙]/g, "") +
+    ".png";
+
+  link.href = canvas.toDataURL("image/png");
+  link.click();
+}
+
+
+function drawImageRow(ctx, row, colWidths, x, y, rowHeight, isHeader){
+
+  let currentX = x;
+
+  row.forEach((cell, index) => {
+
+    ctx.fillStyle = isHeader ? "#e6e6e6" : "#ffffff";
+    ctx.fillRect(currentX, y, colWidths[index], rowHeight);
+
+    ctx.strokeStyle = "#000000";
+    ctx.strokeRect(currentX, y, colWidths[index], rowHeight);
+
+    ctx.fillStyle = "#000000";
+    ctx.font = isHeader ? "bold 18px Arial" : "18px Arial";
+
+    const text = String(cell || "");
+
+    ctx.fillText(
+      text.length > 22 ? text.substring(0, 22) + "..." : text,
+      currentX + 8,
+      y + 27
+    );
+
+    currentX += colWidths[index];
+  });
 }
 // ======================================
 // Matrix Background
