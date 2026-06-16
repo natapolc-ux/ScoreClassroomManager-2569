@@ -514,7 +514,7 @@ h2,h3,h4{
 
 // ใช้ API URL เดิมของคุณ
 const API_URL =
-  "https://script.google.com/macros/s/AKfycbx6IP27LeBE9zzAaQKllPFEf9HNf5zco8TtK0Fjh-IS9VC_kYmdpa8pWyzARJ9fKoEzNA/exec";
+  "https://script.google.com/macros/s/AKfycbxhOJzZ17vCGQQJ_C6LhV9xnPfrZIv_Lg3SNLJBgsYrx5O0Cm3m-QIkhCIiCIdcRPWj/exec";
 
 let currentWorkData = [];
 let currentSheetUrl = "";
@@ -662,9 +662,13 @@ function loadTopics(){
     topics.forEach(t => {
 
       html += `
-        <option value="${escapeAttribute(t.url)}">
-          ${escapeHtml(t.level)} - ${escapeHtml(t.topic)}
-        </option>
+        <option
+  value="${escapeAttribute(t.url)}"
+  data-work-type="${escapeAttribute(t.workType || "individual")}"
+>
+  ${escapeHtml(t.level)} - ${escapeHtml(t.topic)}
+  ${t.workType === "group" ? " [งานกลุ่ม]" : ""}
+</option>
       `;
     });
 
