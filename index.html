@@ -504,6 +504,30 @@ h2,h3,h4{
   <h2>Student Dashboard</h2>
 
   <div id="studentData"></div>
+  <div class="status-box">
+  <h3>ส่งงานผ่านเว็บ</h3>
+
+  <select id="submitTopic">
+    <option value="">กำลังโหลดหัวข้องาน...</option>
+  </select>
+
+  <select id="submitMode">
+    <option value="individual">ส่งเดี่ยว</option>
+    <option value="group">ส่งกลุ่ม</option>
+  </select>
+
+  <textarea
+    id="submitWorkText"
+    placeholder="พิมพ์คำตอบ หรือวางลิงก์งาน/ลิงก์รูป"
+    style="width:100%;height:120px;margin-top:10px;background:black;color:#00ff41;border:1px solid #00ff41;"
+  ></textarea>
+
+  <button onclick="submitStudentWork()">
+    ส่งงาน
+  </button>
+
+  <div id="submitWorkStatus"></div>
+</div>
   <div id="myWorkStatus"></div>
   <div id="myWork"></div>
 
@@ -514,13 +538,15 @@ h2,h3,h4{
 
 // ใช้ API URL เดิมของคุณ
 const API_URL =
-  "https://script.google.com/macros/s/AKfycbxhOJzZ17vCGQQJ_C6LhV9xnPfrZIv_Lg3SNLJBgsYrx5O0Cm3m-QIkhCIiCIdcRPWj/exec";
+  "https://script.google.com/macros/s/AKfycbzrx9sYStIJz2kUJsrh8K4P3_ov6_hSY1BbnYrqlJcKt_k0Gx4XotNIVnlmJ_7FjdSEwQ/exec";
 
 let currentWorkData = [];
 let currentSheetUrl = "";
 
 let currentStudentId = "";
 let currentStudentName = "";
+let currentStudentClass = "";
+let currentStudentNo = "";
 let scoreOptionsData = [];
 let lastScoreTableData = null;
 let hideScoreValues = false;
@@ -581,6 +607,8 @@ function login(){
 
   currentStudentId = data.id;
   currentStudentName = data.name;
+  currentStudentClass = data.className || "";
+  currentStudentNo = data.no || "";
 
   document
     .getElementById("studentPanel")
@@ -594,6 +622,7 @@ function login(){
     </div>`;
 
   loadMyWork();
+  loadSubmitTopics();
 }
     }
 
@@ -2287,6 +2316,99 @@ function drawImageRow(ctx, row, colWidths, x, y, rowHeight, isHeader){
     );
 
     currentX += colWidths[index];
+  });
+}
+function loadSubmitTopics(){
+
+  const select = document.getElementById("submitTopic");
+
+  fetch(API_URL + "?action=topics")
+    .then(res => res.json())
+    .then(response => {
+
+      if(response.status !== "success" || !Array.isArray(response.data)){
+        select.innerHTML = `<option value="">โหลดหัวข้องานไม่สำเร็จ</option>`;
+        return;
+      }
+
+      let html = `<option value="">-- เลือกงาน --</option>`;
+
+      response.data.forEach(t => {
+        html += `
+          <option
+            value="${escapeAttribute(t.url)}"
+            data-work-type="${escapeAttribute(t.workType || "individual")}"
+          >
+            ${escapeHtml(t.level)} - ${escapeHtml(t.topic)}
+            ${t.workType === "group" ? " [งานกลุ่ม]" : ""}
+            ${t.workType === "choice" ? " [เดี่ยว/กลุ่ม]" : ""}
+          </option>
+        `;
+      });
+
+      select.innerHTML = html;
+    });
+}
+function submitStudentWork(){
+
+  const topicSelect = document.getElementById("submitTopic");
+  const url = topicSelect.value;
+  const selectedOption = topicSelect.options[topicSelect.selectedIndex];
+
+  const workType =
+    selectedOption.getAttribute("data-work-type") || "individual";
+
+  const submitMode =
+    workType === "choice"
+      ? document.getElementById("submitMode").value
+      : workType;
+
+  const work = document.getElementById("submitWorkText").value.trim();
+  const statusBox = document.getElementById("submitWorkStatus");
+
+  if(!url){
+    statusBox.innerHTML = `<div class="status-box">❌ กรุณาเลือกงานก่อน</div>`;
+    return;
+  }
+
+  if(!work){
+    statusBox.innerHTML = `<div class="status-box">❌ กรุณาพิมพ์คำตอบหรือวางลิงก์งานก่อน</div>`;
+    return;
+  }
+
+  statusBox.innerHTML = `<div class="status-box">กำลังส่งงาน...</div>`;
+
+  fetch(API_URL + "?action=submitWork", {
+    method: "POST",
+    body: JSON.stringify({
+      url: url,
+      studentId: currentStudentId,
+      name: currentStudentName,
+      className: currentStudentClass,
+      no: currentStudentNo,
+      submitMode: submitMode,
+      work: work
+    })
+  })
+  .then(res => res.json())
+  .then(response => {
+
+    if(response.status !== "success"){
+      statusBox.innerHTML =
+        `<div class="status-box">❌ ${escapeHtml(response.message || "ส่งงานไม่สำเร็จ")}</div>`;
+      return;
+    }
+
+    document.getElementById("submitWorkText").value = "";
+
+    statusBox.innerHTML =
+      `<div class="status-box">✅ ${escapeHtml(response.message)}</div>`;
+
+    loadMyWork();
+  })
+  .catch(error => {
+    console.error(error);
+    statusBox.innerHTML = `<div class="status-box">❌ เชื่อมต่อ API ไม่สำเร็จ</div>`;
   });
 }
 // ======================================
