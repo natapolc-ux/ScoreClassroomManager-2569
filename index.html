@@ -507,15 +507,18 @@ h2,h3,h4{
   <div class="status-box">
   <h3>ส่งงานผ่านเว็บ</h3>
 
-  <select id="submitTopic">
+  <select id="submitTopic" onchange="handleSubmitTopicChange()">
     <option value="">กำลังโหลดหัวข้องาน...</option>
   </select>
+
+  <div id="submitModeBox" style="display:none;">
+  <label>เลือกรูปแบบการส่ง</label>
 
   <select id="submitMode">
     <option value="งานเดี่ยว">ส่งเดี่ยว</option>
     <option value="งานกลุ่ม">ส่งกลุ่ม</option>
   </select>
-
+</div>
   <textarea
     id="submitWorkText"
     placeholder="พิมพ์คำตอบ หรือวางลิงก์งาน/ลิงก์รูป"
@@ -2427,6 +2430,7 @@ function loadSubmitTopics(){
       });
 
       select.innerHTML = html;
+      handleSubmitTopicChange();
     })
 
     .catch(error => {
@@ -2434,6 +2438,46 @@ function loadSubmitTopics(){
       select.innerHTML =
         `<option value="">โหลดหัวข้องานไม่สำเร็จ</option>`;
     });
+}
+function handleSubmitTopicChange(){
+
+  const topicSelect =
+    document.getElementById("submitTopic");
+
+  const submitModeBox =
+    document.getElementById("submitModeBox");
+
+  const submitMode =
+    document.getElementById("submitMode");
+
+  if(!topicSelect || !submitModeBox || !submitMode){
+    return;
+  }
+
+  const selectedOption =
+    topicSelect.options[topicSelect.selectedIndex];
+
+  const workType =
+    selectedOption
+      ? selectedOption.getAttribute("data-work-type") || "งานเดี่ยว"
+      : "งานเดี่ยว";
+
+  if(workType === "เลือกส่ง"){
+
+    submitModeBox.style.display = "block";
+    submitMode.disabled = false;
+
+  } else {
+
+    submitModeBox.style.display = "none";
+    submitMode.disabled = true;
+
+    if(workType === "งานกลุ่ม"){
+      submitMode.value = "งานกลุ่ม";
+    } else {
+      submitMode.value = "งานเดี่ยว";
+    }
+  }
 }
 function submitStudentWork(){
 
@@ -2444,10 +2488,19 @@ function submitStudentWork(){
   const workType =
     selectedOption.getAttribute("data-work-type") || "งานเดี่ยว";
 
-  const submitMode =
-    workType === "เลือกส่ง"
-      ? document.getElementById("submitMode").value
-      : workType;
+  let submitMode = "งานเดี่ยว";
+
+if(workType === "เลือกส่ง"){
+  submitMode = document.getElementById("submitMode").value;
+}
+
+else if(workType === "งานกลุ่ม"){
+  submitMode = "งานกลุ่ม";
+}
+
+else{
+  submitMode = "งานเดี่ยว";
+}
 
   const work =
     document.getElementById("submitWorkText").value.trim();
