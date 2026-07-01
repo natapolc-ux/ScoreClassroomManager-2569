@@ -416,6 +416,11 @@ h2,h3,h4{
   <button class="toolbar-button" onclick="loadWork()">
     โหลดงาน
   </button>
+  <button type="button" onclick="refreshWorkList()">
+  🔄 รีเฟรชผลงาน
+</button>
+
+<span id="refreshWorkStatus" style="font-size:13px; opacity:0.8;"></span>
 
   <div id="workStatus"></div>
   <div id="work"></div>
@@ -549,7 +554,7 @@ const API_URL =
 
 let currentWorkData = [];
 let currentSheetUrl = "";
-
+let autoRefreshWorkTimer = null;
 let currentStudentId = "";
 let currentStudentName = "";
 let currentStudentLevel = "";
@@ -608,6 +613,7 @@ function login(){
           .style.display = "block";
 
         loadTopics();
+        startAutoRefreshWork();
         loadScoreOptions();
       }
 
@@ -721,7 +727,50 @@ ${t.workType === "เลือกส่ง" ? " [เลือกส่ง]" : ""
   });
 }
 
+function refreshWorkList(){
 
+  const status =
+    document.getElementById("refreshWorkStatus");
+
+  if(status){
+    status.textContent = "กำลังรีเฟรช...";
+  }
+
+  loadWork();
+
+  setTimeout(() => {
+    if(status){
+      const now = new Date();
+
+      status.textContent =
+        "อัปเดตล่าสุด " +
+        now.toLocaleTimeString("th-TH", {
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit"
+        });
+    }
+  }, 800);
+}
+function startAutoRefreshWork(){
+
+  if(autoRefreshWorkTimer){
+    clearInterval(autoRefreshWorkTimer);
+  }
+
+  autoRefreshWorkTimer = setInterval(() => {
+
+    const topicSelect =
+      document.getElementById("topic");
+
+    if(!topicSelect || !topicSelect.value){
+      return;
+    }
+
+    refreshWorkList();
+
+  }, 30000);
+}
 // ======================================
 // โหลดงานนักเรียน
 // ======================================
