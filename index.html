@@ -66,9 +66,10 @@ h2,h3,h4{
 
 .toolbar{
   display:grid;
-  grid-template-columns:2fr 1fr 1fr;
+  grid-template-columns:140px 2fr 1fr 1fr;
   gap:10px;
   margin-bottom:10px;
+  align-items:end;
 }
 
 .toolbar-button{
@@ -397,25 +398,25 @@ h2,h3,h4{
 
   <div class="toolbar">
 
-    <select id="topic">
-      <option value="">กำลังโหลดหัวข้องาน...</option>
-    </select>
-
-    <select id="classFilter">
-      <option value="">ทุกห้อง</option>
-    </select>
-
-    <input
-      id="noFilter"
-      type="number"
-      placeholder="กรองเลขที่"
-    >
-
-  </div>
-
   <button class="toolbar-button" onclick="loadWork()">
     โหลดงาน
   </button>
+
+  <select id="topic" onchange="updateWorkClassFilterByTopic()">
+    <option value="">กำลังโหลดหัวข้องาน...</option>
+  </select>
+
+  <select id="classFilter">
+    <option value="">ทุกห้อง</option>
+  </select>
+
+  <input
+    id="noFilter"
+    type="number"
+    placeholder="กรองเลขที่"
+  >
+
+</div>
   <button type="button" onclick="refreshWorkList()">
   🔄 รีเฟรชผลงาน
 </button>
