@@ -420,6 +420,10 @@ h2,h3,h4{
   🔄 รีเฟรชผลงาน
 </button>
 
+<button type="button" id="autoRefreshToggleBtn" onclick="toggleAutoRefreshWork()">
+  ⏸ อัปเดตอัตโนมัติ: ปิด
+</button>
+
 <span id="refreshWorkStatus" style="font-size:13px; opacity:0.8;"></span>
 
 <label>เรียงลำดับผลงาน</label>
@@ -569,6 +573,7 @@ const API_URL =
 let currentWorkData = [];
 let currentSheetUrl = "";
 let autoRefreshWorkTimer = null;
+let autoRefreshWorkEnabled = false;
 let currentStudentId = "";
 let currentStudentName = "";
 let currentStudentLevel = "";
@@ -627,7 +632,6 @@ function login(){
           .style.display = "block";
 
         loadTopics();
-        startAutoRefreshWork();
         loadScoreOptions();
       }
 
@@ -762,17 +766,24 @@ function refreshWorkList(){
           hour: "2-digit",
           minute: "2-digit",
           second: "2-digit"
-        });
+        }) +
+        (
+          autoRefreshWorkEnabled
+            ? " | อัปเดตอัตโนมัติ: เปิด"
+            : " | อัปเดตอัตโนมัติ: ปิด"
+        );
     }
   }, 800);
 }
 function startAutoRefreshWork(){
 
-  if(autoRefreshWorkTimer){
-    clearInterval(autoRefreshWorkTimer);
-  }
+  stopAutoRefreshWork();
 
   autoRefreshWorkTimer = setInterval(() => {
+
+    if(!autoRefreshWorkEnabled){
+      return;
+    }
 
     const topicSelect =
       document.getElementById("topic");
@@ -784,6 +795,53 @@ function startAutoRefreshWork(){
     refreshWorkList();
 
   }, 30000);
+}
+
+
+function stopAutoRefreshWork(){
+
+  if(autoRefreshWorkTimer){
+    clearInterval(autoRefreshWorkTimer);
+    autoRefreshWorkTimer = null;
+  }
+}
+
+
+function toggleAutoRefreshWork(){
+
+  const button =
+    document.getElementById("autoRefreshToggleBtn");
+
+  const status =
+    document.getElementById("refreshWorkStatus");
+
+  autoRefreshWorkEnabled =
+    !autoRefreshWorkEnabled;
+
+  if(autoRefreshWorkEnabled){
+
+    if(button){
+      button.textContent = "▶ อัปเดตอัตโนมัติ: เปิด";
+    }
+
+    if(status){
+      status.textContent = "เปิดอัปเดตอัตโนมัติทุก 30 วินาที";
+    }
+
+    startAutoRefreshWork();
+
+  } else {
+
+    stopAutoRefreshWork();
+
+    if(button){
+      button.textContent = "⏸ อัปเดตอัตโนมัติ: ปิด";
+    }
+
+    if(status){
+      status.textContent = "ปิดอัปเดตอัตโนมัติแล้ว";
+    }
+  }
 }
 // ======================================
 // โหลดงานนักเรียน
