@@ -422,6 +422,20 @@ h2,h3,h4{
 
 <span id="refreshWorkStatus" style="font-size:13px; opacity:0.8;"></span>
 
+<label>เรียงลำดับผลงาน</label>
+<select id="workSortMode" onchange="applyWorkSortAndRender()">
+  <option value="latest">ส่งล่าสุดก่อน</option>
+  <option value="oldest">ส่งก่อนสุดก่อน</option>
+  <option value="noAsc">เลขที่น้อยไปมาก</option>
+  <option value="noDesc">เลขที่มากไปน้อย</option>
+  <option value="nameAsc">ชื่อนักเรียน ก-ฮ</option>
+  <option value="groupAsc">ชื่อกลุ่ม ก-ฮ</option>
+</select>
+
+<button type="button" onclick="sortCurrentWorkSheet()">
+  🔃 เรียงในชีต
+</button>
+
   <div id="workStatus"></div>
   <div id="work"></div>
 <hr class="panel-divider">
@@ -852,7 +866,7 @@ function loadWork(){
         พบงานทั้งหมด ${currentWorkData.length} รายการ
       </div>`;
 
-    renderWorkCards();
+    applyWorkSortAndRender();
   })
 
   .catch(error => {
@@ -902,6 +916,177 @@ function populateClassFilter(data){
 // ======================================
 // แสดงการ์ดงาน พร้อมกรองห้อง/เลขที่
 // ======================================
+function applyWorkSortAndRender(){
+  renderWorkCards();
+}
+
+
+function getSortedWorkData(data){
+
+  const sortSelect =
+    document.getElementById("workSortMode");
+
+  const sortMode =
+    sortSelect ? sortSelect.value : "latest";
+
+  const sorted =
+    [...data];
+
+  sorted.sort((a, b) => {
+
+    if(sortMode === "latest"){
+      return getTimeValue(b.timestamp) - getTimeValue(a.timestamp);
+    }
+
+    if(sortMode === "oldest"){
+      return getTimeValue(a.timestamp) - getTimeValue(b.timestamp);
+    }
+
+    if(sortMode === "noAsc" || sortMode === "noDesc"){
+      const aIsGroup = isGroupWorkItem(a);
+      const bIsGroup = isGroupWorkItem(b);
+
+      if(aIsGroup !== bIsGroup){
+        return aIsGroup ? 1 : -1;
+      }
+
+      return sortMode === "noAsc"
+        ? getNoValue(a.no) - getNoValue(b.no)
+        : getNoValue(b.no) - getNoValue(a.no);
+    }
+
+    if(sortMode === "nameAsc"){
+      return getStudentDisplayName(a)
+        .localeCompare(
+          getStudentDisplayName(b),
+          "th",
+          { numeric: true }
+        );
+    }
+
+    if(sortMode === "groupAsc"){
+      return getGroupDisplayName(a)
+        .localeCompare(
+          getGroupDisplayName(b),
+          "th",
+          { numeric: true }
+        );
+    }
+
+    return 0;
+  });
+
+  return sorted;
+}
+
+
+function getTimeValue(value){
+
+  const time =
+    new Date(value).getTime();
+
+  return isNaN(time) ? 0 : time;
+}
+
+
+function getNoValue(value){
+
+  const number =
+    parseInt(value, 10);
+
+  return isNaN(number) ? 999999 : number;
+}
+
+
+function isGroupWorkItem(item){
+
+  return item.isGroup === true ||
+    String(item.submitMode || "").trim() === "งานกลุ่ม" ||
+    String(item.groupName || "").trim() !== "";
+}
+
+
+function getStudentDisplayName(item){
+
+  return String(
+    item.name ||
+    item.studentName ||
+    ""
+  ).trim();
+}
+
+
+function getGroupDisplayName(item){
+
+  if(isGroupWorkItem(item)){
+    return String(item.groupName || "").trim();
+  }
+
+  return "\uffff";
+}
+
+
+function sortCurrentWorkSheet(){
+
+  const topicSelect =
+    document.getElementById("topic");
+
+  const sortSelect =
+    document.getElementById("workSortMode");
+
+  if(!topicSelect || !topicSelect.value){
+    alert("กรุณาเลือกหัวข้องานก่อน");
+    return;
+  }
+
+  const selectedOption =
+    topicSelect.options[topicSelect.selectedIndex];
+
+  const workType =
+    selectedOption.getAttribute("data-work-type") || "งานเดี่ยว";
+
+  const sortMode =
+    sortSelect ? sortSelect.value : "latest";
+
+  const confirmed =
+    confirm(
+      "ต้องการเรียงลำดับข้อมูลในชีตจริงหรือไม่?\n\n" +
+      "หลังเรียงแล้ว ลำดับแถวใน Google Sheet จะเปลี่ยนตาม"
+    );
+
+  if(!confirmed){
+    return;
+  }
+
+  fetch(API_URL + "?action=sortWorkSheet", {
+    method: "POST",
+    body: JSON.stringify({
+      url: topicSelect.value,
+      sortMode: sortMode,
+      workType: workType
+    })
+  })
+
+  .then(res => res.json())
+
+  .then(response => {
+
+    if(response.status !== "success"){
+      alert("❌ " + (response.message || "เรียงข้อมูลในชีตไม่สำเร็จ"));
+      return;
+    }
+
+    alert("✅ " + response.message);
+    refreshWorkList();
+  })
+
+  .catch(error => {
+    console.error(error);
+    alert("❌ เชื่อมต่อ API ไม่สำเร็จ");
+  });
+}
+
+
 function renderWorkCards(){
 
   const workBox = document.getElementById("work");
@@ -917,13 +1102,29 @@ function renderWorkCards(){
     .value
     .trim();
 
+  const sortedWorkData =
+    getSortedWorkData(currentWorkData);
+
   let html = "";
   let visibleCount = 0;
 
-  currentWorkData.forEach(s => {
+  sortedWorkData.forEach(s => {
 
     const studentClass = String(s.class || "").trim();
     const studentNo = String(s.no || "").trim();
+
+    const isGroup =
+      isGroupWorkItem(s);
+
+    const displayTitle =
+      isGroup
+        ? String(s.groupName || "ไม่ระบุชื่อกลุ่ม").trim()
+        : String(s.name || "-").trim();
+
+    const displayDetail =
+      isGroup
+        ? "ผู้ส่ง: " + String(s.name || "-").trim()
+        : "เลขที่: " + String(studentNo || "-").trim();
 
     if(
       selectedClass &&
@@ -934,7 +1135,15 @@ function renderWorkCards(){
 
     if(
       selectedNo &&
+      !isGroup &&
       studentNo !== selectedNo
+    ){
+      return;
+    }
+
+    if(
+      selectedNo &&
+      isGroup
     ){
       return;
     }
@@ -952,29 +1161,30 @@ function renderWorkCards(){
 
         <h3>
           ${escapeHtml(studentClass)}
-          เลขที่ ${escapeHtml(studentNo)}
+          ${isGroup ? "งานกลุ่ม" : escapeHtml("เลขที่ " + studentNo)}
         </h3>
 
         <div class="meta">
-  <div>ชื่อ: ${escapeHtml(s.name || "")}</div>
-  <div>รหัสนักเรียน: ${escapeHtml(s.id || "")}</div>
+          <div>${isGroup ? "ชื่อกลุ่ม" : "ชื่อ"}: ${escapeHtml(displayTitle)}</div>
+          <div>${escapeHtml(displayDetail)}</div>
+          <div>รหัสผู้ส่ง: ${escapeHtml(s.id || "")}</div>
 
-  <div class="submit-time ${s.isLate ? "late-time" : "normal-time"}">
-    เวลาส่งงาน: ${escapeHtml(formatTimestamp(s.timestamp))}
-    ${s.isLate ? `<span class="late-label">ส่งช้า</span>` : ``}
-  </div>
+          <div class="submit-time ${s.isLate ? "late-time" : "normal-time"}">
+            เวลาส่งงาน: ${escapeHtml(formatTimestamp(s.timestamp))}
+            ${s.isLate ? `<span class="late-label">ส่งช้า</span>` : ``}
+          </div>
 
-  ${
-    s.dueDate
-    ? `
-      <div class="due-date">
-        กำหนดส่งของห้องนี้:
-        ${escapeHtml(formatTimestamp(s.dueDate))}
-      </div>
-    `
-    : ``
-  }
-</div>
+          ${
+            s.dueDate
+            ? `
+              <div class="due-date">
+                กำหนดส่งของห้องนี้:
+                ${escapeHtml(formatTimestamp(s.dueDate))}
+              </div>
+            `
+            : ``
+          }
+        </div>
 
         <div class="work-box">
           <h4>งานที่ส่ง</h4>
@@ -999,14 +1209,15 @@ function renderWorkCards(){
           >
             บันทึกคะแนน
           </button>
-<button
-  onclick="deleteSubmission(
-    '${escapeJsString(currentSheetUrl)}',
-    '${escapeJsString(s.rowIndex || "")}'
-  )"
->
-  ลบงานนี้
-</button>
+
+          <button
+            onclick="deleteSubmission(
+              '${escapeJsString(currentSheetUrl)}',
+              '${escapeJsString(s.rowIndex || "")}'
+            )"
+          >
+            ลบงานนี้
+          </button>
         </div>
 
       </div>
@@ -1020,6 +1231,7 @@ function renderWorkCards(){
 
   workBox.innerHTML = html;
 }
+
 
 
 // ======================================
@@ -1131,6 +1343,7 @@ function saveScore(url, studentId, rowIndex){
 
     if(data.status === "success"){
       alert("✅ บันทึกคะแนนแล้ว");
+      refreshWorkList();
     }
 
     else{
