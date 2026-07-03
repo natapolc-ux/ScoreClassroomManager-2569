@@ -724,19 +724,21 @@ function loadTopics(){
 
     topics.forEach(t => {
 
-      html += `
-        <option
-  value="${escapeAttribute(t.url)}"
-data-work-type="${escapeAttribute(t.workType || "งานเดี่ยว")}"
->
-  ${escapeHtml(t.level)} - ${escapeHtml(t.topic)}
-${t.workType === "งานกลุ่ม" ? " [งานกลุ่ม]" : ""}
-${t.workType === "เลือกส่ง" ? " [เลือกส่ง]" : ""}
-</option>
-      `;
+html += `
+  <option
+    value="${escapeAttribute(t.url)}"
+    data-level="${escapeAttribute(t.level || "")}"
+    data-work-type="${escapeAttribute(t.workType || "งานเดี่ยว")}"
+  >
+    ${escapeHtml(t.level)} - ${escapeHtml(t.topic)}
+    ${t.workType === "งานกลุ่ม" ? " [งานกลุ่ม]" : ""}
+    ${t.workType === "เลือกส่ง" ? " [เลือกส่ง]" : ""}
+  </option>
+`;
     });
 
     topicSelect.innerHTML = html;
+updateWorkClassFilterByTopic();
   })
 
   .catch(error => {
@@ -745,7 +747,77 @@ ${t.workType === "เลือกส่ง" ? " [เลือกส่ง]" : ""
       `<option value="">โหลดหัวข้องานไม่สำเร็จ</option>`;
   });
 }
+function updateWorkClassFilterByTopic(keepClassValue){
 
+  const topicSelect =
+    document.getElementById("topic");
+
+  const classSelect =
+    document.getElementById("classFilter");
+
+  const noFilter =
+    document.getElementById("noFilter");
+
+  if(!topicSelect || !classSelect){
+    return;
+  }
+
+  const selectedOption =
+    topicSelect.options[topicSelect.selectedIndex];
+
+  const selectedLevel =
+    selectedOption
+      ? String(selectedOption.getAttribute("data-level") || "").trim()
+      : "";
+
+  const oldClassValue =
+    keepClassValue !== undefined
+      ? String(keepClassValue || "").trim()
+      : String(classSelect.value || "").trim();
+
+  let classes = [];
+
+  if(selectedLevel && Array.isArray(scoreOptionsData)){
+
+    const foundLevel =
+      scoreOptionsData.find(item =>
+        String(item.level || "").trim() === selectedLevel
+      );
+
+    if(foundLevel && Array.isArray(foundLevel.classes)){
+      classes = foundLevel.classes;
+    }
+  }
+
+  let html =
+    `<option value="">ทุกห้อง</option>`;
+
+  classes.forEach(className => {
+    html += `
+      <option value="${escapeAttribute(className)}">
+        ${escapeHtml(className)}
+      </option>
+    `;
+  });
+
+  classSelect.innerHTML = html;
+
+  if(oldClassValue){
+    const hasOldClass =
+      Array.from(classSelect.options)
+        .some(option => option.value === oldClassValue);
+
+    if(hasOldClass){
+      classSelect.value = oldClassValue;
+    }
+  }
+
+  classSelect.onchange = renderWorkCards;
+
+  if(noFilter){
+    noFilter.oninput = renderWorkCards;
+  }
+}
 function refreshWorkList(){
 
   const status =
@@ -852,7 +924,8 @@ function loadWork(){
   const url = document
     .getElementById("topic")
     .value;
-
+  const selectedClassBeforeLoad =
+  document.getElementById("classFilter").value;
   const workBox = document.getElementById("work");
   const workStatus = document.getElementById("workStatus");
 
@@ -918,7 +991,7 @@ function loadWork(){
       return;
     }
 
-    populateClassFilter(currentWorkData);
+    updateWorkClassFilterByTopic(selectedClassBeforeLoad);
 
     workStatus.innerHTML =
       `<div class="status-box">
@@ -1728,6 +1801,7 @@ function loadScoreOptions(){
     }
 
     scoreOptionsData = response.data;
+    updateWorkClassFilterByTopic();
 
     if(scoreOptionsData.length === 0){
       levelSelect.innerHTML =
