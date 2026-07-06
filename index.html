@@ -591,6 +591,10 @@ let scoreOptionsData = [];
 let lastScoreTableData = null;
 let hideScoreValues = false;
 let changedScoreMap = {};
+let hideViewedWorksEnabled = false;
+
+const VIEWED_WORKS_STORAGE_KEY = "matrixViewedWorks";
+const HIDE_VIEWED_STORAGE_KEY = "matrixHideViewedWorks";
 
 // ======================================
 // LOGIN
@@ -641,6 +645,7 @@ function login(){
 
         loadTopics();
         loadScoreOptions();
+        loadHideViewedWorksSetting();
       }
 
       else{
@@ -754,6 +759,13 @@ updateWorkClassFilterByTopic();
       `<option value="">โหลดหัวข้องานไม่สำเร็จ</option>`;
   });
 }
+function normalizeOptionKey(value){
+  return String(value || "")
+    .trim()
+    .replace(/\s+/g, "")
+    .replace(/\./g, "")
+    .toLowerCase();
+}
 function updateWorkClassFilterByTopic(keepClassValue){
 
   const topicSelect =
@@ -788,7 +800,7 @@ function updateWorkClassFilterByTopic(keepClassValue){
 
     const foundLevel =
       scoreOptionsData.find(item =>
-        String(item.level || "").trim() === selectedLevel
+        normalizeOptionKey(item.level) === normalizeOptionKey(selectedLevel)
       );
 
     if(foundLevel && Array.isArray(foundLevel.classes)){
@@ -1224,8 +1236,109 @@ function sortCurrentWorkSheet(){
     alert("❌ เชื่อมต่อ API ไม่สำเร็จ");
   });
 }
+function loadHideViewedWorksSetting(){
+
+  const saved =
+    localStorage.getItem(HIDE_VIEWED_STORAGE_KEY);
+
+  hideViewedWorksEnabled =
+    saved === "true";
+
+  const checkbox =
+    document.getElementById("hideViewedWorksToggle");
+
+  if(checkbox){
+    checkbox.checked = hideViewedWorksEnabled;
+  }
+}
 
 
+function toggleHideViewedWorks(){
+
+  const checkbox =
+    document.getElementById("hideViewedWorksToggle");
+
+  hideViewedWorksEnabled =
+    checkbox ? checkbox.checked : false;
+
+  localStorage.setItem(
+    HIDE_VIEWED_STORAGE_KEY,
+    hideViewedWorksEnabled ? "true" : "false"
+  );
+
+  renderWorkCards();
+}
+
+
+function getViewedWorksMap(){
+
+  try {
+    return JSON.parse(
+      localStorage.getItem(VIEWED_WORKS_STORAGE_KEY) || "{}"
+    );
+  } catch(error) {
+    return {};
+  }
+}
+
+
+function saveViewedWorksMap(map){
+
+  localStorage.setItem(
+    VIEWED_WORKS_STORAGE_KEY,
+    JSON.stringify(map || {})
+  );
+}
+
+
+function getWorkViewedKey(rowIndex){
+
+  return String(currentSheetUrl || "") + "::" + String(rowIndex || "");
+}
+
+
+function markWorkAsViewed(rowIndex){
+
+  if(!rowIndex){
+    return;
+  }
+
+  const map =
+    getViewedWorksMap();
+
+  map[getWorkViewedKey(rowIndex)] = true;
+
+  saveViewedWorksMap(map);
+}
+
+
+function markWorkAsViewedAndHide(rowIndex){
+
+  markWorkAsViewed(rowIndex);
+  renderWorkCards();
+}
+
+
+function hasScoreValue(score){
+
+  return score !== "" &&
+    score !== null &&
+    score !== undefined &&
+    String(score).trim() !== "";
+}
+
+
+function isWorkViewedOrChecked(item){
+
+  if(hasScoreValue(item.score)){
+    return true;
+  }
+
+  const map =
+    getViewedWorksMap();
+
+  return map[getWorkViewedKey(item.rowIndex)] === true;
+}
 function renderWorkCards(){
 
   const workBox = document.getElementById("work");
@@ -1248,7 +1361,9 @@ function renderWorkCards(){
   let visibleCount = 0;
 
   sortedWorkData.forEach(s => {
-
+  if(hideViewedWorksEnabled && isWorkViewedOrChecked(s)){
+  return;
+}
     const studentClass = String(s.class || "").trim();
     const studentNo = String(s.no || "").trim();
 
@@ -1348,7 +1463,12 @@ function renderWorkCards(){
           >
             บันทึกคะแนน
           </button>
-
+<button
+  type="button"
+  onclick="markWorkAsViewedAndHide('${escapeJsString(s.rowIndex || "")}')"
+>
+  👁 ดูแล้ว/ซ่อน
+</button>
           <button
             onclick="deleteSubmission(
               '${escapeJsString(currentSheetUrl)}',
@@ -1481,9 +1601,13 @@ function saveScore(url, studentId, rowIndex){
   .then(data => {
 
     if(data.status === "success"){
-      alert("✅ บันทึกคะแนนแล้ว");
-      refreshWorkList();
-    }
+
+  markWorkAsViewed(rowIndex);
+
+  alert("✅ บันทึกคะแนนแล้ว");
+
+  refreshWorkList();
+}
 
     else{
       alert("❌ " + (data.message || "บันทึกคะแนนไม่สำเร็จ"));
@@ -2974,6 +3098,9 @@ function renderWorksheetContent(url){
       เปิดใบงาน / ดาวน์โหลด
     </a>
   `;
+}
+  function openImageCompressor(){
+  window.open("https://squoosh.app/", "_blank");
 }
 function submitStudentWork(){
 
