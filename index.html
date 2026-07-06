@@ -424,7 +424,14 @@ h2,h3,h4{
 <button type="button" id="autoRefreshToggleBtn" onclick="toggleAutoRefreshWork()">
   ⏸ อัปเดตอัตโนมัติ: ปิด
 </button>
-
+<label class="hide-score-box">
+  <input
+    type="checkbox"
+    id="hideViewedWorksToggle"
+    onchange="toggleHideViewedWorks()"
+  >
+  ซ่อนผลงานที่ตรวจแล้ว/ดูแล้ว
+</label>
 <span id="refreshWorkStatus" style="font-size:13px; opacity:0.8;"></span>
 
 <label>เรียงลำดับผลงาน</label>
@@ -534,7 +541,7 @@ h2,h3,h4{
   <select id="submitTopic" onchange="handleSubmitTopicChange()">
     <option value="">กำลังโหลดหัวข้องาน...</option>
   </select>
-
+  <div id="worksheetBox" class="status-box" style="display:none;"></div>
   <div id="submitModeBox" style="display:none;">
   <label>เลือกรูปแบบการส่ง</label>
 
@@ -2814,9 +2821,11 @@ function loadSubmitTopics(){
       topics.forEach(t => {
         html += `
           <option
-            value="${escapeAttribute(t.url)}"
-            data-work-type="${escapeAttribute(t.workType || "งานเดี่ยว")}"
-          >
+  value="${escapeAttribute(t.url)}"
+  data-work-type="${escapeAttribute(t.workType || "งานเดี่ยว")}"
+  data-worksheet-url="${escapeAttribute(t.worksheetUrl || "")}"
+  data-worksheet-visible="${t.worksheetVisible === false ? "false" : "true"}"
+>
             ${escapeHtml(t.level)} - ${escapeHtml(t.topic)}
             ${t.workType === "งานกลุ่ม" ? " [งานกลุ่ม]" : ""}
             ${t.workType === "เลือกส่ง" ? " [เลือกส่ง]" : ""}
@@ -2873,6 +2882,98 @@ function handleSubmitTopicChange(){
       submitMode.value = "งานเดี่ยว";
     }
   }
+  updateWorksheetBox(selectedOption);
+}
+function updateWorksheetBox(selectedOption){
+
+  const worksheetBox =
+    document.getElementById("worksheetBox");
+
+  if(!worksheetBox){
+    return;
+  }
+
+  const worksheetUrl =
+    selectedOption
+      ? String(selectedOption.getAttribute("data-worksheet-url") || "").trim()
+      : "";
+
+  const worksheetVisible =
+    selectedOption
+      ? String(selectedOption.getAttribute("data-worksheet-visible") || "true")
+      : "true";
+
+  if(!worksheetUrl || worksheetVisible === "false"){
+
+    worksheetBox.style.display = "none";
+    worksheetBox.innerHTML = "";
+    return;
+  }
+
+  worksheetBox.style.display = "block";
+
+  worksheetBox.innerHTML = `
+    <h3>ใบงาน / เอกสารประกอบ</h3>
+    <p>ให้นักเรียนเปิดอ่านหรือดาวน์โหลดไปทำงานก่อนส่ง</p>
+
+    ${renderWorksheetContent(worksheetUrl)}
+  `;
+}
+
+
+function renderWorksheetContent(url){
+
+  const driveFileId =
+    extractDriveFileId(url);
+
+  if(driveFileId){
+
+    const previewUrl =
+      "https://drive.google.com/file/d/" +
+      driveFileId +
+      "/preview";
+
+    const downloadUrl =
+      "https://drive.google.com/uc?export=download&id=" +
+      driveFileId;
+
+    return `
+      <iframe
+        class="drive-preview"
+        src="${escapeAttribute(previewUrl)}"
+        allow="autoplay"
+      ></iframe>
+
+      <a
+        class="file-link"
+        href="${escapeAttribute(url)}"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        เปิดใบงาน
+      </a>
+
+      <a
+        class="file-link"
+        href="${escapeAttribute(downloadUrl)}"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        ดาวน์โหลดใบงาน
+      </a>
+    `;
+  }
+
+  return `
+    <a
+      class="file-link"
+      href="${escapeAttribute(url)}"
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      เปิดใบงาน / ดาวน์โหลด
+    </a>
+  `;
 }
 function submitStudentWork(){
 
