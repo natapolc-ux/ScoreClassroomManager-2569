@@ -75,7 +75,49 @@ h2,h3,h4{
 .toolbar-button{
   margin-top:10px;
 }
+.settings-wrap{
+  position:relative;
+}
 
+.gear-button{
+  width:48px;
+  min-width:48px;
+  font-size:20px;
+  text-align:center;
+}
+
+.settings-popup{
+  display:none;
+  position:absolute;
+  right:0;
+  top:58px;
+  width:300px;
+  z-index:999;
+  padding:14px;
+  border:1px solid #00ff41;
+  background:rgba(0,0,0,0.96);
+  box-shadow:0 0 18px #00ff41;
+}
+
+.settings-popup.show{
+  display:block;
+}
+
+.settings-title{
+  font-weight:bold;
+  margin-bottom:8px;
+  text-shadow:0 0 8px #00ff41;
+}
+
+.settings-popup label{
+  display:block;
+  margin-top:10px;
+}
+
+.settings-popup select,
+.settings-popup button{
+  width:100%;
+}
 .status-box{
   margin-top:15px;
   padding:12px;
@@ -314,6 +356,11 @@ h2,h3,h4{
   .drive-preview{
     height:420px;
   }
+  .settings-popup{
+    position:static;
+    width:100%;
+    margin-top:10px;
+  }
 }
 .work-status{
   display:inline-block;
@@ -416,14 +463,56 @@ h2,h3,h4{
     placeholder="กรองเลขที่"
   >
 
+  <div class="settings-wrap">
+
+    <button
+      type="button"
+      class="gear-button"
+      onclick="toggleWorkSettingsPopup()"
+      title="ตั้งค่าการแสดงผล"
+    >
+      ⚙
+    </button>
+
+    <div id="workSettingsPopup" class="settings-popup">
+
+      <div class="settings-title">
+        ตั้งค่าการตรวจงาน
+      </div>
+
+      <button
+        type="button"
+        id="autoRefreshToggleBtn"
+        onclick="toggleAutoRefreshWork()"
+      >
+        ⏸ อัปเดตอัตโนมัติ: ปิด
+      </button>
+
+      <label>เรียงลำดับผลงาน</label>
+
+      <select id="workSortMode" onchange="applyWorkSortAndRender()">
+        <option value="latest">ส่งล่าสุดก่อน</option>
+        <option value="oldest">ส่งก่อนสุดก่อน</option>
+        <option value="noAsc">เลขที่น้อยไปมาก</option>
+        <option value="noDesc">เลขที่มากไปน้อย</option>
+        <option value="nameAsc">ชื่อนักเรียน ก-ฮ</option>
+        <option value="groupAsc">ชื่อกลุ่ม ก-ฮ</option>
+      </select>
+
+      <button type="button" onclick="sortCurrentWorkSheet()">
+        🔃 เรียงในชีต
+      </button>
+
+    </div>
+
+  </div>
+
 </div>
-  <button type="button" onclick="refreshWorkList()">
+
+<button type="button" onclick="refreshWorkList()">
   🔄 รีเฟรชผลงาน
 </button>
 
-<button type="button" id="autoRefreshToggleBtn" onclick="toggleAutoRefreshWork()">
-  ⏸ อัปเดตอัตโนมัติ: ปิด
-</button>
 <label class="hide-score-box">
   <input
     type="checkbox"
@@ -432,21 +521,6 @@ h2,h3,h4{
   >
   ซ่อนผลงานที่ตรวจแล้ว/ดูแล้ว
 </label>
-<span id="refreshWorkStatus" style="font-size:13px; opacity:0.8;"></span>
-
-<label>เรียงลำดับผลงาน</label>
-<select id="workSortMode" onchange="applyWorkSortAndRender()">
-  <option value="latest">ส่งล่าสุดก่อน</option>
-  <option value="oldest">ส่งก่อนสุดก่อน</option>
-  <option value="noAsc">เลขที่น้อยไปมาก</option>
-  <option value="noDesc">เลขที่มากไปน้อย</option>
-  <option value="nameAsc">ชื่อนักเรียน ก-ฮ</option>
-  <option value="groupAsc">ชื่อกลุ่ม ก-ฮ</option>
-</select>
-
-<button type="button" onclick="sortCurrentWorkSheet()">
-  🔃 เรียงในชีต
-</button>
 
   <div id="workStatus"></div>
   <div id="work"></div>
@@ -837,35 +911,37 @@ function updateWorkClassFilterByTopic(keepClassValue){
     noFilter.oninput = renderWorkCards;
   }
 }
-function refreshWorkList(){
+function toggleWorkSettingsPopup(){
 
-  const status =
-    document.getElementById("refreshWorkStatus");
+  const popup =
+    document.getElementById("workSettingsPopup");
 
-  if(status){
-    status.textContent = "กำลังรีเฟรช...";
+  if(!popup){
+    return;
   }
 
+  popup.classList.toggle("show");
+}
+
+
+document.addEventListener("click", function(event){
+
+  const wrap =
+    document.querySelector(".settings-wrap");
+
+  const popup =
+    document.getElementById("workSettingsPopup");
+
+  if(!wrap || !popup){
+    return;
+  }
+
+  if(!wrap.contains(event.target)){
+    popup.classList.remove("show");
+  }
+});
+function refreshWorkList(){
   loadWork();
-
-  setTimeout(() => {
-    if(status){
-      const now = new Date();
-
-      status.textContent =
-        "อัปเดตล่าสุด " +
-        now.toLocaleTimeString("th-TH", {
-          hour: "2-digit",
-          minute: "2-digit",
-          second: "2-digit"
-        }) +
-        (
-          autoRefreshWorkEnabled
-            ? " | อัปเดตอัตโนมัติ: เปิด"
-            : " | อัปเดตอัตโนมัติ: ปิด"
-        );
-    }
-  }, 800);
 }
 function startAutoRefreshWork(){
 
@@ -904,9 +980,6 @@ function toggleAutoRefreshWork(){
   const button =
     document.getElementById("autoRefreshToggleBtn");
 
-  const status =
-    document.getElementById("refreshWorkStatus");
-
   autoRefreshWorkEnabled =
     !autoRefreshWorkEnabled;
 
@@ -914,10 +987,6 @@ function toggleAutoRefreshWork(){
 
     if(button){
       button.textContent = "▶ อัปเดตอัตโนมัติ: เปิด";
-    }
-
-    if(status){
-      status.textContent = "เปิดอัปเดตอัตโนมัติทุก 30 วินาที";
     }
 
     startAutoRefreshWork();
@@ -928,10 +997,6 @@ function toggleAutoRefreshWork(){
 
     if(button){
       button.textContent = "⏸ อัปเดตอัตโนมัติ: ปิด";
-    }
-
-    if(status){
-      status.textContent = "ปิดอัปเดตอัตโนมัติแล้ว";
     }
   }
 }
