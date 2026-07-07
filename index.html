@@ -1934,6 +1934,11 @@ function renderMyWorkCards(data){
           ? `
             <div class="meta">
               <div>ห้อง: ${escapeHtml(item.class || "")}</div>
+              ${
+  item.submitMode === "งานกลุ่ม"
+  ? `<div>กลุ่ม: ${escapeHtml(item.groupName || "-")}</div>`
+  : ``
+}
               <div>เลขที่: ${escapeHtml(item.no || "")}</div>
               <div>เวลาส่งงาน: ${escapeHtml(formatTimestamp(item.timestamp))}</div>
             </div>
