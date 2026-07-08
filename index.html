@@ -704,6 +704,7 @@ let hideViewedWorksEnabled = false;
 
 const VIEWED_WORKS_STORAGE_KEY = "matrixViewedWorks";
 const HIDE_VIEWED_STORAGE_KEY = "matrixHideViewedWorks";
+const COLLAPSED_WORKS_STORAGE_KEY = "matrixCollapsedWorks";
 
 // ======================================
 // LOGIN
@@ -1412,25 +1413,71 @@ function markWorkAsViewed(rowIndex){
 }
 
 
+function getCollapsedWorksMap(){
+
+  try {
+    return JSON.parse(
+      localStorage.getItem(COLLAPSED_WORKS_STORAGE_KEY) || "{}"
+    );
+  } catch(error) {
+    return {};
+  }
+}
+
+
+function saveCollapsedWorksMap(map){
+
+  localStorage.setItem(
+    COLLAPSED_WORKS_STORAGE_KEY,
+    JSON.stringify(map || {})
+  );
+}
+
+
+function getCollapsedWorkKey(rowIndex){
+
+  return String(currentSheetUrl || "") + "::" + String(rowIndex || "");
+}
+
+
+function isWorkCollapsed(item){
+
+  const map =
+    getCollapsedWorksMap();
+
+  const key =
+    getCollapsedWorkKey(item.rowIndex);
+
+  if(Object.prototype.hasOwnProperty.call(map, key)){
+    return map[key] === true;
+  }
+
+  return hasScoreValue(item.score);
+}
+
+
+function setWorkCollapsed(rowIndex, collapsed){
+
+  if(!rowIndex){
+    return;
+  }
+
+  const map =
+    getCollapsedWorksMap();
+
+  map[getCollapsedWorkKey(rowIndex)] =
+    collapsed === true;
+
+  saveCollapsedWorksMap(map);
+
+  renderWorkCards();
+}
+
+
 function markWorkAsViewedAndHide(rowIndex){
 
   markWorkAsViewed(rowIndex);
-
-  hideViewedWorksEnabled = true;
-
-  localStorage.setItem(
-    HIDE_VIEWED_STORAGE_KEY,
-    "true"
-  );
-
-  const checkbox =
-    document.getElementById("hideViewedWorksToggle");
-
-  if(checkbox){
-    checkbox.checked = true;
-  }
-
-  renderWorkCards();
+  setWorkCollapsed(rowIndex, true);
 }
 
 
