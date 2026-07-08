@@ -1579,9 +1579,12 @@ function renderWorkCards(){
 
     <button
       type="button"
-      onclick="markWorkAsViewedAndHide('${escapeJsString(s.rowIndex || "")}')"
+      onclick="setWorkCollapsed(
+        '${escapeJsString(s.rowIndex || "")}',
+        ${isCollapsed ? "false" : "true"}
+      )"
     >
-      👁 ตรวจแล้ว
+      ${isCollapsed ? "👁 แสดงงาน" : "🙈 ซ่อนงาน"}
     </button>
 
     <button
@@ -1623,12 +1626,43 @@ function renderWorkCards(){
           }
         </div>
 
-        <div class="work-box">
-          <h4>งานที่ส่ง</h4>
-          ${renderWorkContent(workValue)}
-        </div>
+        ${
+  isCollapsed
+  ? `
+    <div class="work-box">
+      <p class="empty-text">
+        ย่อแผ่นงานแล้ว กด “แสดงงาน” เพื่อดูงานที่ส่งและให้คะแนน
+      </p>
+    </div>
+  `
+  : `
+    <div class="work-box">
+      <h4>งานที่ส่ง</h4>
+      ${renderWorkContent(workValue)}
+    </div>
 
-        <div class="score-area">
+    <div class="score-area">
+
+      <input
+        type="number"
+        id="score_${escapeAttribute(s.rowIndex || s.id)}"
+        value="${escapeAttribute(s.score || "")}"
+        placeholder="คะแนน"
+      >
+
+      <button
+        onclick="saveScore(
+          '${escapeJsString(currentSheetUrl)}',
+          '${escapeJsString(s.id || "")}',
+          '${escapeJsString(s.rowIndex || "")}'
+        )"
+      >
+        บันทึกคะแนน
+      </button>
+
+    </div>
+  `
+}
 
           <input
             type="number"
