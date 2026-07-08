@@ -1415,6 +1415,21 @@ function markWorkAsViewed(rowIndex){
 function markWorkAsViewedAndHide(rowIndex){
 
   markWorkAsViewed(rowIndex);
+
+  hideViewedWorksEnabled = true;
+
+  localStorage.setItem(
+    HIDE_VIEWED_STORAGE_KEY,
+    "true"
+  );
+
+  const checkbox =
+    document.getElementById("hideViewedWorksToggle");
+
+  if(checkbox){
+    checkbox.checked = true;
+  }
+
   renderWorkCards();
 }
 
@@ -1513,7 +1528,28 @@ function renderWorkCards(){
 
       <div class="card">
 
-        <h3>
+  <div class="work-card-actions">
+
+    <button
+      type="button"
+      onclick="markWorkAsViewedAndHide('${escapeJsString(s.rowIndex || "")}')"
+    >
+      👁 ตรวจแล้ว
+    </button>
+
+    <button
+      type="button"
+      onclick="deleteSubmission(
+        '${escapeJsString(currentSheetUrl)}',
+        '${escapeJsString(s.rowIndex || "")}'
+      )"
+    >
+      ลบงาน
+    </button>
+
+  </div>
+
+  <h3>
           ${escapeHtml(studentClass)}
           ${isGroup ? "งานกลุ่ม" : escapeHtml("เลขที่ " + studentNo)}
         </h3>
@@ -1563,20 +1599,7 @@ function renderWorkCards(){
           >
             บันทึกคะแนน
           </button>
-<button
-  type="button"
-  onclick="markWorkAsViewedAndHide('${escapeJsString(s.rowIndex || "")}')"
->
-  👁 ดูแล้ว/ซ่อน
-</button>
-          <button
-            onclick="deleteSubmission(
-              '${escapeJsString(currentSheetUrl)}',
-              '${escapeJsString(s.rowIndex || "")}'
-            )"
-          >
-            ลบงานนี้
-          </button>
+
         </div>
 
       </div>
@@ -1700,9 +1723,23 @@ function saveScore(url, studentId, rowIndex){
 
   .then(data => {
 
-    if(data.status === "success"){
+if(data.status === "success"){
 
   markWorkAsViewed(rowIndex);
+
+  hideViewedWorksEnabled = true;
+
+  localStorage.setItem(
+    HIDE_VIEWED_STORAGE_KEY,
+    "true"
+  );
+
+  const checkbox =
+    document.getElementById("hideViewedWorksToggle");
+
+  if(checkbox){
+    checkbox.checked = true;
+  }
 
   alert("✅ บันทึกคะแนนแล้ว");
 
