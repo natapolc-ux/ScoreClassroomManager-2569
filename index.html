@@ -1506,15 +1506,10 @@ function renderWorkCards(){
   const workBox = document.getElementById("work");
 
   const selectedClass =
-    document
-    .getElementById("classFilter")
-    .value;
+    document.getElementById("classFilter").value;
 
   const selectedNo =
-    document
-    .getElementById("noFilter")
-    .value
-    .trim();
+    document.getElementById("noFilter").value.trim();
 
   const sortedWorkData =
     getSortedWorkData(currentWorkData);
@@ -1546,25 +1541,15 @@ function renderWorkCards(){
         ? "ผู้ส่ง: " + String(s.name || "-").trim()
         : "เลขที่: " + String(studentNo || "-").trim();
 
-    if(
-      selectedClass &&
-      studentClass !== selectedClass
-    ){
+    if(selectedClass && studentClass !== selectedClass){
       return;
     }
 
-    if(
-      selectedNo &&
-      !isGroup &&
-      studentNo !== selectedNo
-    ){
+    if(selectedNo && !isGroup && studentNo !== selectedNo){
       return;
     }
 
-    if(
-      selectedNo &&
-      isGroup
-    ){
+    if(selectedNo && isGroup){
       return;
     }
 
@@ -1576,7 +1561,6 @@ function renderWorkCards(){
       : (s.image !== undefined ? s.image : "");
 
     html += `
-
       <div class="card">
 
         <div class="work-card-actions">
@@ -1796,7 +1780,6 @@ if(data.status === "success"){
 
   refreshWorkList();
 }
-
     else{
       alert("❌ " + (data.message || "บันทึกคะแนนไม่สำเร็จ"));
     }
