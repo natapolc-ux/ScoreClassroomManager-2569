@@ -1041,13 +1041,17 @@ function toggleAutoRefreshWork(){
 // ======================================
 function loadWork(){
 
-  const url = document
-    .getElementById("topic")
-    .value;
+  const url =
+    document.getElementById("topic").value;
+
   const selectedClassBeforeLoad =
-  document.getElementById("classFilter").value;
-  const workBox = document.getElementById("work");
-  const workStatus = document.getElementById("workStatus");
+    document.getElementById("classFilter").value;
+
+  const workBox =
+    document.getElementById("work");
+
+  const workStatus =
+    document.getElementById("workStatus");
 
   if(!url){
     workStatus.innerHTML =
@@ -1076,7 +1080,6 @@ function loadWork(){
 
     let data = [];
 
-    // API ใหม่
     if(
       response &&
       response.status === "success" &&
@@ -1085,7 +1088,6 @@ function loadWork(){
       data = response.data;
     }
 
-    // เผื่อ API เก่าที่ยังส่ง array ตรง ๆ
     else if(Array.isArray(response)){
       data = response;
     }
@@ -1104,10 +1106,8 @@ function loadWork(){
     currentWorkData = data;
 
     if(currentWorkData.length === 0){
-
       workStatus.innerHTML =
         `<div class="status-box">ยังไม่มีข้อมูลงานนักเรียนในชีทนี้</div>`;
-
       return;
     }
 
@@ -1118,16 +1118,32 @@ function loadWork(){
         พบงานทั้งหมด ${currentWorkData.length} รายการ
       </div>`;
 
-    applyWorkSortAndRender();
+    try {
+      applyWorkSortAndRender();
+    } catch(renderError) {
+
+      console.error("Render work error:", renderError);
+
+      workStatus.innerHTML =
+        `<div class="status-box">
+          ❌ โหลดข้อมูลจาก API สำเร็จแล้ว แต่แสดงผลการ์ดงานไม่ได้<br><br>
+          รายละเอียด error:<br>
+          ${escapeHtml(renderError.message || renderError)}
+        </div>`;
+
+      workBox.innerHTML = "";
+    }
   })
 
   .catch(error => {
 
-    console.error(error);
+    console.error("API fetch error:", error);
 
     workStatus.innerHTML =
       `<div class="status-box">
-        ❌ เกิดข้อผิดพลาดในการเชื่อมต่อ API
+        ❌ เรียก API ไม่สำเร็จจริง ๆ<br><br>
+        รายละเอียด error:<br>
+        ${escapeHtml(error.message || error)}
       </div>`;
   });
 }
