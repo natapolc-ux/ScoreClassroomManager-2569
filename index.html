@@ -1523,11 +1523,15 @@ function renderWorkCards(){
   let visibleCount = 0;
 
   sortedWorkData.forEach(s => {
-  if(hideViewedWorksEnabled && isWorkViewedOrChecked(s)){
-  return;
-}
-    const studentClass = String(s.class || "").trim();
-    const studentNo = String(s.no || "").trim();
+
+    const isCollapsed =
+      isWorkCollapsed(s);
+
+    const studentClass =
+      String(s.class || "").trim();
+
+    const studentNo =
+      String(s.no || "").trim();
 
     const isGroup =
       isGroupWorkItem(s);
@@ -1575,31 +1579,31 @@ function renderWorkCards(){
 
       <div class="card">
 
-  <div class="work-card-actions">
+        <div class="work-card-actions">
 
-    <button
-      type="button"
-      onclick="setWorkCollapsed(
-        '${escapeJsString(s.rowIndex || "")}',
-        ${isCollapsed ? "false" : "true"}
-      )"
-    >
-      ${isCollapsed ? "👁 แสดงงาน" : "🙈 ซ่อนงาน"}
-    </button>
+          <button
+            type="button"
+            onclick="setWorkCollapsed(
+              '${escapeJsString(s.rowIndex || "")}',
+              ${isCollapsed ? "false" : "true"}
+            )"
+          >
+            ${isCollapsed ? "👁 แสดงงาน" : "🙈 ซ่อนงาน"}
+          </button>
 
-    <button
-      type="button"
-      onclick="deleteSubmission(
-        '${escapeJsString(currentSheetUrl)}',
-        '${escapeJsString(s.rowIndex || "")}'
-      )"
-    >
-      ลบงาน
-    </button>
+          <button
+            type="button"
+            onclick="deleteSubmission(
+              '${escapeJsString(currentSheetUrl)}',
+              '${escapeJsString(s.rowIndex || "")}'
+            )"
+          >
+            ลบงาน
+          </button>
 
-  </div>
+        </div>
 
-  <h3>
+        <h3>
           ${escapeHtml(studentClass)}
           ${isGroup ? "งานกลุ่ม" : escapeHtml("เลขที่ " + studentNo)}
         </h3>
@@ -1627,61 +1631,42 @@ function renderWorkCards(){
         </div>
 
         ${
-  isCollapsed
-  ? `
-    <div class="work-box">
-      <p class="empty-text">
-        ย่อแผ่นงานแล้ว กด “แสดงงาน” เพื่อดูงานที่ส่งและให้คะแนน
-      </p>
-    </div>
-  `
-  : `
-    <div class="work-box">
-      <h4>งานที่ส่ง</h4>
-      ${renderWorkContent(workValue)}
-    </div>
+          isCollapsed
+          ? `
+            <div class="work-box">
+              <p class="empty-text">
+                ย่อแผ่นงานแล้ว กด “แสดงงาน” เพื่อดูงานที่ส่งและให้คะแนน
+              </p>
+            </div>
+          `
+          : `
+            <div class="work-box">
+              <h4>งานที่ส่ง</h4>
+              ${renderWorkContent(workValue)}
+            </div>
 
-    <div class="score-area">
+            <div class="score-area">
 
-      <input
-        type="number"
-        id="score_${escapeAttribute(s.rowIndex || s.id)}"
-        value="${escapeAttribute(s.score || "")}"
-        placeholder="คะแนน"
-      >
+              <input
+                type="number"
+                id="score_${escapeAttribute(s.rowIndex || s.id)}"
+                value="${escapeAttribute(s.score || "")}"
+                placeholder="คะแนน"
+              >
 
-      <button
-        onclick="saveScore(
-          '${escapeJsString(currentSheetUrl)}',
-          '${escapeJsString(s.id || "")}',
-          '${escapeJsString(s.rowIndex || "")}'
-        )"
-      >
-        บันทึกคะแนน
-      </button>
+              <button
+                onclick="saveScore(
+                  '${escapeJsString(currentSheetUrl)}',
+                  '${escapeJsString(s.id || "")}',
+                  '${escapeJsString(s.rowIndex || "")}'
+                )"
+              >
+                บันทึกคะแนน
+              </button>
 
-    </div>
-  `
-}
-
-          <input
-            type="number"
-            id="score_${escapeAttribute(s.rowIndex || s.id)}"
-            value="${escapeAttribute(s.score || "")}"
-            placeholder="คะแนน"
-          >
-
-          <button
-            onclick="saveScore(
-              '${escapeJsString(currentSheetUrl)}',
-              '${escapeJsString(s.id || "")}',
-              '${escapeJsString(s.rowIndex || "")}'
-            )"
-          >
-            บันทึกคะแนน
-          </button>
-
-        </div>
+            </div>
+          `
+        }
 
       </div>
     `;
@@ -1694,9 +1679,6 @@ function renderWorkCards(){
 
   workBox.innerHTML = html;
 }
-
-
-
 // ======================================
 // แสดงงานในช่อง Work
 // ถ้าเป็น Drive URL = พรีวิวไฟล์
@@ -1808,19 +1790,7 @@ if(data.status === "success"){
 
   markWorkAsViewed(rowIndex);
 
-  hideViewedWorksEnabled = true;
-
-  localStorage.setItem(
-    HIDE_VIEWED_STORAGE_KEY,
-    "true"
-  );
-
-  const checkbox =
-    document.getElementById("hideViewedWorksToggle");
-
-  if(checkbox){
-    checkbox.checked = true;
-  }
+  setWorkCollapsed(rowIndex, true);
 
   alert("✅ บันทึกคะแนนแล้ว");
 
