@@ -705,6 +705,7 @@ let hideViewedWorksEnabled = false;
 const VIEWED_WORKS_STORAGE_KEY = "matrixViewedWorks";
 const HIDE_VIEWED_STORAGE_KEY = "matrixHideViewedWorks";
 const COLLAPSED_WORKS_STORAGE_KEY = "matrixCollapsedWorks";
+const FULL_SCORE_STORAGE_KEY_PREFIX = "matrixFullScore::";
 
 // ======================================
 // LOGIN
@@ -1041,17 +1042,13 @@ function toggleAutoRefreshWork(){
 // ======================================
 function loadWork(){
 
-  const url =
-    document.getElementById("topic").value;
-
+  const url = document
+    .getElementById("topic")
+    .value;
   const selectedClassBeforeLoad =
-    document.getElementById("classFilter").value;
-
-  const workBox =
-    document.getElementById("work");
-
-  const workStatus =
-    document.getElementById("workStatus");
+  document.getElementById("classFilter").value;
+  const workBox = document.getElementById("work");
+  const workStatus = document.getElementById("workStatus");
 
   if(!url){
     workStatus.innerHTML =
@@ -1080,6 +1077,7 @@ function loadWork(){
 
     let data = [];
 
+    // API ใหม่
     if(
       response &&
       response.status === "success" &&
@@ -1088,6 +1086,7 @@ function loadWork(){
       data = response.data;
     }
 
+    // เผื่อ API เก่าที่ยังส่ง array ตรง ๆ
     else if(Array.isArray(response)){
       data = response;
     }
@@ -1106,8 +1105,10 @@ function loadWork(){
     currentWorkData = data;
 
     if(currentWorkData.length === 0){
+
       workStatus.innerHTML =
         `<div class="status-box">ยังไม่มีข้อมูลงานนักเรียนในชีทนี้</div>`;
+
       return;
     }
 
@@ -1118,32 +1119,16 @@ function loadWork(){
         พบงานทั้งหมด ${currentWorkData.length} รายการ
       </div>`;
 
-    try {
-      applyWorkSortAndRender();
-    } catch(renderError) {
-
-      console.error("Render work error:", renderError);
-
-      workStatus.innerHTML =
-        `<div class="status-box">
-          ❌ โหลดข้อมูลจาก API สำเร็จแล้ว แต่แสดงผลการ์ดงานไม่ได้<br><br>
-          รายละเอียด error:<br>
-          ${escapeHtml(renderError.message || renderError)}
-        </div>`;
-
-      workBox.innerHTML = "";
-    }
+    applyWorkSortAndRender();
   })
 
   .catch(error => {
 
-    console.error("API fetch error:", error);
+    console.error(error);
 
     workStatus.innerHTML =
       `<div class="status-box">
-        ❌ เรียก API ไม่สำเร็จจริง ๆ<br><br>
-        รายละเอียด error:<br>
-        ${escapeHtml(error.message || error)}
+        ❌ เกิดข้อผิดพลาดในการเชื่อมต่อ API
       </div>`;
   });
 }
@@ -1557,6 +1542,14 @@ function renderWorkCards(){
         ? "ผู้ส่ง: " + String(s.name || "-").trim()
         : "เลขที่: " + String(studentNo || "-").trim();
 
+    const scoreText =
+      String(s.score ?? "").trim();
+
+    const checkedLabel =
+      scoreText === "ตรวจแล้ว"
+        ? "ตรวจแล้ว แต่ยังไม่ให้คะแนน"
+        : (scoreText ? "ให้คะแนนแล้ว: " + scoreText : "ยังไม่ได้ตรวจ");
+
     if(selectedClass && studentClass !== selectedClass){
       return;
     }
@@ -1612,6 +1605,7 @@ function renderWorkCards(){
           <div>${isGroup ? "ชื่อกลุ่ม" : "ชื่อ"}: ${escapeHtml(displayTitle)}</div>
           <div>${escapeHtml(displayDetail)}</div>
           <div>รหัสผู้ส่ง: ${escapeHtml(s.id || "")}</div>
+          <div>สถานะตรวจ: ${escapeHtml(checkedLabel)}</div>
 
           <div class="submit-time ${s.isLate ? "late-time" : "normal-time"}">
             เวลาส่งงาน: ${escapeHtml(formatTimestamp(s.timestamp))}
@@ -1650,7 +1644,7 @@ function renderWorkCards(){
               <input
                 type="number"
                 id="score_${escapeAttribute(s.rowIndex || s.id)}"
-                value="${escapeAttribute(s.score || "")}"
+                value="${scoreText === "ตรวจแล้ว" ? "" : escapeAttribute(s.score || "")}"
                 placeholder="คะแนน"
               >
 
@@ -1662,6 +1656,28 @@ function renderWorkCards(){
                 )"
               >
                 บันทึกคะแนน
+              </button>
+
+              <button
+                type="button"
+                onclick="markCheckedNoScore(
+                  '${escapeJsString(currentSheetUrl)}',
+                  '${escapeJsString(s.id || "")}',
+                  '${escapeJsString(s.rowIndex || "")}'
+                )"
+              >
+                ตรวจแล้ว แต่ยังไม่ให้คะแนน
+              </button>
+
+              <button
+                type="button"
+                onclick="giveFullScore(
+                  '${escapeJsString(currentSheetUrl)}',
+                  '${escapeJsString(s.id || "")}',
+                  '${escapeJsString(s.rowIndex || "")}'
+                )"
+              >
+                ให้คะแนนเต็ม
               </button>
 
             </div>
@@ -1773,6 +1789,22 @@ function saveScore(url, studentId, rowIndex){
 
   const score = scoreInput.value;
 
+  if(score === ""){
+    alert("กรุณากรอกคะแนน หรือกดปุ่ม ตรวจแล้ว แต่ยังไม่ให้คะแนน");
+    return;
+  }
+
+  saveScoreValue(
+    url,
+    studentId,
+    rowIndex,
+    score,
+    "✅ บันทึกคะแนนแล้ว"
+  );
+}
+
+function saveScoreValue(url, studentId, rowIndex, score, successMessage){
+
   fetch(
     API_URL
     + "?action=updateScore"
@@ -1786,18 +1818,18 @@ function saveScore(url, studentId, rowIndex){
 
   .then(data => {
 
-if(data.status === "success"){
+    if(data.status === "success"){
 
-  markWorkAsViewed(rowIndex);
+      markWorkAsViewed(rowIndex);
+      setWorkCollapsed(rowIndex, true);
 
-  setWorkCollapsed(rowIndex, true);
+      alert(successMessage || "✅ บันทึกแล้ว");
 
-  alert("✅ บันทึกคะแนนแล้ว");
+      refreshWorkList();
+    }
 
-  refreshWorkList();
-}
     else{
-      alert("❌ " + (data.message || "บันทึกคะแนนไม่สำเร็จ"));
+      alert("❌ " + (data.message || "บันทึกไม่สำเร็จ"));
     }
   })
 
@@ -1805,6 +1837,51 @@ if(data.status === "success"){
     console.error(error);
     alert("❌ เชื่อมต่อ API ไม่สำเร็จ");
   });
+}
+
+function markCheckedNoScore(url, studentId, rowIndex){
+
+  saveScoreValue(
+    url,
+    studentId,
+    rowIndex,
+    "ตรวจแล้ว",
+    "✅ บันทึกสถานะตรวจแล้ว แต่ยังไม่ให้คะแนนแล้ว"
+  );
+}
+
+function giveFullScore(url, studentId, rowIndex){
+
+  const storageKey =
+    FULL_SCORE_STORAGE_KEY_PREFIX + String(url || "");
+
+  const oldFullScore =
+    localStorage.getItem(storageKey) || "10";
+
+  const fullScore =
+    prompt("กรอกคะแนนเต็มของงานนี้", oldFullScore);
+
+  if(fullScore === null){
+    return;
+  }
+
+  const cleanedScore =
+    String(fullScore || "").trim();
+
+  if(cleanedScore === ""){
+    alert("กรุณากรอกคะแนนเต็ม");
+    return;
+  }
+
+  localStorage.setItem(storageKey, cleanedScore);
+
+  saveScoreValue(
+    url,
+    studentId,
+    rowIndex,
+    cleanedScore,
+    "✅ ให้คะแนนเต็มแล้ว"
+  );
 }
 function deleteSubmission(url, rowIndex){
   if(!url || !rowIndex){
@@ -2038,6 +2115,31 @@ function renderMyWorkCards(data){
     const isSubmitted =
       item.status === "submitted";
 
+    const scoreText =
+      String(item.score ?? "").trim();
+
+    const isCheckedOnly =
+      scoreText === "ตรวจแล้ว";
+
+    const canDelete =
+      isSubmitted &&
+      !scoreText &&
+      item.sheetUrl &&
+      item.rowIndex;
+
+    const scoreStatusHtml =
+      isSubmitted
+      ? `
+        <div class="work-status ${scoreText ? "submitted-status" : "missing-status"}">
+          ${
+            scoreText
+            ? (isCheckedOnly ? "✅ ครูตรวจแล้ว แต่ยังไม่ให้คะแนน" : "✅ ได้คะแนนแล้ว: " + escapeHtml(scoreText))
+            : "⏳ ส่งแล้ว รอครูตรวจ"
+          }
+        </div>
+      `
+      : ``;
+
     html += `
 
       <div class="card">
@@ -2051,17 +2153,19 @@ function renderMyWorkCards(data){
           ${isSubmitted ? "✅ ส่งแล้ว" : "❌ ยังไม่ได้ส่ง"}
         </div>
 
+        ${scoreStatusHtml}
+
         ${
           isSubmitted
           ? `
             <div class="meta">
               <div>ห้อง: ${escapeHtml(item.class || "")}</div>
               ${
-  item.submitMode === "งานกลุ่ม"
-  ? `<div>กลุ่ม: ${escapeHtml(item.groupName || "-")}</div>`
-  : ``
-}
-              <div>เลขที่: ${escapeHtml(item.no || "")}</div>
+                item.submitMode === "งานกลุ่ม"
+                ? `<div>กลุ่ม: ${escapeHtml(item.groupName || "-")}</div>
+                   <div>ผู้ส่งงานกลุ่ม: ${escapeHtml(item.submitterName || item.name || "-")}</div>`
+                : `<div>เลขที่: ${escapeHtml(item.no || "")}</div>`
+              }
               <div>เวลาส่งงาน: ${escapeHtml(formatTimestamp(item.timestamp))}</div>
             </div>
 
@@ -2069,6 +2173,27 @@ function renderMyWorkCards(data){
               <h4>งานที่ส่ง</h4>
               ${renderWorkContent(item.work)}
             </div>
+
+            ${
+              canDelete
+              ? `
+                <button
+                  type="button"
+                  onclick="deleteMySubmission(
+                    '${escapeJsString(item.sheetUrl || "")}',
+                    '${escapeJsString(item.rowIndex || "")}',
+                    '${escapeJsString(item.submitMode || "งานเดี่ยว")}'
+                  )"
+                >
+                  ลบงานของฉัน
+                </button>
+              `
+              : `
+                <div class="status-box">
+                  ${scoreText ? "ครูตรวจแล้ว/ให้คะแนนแล้ว จึงไม่สามารถลบงานเองได้" : ""}
+                </div>
+              `
+            }
           `
           : `
             <div class="meta">
@@ -2089,6 +2214,49 @@ function renderMyWorkCards(data){
   });
 
   workBox.innerHTML = html;
+}
+
+function deleteMySubmission(url, rowIndex, workType){
+
+  if(!url || !rowIndex){
+    alert("ไม่พบข้อมูลงานที่ต้องการลบ");
+    return;
+  }
+
+  const confirmed =
+    confirm("ต้องการลบงานที่ส่งนี้หรือไม่?\n\nลบได้เฉพาะงานที่ครูยังไม่ได้ตรวจหรือให้คะแนนเท่านั้น");
+
+  if(!confirmed){
+    return;
+  }
+
+  fetch(API_URL + "?action=studentDeleteSubmission", {
+    method: "POST",
+    body: JSON.stringify({
+      url: url,
+      rowIndex: rowIndex,
+      studentId: currentStudentId,
+      workType: workType || "งานเดี่ยว"
+    })
+  })
+
+  .then(res => res.json())
+
+  .then(response => {
+
+    if(response.status !== "success"){
+      alert("❌ " + (response.message || "ลบงานไม่สำเร็จ"));
+      return;
+    }
+
+    alert("✅ " + response.message);
+    loadMyWork();
+  })
+
+  .catch(error => {
+    console.error(error);
+    alert("❌ เชื่อมต่อ API ไม่สำเร็จ");
+  });
 }
 // ======================================
 // โหลดตัวเลือกระดับชั้น / ห้อง
@@ -2470,15 +2638,22 @@ function renderEditableScoreCell(cell, assignmentIndex){
 
   if(
     hideScoreValues &&
-    status === "scored"
+    (status === "scored" || status === "checked")
   ){
     return `<span class="hidden-score">••••</span>`;
   }
 
   if(
     status === "scored" ||
-    status === "pending"
+    status === "pending" ||
+    status === "checked"
   ){
+
+    const statusText =
+      status === "scored"
+      ? "ให้คะแนนแล้ว"
+      : (status === "checked" ? "ตรวจแล้ว" : "ส่งแล้ว/รอตรวจ");
+
     return `
       <div class="select-score-box">
 
@@ -2490,12 +2665,14 @@ function renderEditableScoreCell(cell, assignmentIndex){
         >
 
         <div>
+          <div class="score-pending">${escapeHtml(statusText)}</div>
+
           <input
             id="score_input_${escapeAttribute(key)}"
             class="score-input"
             type="number"
             value="${escapeAttribute(score)}"
-            placeholder="${status === "pending" ? (cell.isLate ? "ส่งช้า/รอตรวจ" : "รอตรวจ") : ""}"
+            placeholder="คะแนน"
             data-key="${escapeAttribute(key)}"
             data-url="${escapeAttribute(sheetUrl)}"
             data-row-index="${escapeAttribute(rowIndex)}"
