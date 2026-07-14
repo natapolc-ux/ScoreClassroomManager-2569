@@ -1294,6 +1294,8 @@ function loadWork(){
 
     currentWorkData = data;
 
+    applyDefaultCollapsedForCheckedWorks(currentWorkData);
+
     if(currentWorkData.length === 0){
 
       workStatus.innerHTML =
@@ -1628,6 +1630,36 @@ function saveCollapsedWorksMap(map){
 function getCollapsedWorkKey(rowIndex){
 
   return String(currentSheetUrl || "") + "::" + String(rowIndex || "");
+}
+
+
+function applyDefaultCollapsedForCheckedWorks(data){
+
+  const map =
+    getCollapsedWorksMap();
+
+  let changed = false;
+
+  (Array.isArray(data) ? data : []).forEach(item => {
+
+    if(
+      item &&
+      item.rowIndex &&
+      hasScoreValue(item.score)
+    ){
+      const key =
+        getCollapsedWorkKey(item.rowIndex);
+
+      if(map[key] !== true){
+        map[key] = true;
+        changed = true;
+      }
+    }
+  });
+
+  if(changed){
+    saveCollapsedWorksMap(map);
+  }
 }
 
 
