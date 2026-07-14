@@ -66,7 +66,7 @@ h2,h3,h4{
 
 .toolbar{
   display:grid;
-  grid-template-columns:140px 2fr 1fr 1fr;
+  grid-template-columns:140px 2fr 1fr 1fr 48px;
   gap:10px;
   margin-bottom:10px;
   align-items:end;
@@ -146,7 +146,7 @@ h2,h3,h4{
 
 .score-tools-row{
   display:grid;
-  grid-template-columns:1fr 1fr 1fr;
+  grid-template-columns:1.4fr 1fr 1fr 1fr;
   gap:10px;
   margin-top:10px;
 }
@@ -445,6 +445,39 @@ h2,h3,h4{
   outline:2px solid #ffd43b;
   box-shadow:0 0 8px #ffd43b;
 }
+.assignment-header{
+  min-width:190px;
+  vertical-align:top;
+}
+
+.assignment-title-button{
+  width:100%;
+  margin-top:0;
+  padding:7px 8px;
+  white-space:normal;
+  line-height:1.35;
+}
+
+.full-score-box{
+  margin-top:6px;
+  font-size:12px;
+  opacity:0.95;
+}
+
+.full-score-input{
+  width:80px !important;
+  margin-top:4px !important;
+  padding:6px !important;
+  text-align:center;
+}
+
+.bulk-score-hint{
+  padding:11px;
+  border:1px dashed #00ff41;
+  background:rgba(0,0,0,0.7);
+  line-height:1.5;
+}
+
 </style>
 
 </head>
@@ -587,6 +620,7 @@ h2,h3,h4{
     <input
       type="checkbox"
       id="hideScoresToggle"
+      checked
       onchange="toggleHideScores()"
     >
     ซ่อนคะแนนในตาราง
@@ -594,28 +628,23 @@ h2,h3,h4{
 
   <div class="score-tools-row">
 
-    <select id="bulkAssignment">
-  <option value="">เลือกงานที่ต้องการให้คะแนน</option>
-</select>
+    <div class="bulk-score-hint">
+      คลิกชื่องานบนหัวตารางเพื่อเลือกช่องคะแนนของงานนั้น
+    </div>
 
-<input
-  id="bulkScore"
-  type="number"
-  placeholder="คะแนน"
->
+    <input
+      id="bulkScore"
+      type="number"
+      placeholder="คะแนนที่จะใส่ให้ช่องที่เลือก"
+    >
 
-<button onclick="selectScoreCellsByAssignment()">
-  เลือกทั้งหมดในงานนี้
-</button>
+    <button onclick="applyScoreToSelectedCells()">
+      ใส่คะแนนให้ช่องที่เลือก
+    </button>
 
-<button onclick="applyScoreToSelectedCells()">
-  ใส่คะแนนให้ช่องที่เลือก
-</button>
-
-<button onclick="clearSelectedScoreCells()">
-  ยกเลิกทั้งหมด
-</button>
-  
+    <button onclick="clearSelectedScoreCells()">
+      ยกเลิกทั้งหมด
+    </button>
 
   </div>
 
@@ -698,7 +727,7 @@ let currentStudentClass = "";
 let currentStudentNo = "";
 let scoreOptionsData = [];
 let lastScoreTableData = null;
-let hideScoreValues = false;
+let hideScoreValues = true;
 let changedScoreMap = {};
 let hideViewedWorksEnabled = false;
 
@@ -1548,7 +1577,7 @@ function renderWorkCards(){
     const checkedLabel =
       scoreText === "ตรวจแล้ว"
         ? "ตรวจแล้ว แต่ยังไม่ให้คะแนน"
-        : (scoreText ? "ให้คะแนนแล้ว: " + scoreText : "ยังไม่ได้ตรวจ");
+        : (scoreText ? "คะแนน: " + scoreText : "ยังไม่ได้ตรวจ");
 
     if(selectedClass && studentClass !== selectedClass){
       return;
@@ -1846,7 +1875,7 @@ function markCheckedNoScore(url, studentId, rowIndex){
     studentId,
     rowIndex,
     "ตรวจแล้ว",
-    "✅ บันทึกสถานะตรวจแล้ว แต่ยังไม่ให้คะแนนแล้ว"
+    "✅ บันทึกสถานะตรวจแล้วเรียบร้อย"
   );
 }
 
@@ -2190,7 +2219,7 @@ function renderMyWorkCards(data){
               `
               : `
                 <div class="status-box">
-                  ${scoreText ? "ครูตรวจแล้ว/ให้คะแนนแล้ว จึงไม่สามารถลบงานเองได้" : ""}
+                  ${scoreText ? "ครูตรวจแล้วหรือมีคะแนน จึงไม่สามารถลบงานเองได้" : ""}
                 </div>
               `
             }
@@ -2568,9 +2597,34 @@ function renderScoreTable(data){
           <th>ชื่อ</th>
   `;
 
-  assignments.forEach(item => {
+  assignments.forEach((item, index) => {
+
+    const fullScore =
+      getFullScoreForAssignment(item);
+
     html += `
-      <th>${escapeHtml(item.topic || "")}</th>
+      <th class="assignment-header">
+        <button
+          type="button"
+          class="assignment-title-button"
+          onclick="selectScoreCellsByAssignment(${index})"
+          title="คลิกเพื่อเลือกช่องคะแนนของงานนี้"
+        >
+          ${escapeHtml(item.topic || "")}
+        </button>
+
+        <div class="full-score-box">
+          คะแนนเต็ม<br>
+          <input
+            type="number"
+            class="full-score-input"
+            value="${escapeAttribute(fullScore)}"
+            placeholder="เต็ม"
+            onclick="event.stopPropagation()"
+            onchange="setFullScoreForAssignment(${index}, this.value)"
+          >
+        </div>
+      </th>
     `;
   });
 
@@ -2637,22 +2691,29 @@ function renderEditableScoreCell(cell, assignmentIndex){
     sheetUrl + "|" + rowIndex + "|" + studentId + "|" + assignmentIndex;
 
   if(
-    hideScoreValues &&
-    (status === "scored" || status === "checked")
-  ){
-    return `<span class="hidden-score">••••</span>`;
-  }
-
-  if(
     status === "scored" ||
     status === "pending" ||
     status === "checked"
   ){
 
     const statusText =
-      status === "scored"
-      ? "ให้คะแนนแล้ว"
-      : (status === "checked" ? "ตรวจแล้ว" : "ส่งแล้ว/รอตรวจ");
+      status === "checked"
+      ? "ตรวจแล้ว"
+      : "ส่งแล้ว";
+
+    const shouldHideScore =
+      hideScoreValues &&
+      (status === "scored" || status === "checked");
+
+    const displayScore =
+      shouldHideScore || status === "checked"
+      ? ""
+      : score;
+
+    const placeholderText =
+      shouldHideScore
+      ? "ซ่อนคะแนน"
+      : (status === "pending" ? "รอตรวจ" : "คะแนน");
 
     return `
       <div class="select-score-box">
@@ -2671,8 +2732,8 @@ function renderEditableScoreCell(cell, assignmentIndex){
             id="score_input_${escapeAttribute(key)}"
             class="score-input"
             type="number"
-            value="${escapeAttribute(score)}"
-            placeholder="คะแนน"
+            value="${escapeAttribute(displayScore)}"
+            placeholder="${escapeAttribute(placeholderText)}"
             data-key="${escapeAttribute(key)}"
             data-url="${escapeAttribute(sheetUrl)}"
             data-row-index="${escapeAttribute(rowIndex)}"
@@ -2741,7 +2802,7 @@ function selectAllScoreCells(){
       เลือกทั้งหมดแล้ว (${checks.length} ช่อง)
     </div>`;
 }
-function clearSelectedScoreCells(){
+function clearSelectedScoreCells(showMessage = true){
 
   const checks =
     document.querySelectorAll(".score-check");
@@ -2761,10 +2822,12 @@ function clearSelectedScoreCells(){
     }
   });
 
-  document.getElementById("bulkScoreStatus").innerHTML =
-    `<div class="status-box">
-      ยกเลิกการเลือกทั้งหมดแล้ว
-    </div>`;
+  if(showMessage){
+    document.getElementById("bulkScoreStatus").innerHTML =
+      `<div class="status-box">
+        ยกเลิกการเลือกทั้งหมดแล้ว
+      </div>`;
+  }
 }
 function applyScoreToSelectedCells(){
 
@@ -2822,6 +2885,54 @@ function toggleHideScores(){
     renderScoreTable(lastScoreTableData);
   }
 }
+
+function getAssignmentStorageKey(assignment){
+
+  const keySource =
+    assignment && assignment.url
+    ? assignment.url
+    : (assignment && assignment.topic ? assignment.topic : "");
+
+  return FULL_SCORE_STORAGE_KEY_PREFIX + String(keySource || "");
+}
+
+function getFullScoreForAssignment(assignment){
+
+  if(!assignment){
+    return "";
+  }
+
+  return localStorage.getItem(
+    getAssignmentStorageKey(assignment)
+  ) || "";
+}
+
+function setFullScoreForAssignment(assignmentIndex, value){
+
+  if(!lastScoreTableData || !Array.isArray(lastScoreTableData.assignments)){
+    return;
+  }
+
+  const assignment =
+    lastScoreTableData.assignments[assignmentIndex];
+
+  if(!assignment){
+    return;
+  }
+
+  const cleaned =
+    String(value || "").trim();
+
+  const storageKey =
+    getAssignmentStorageKey(assignment);
+
+  if(cleaned === ""){
+    localStorage.removeItem(storageKey);
+  } else {
+    localStorage.setItem(storageKey, cleaned);
+  }
+}
+
   // ======================================
 // จำคะแนนที่มีการแก้ไข
 // ======================================
@@ -2843,77 +2954,19 @@ function markScoreChanged(input){
 // เติมตัวเลือกงานสำหรับให้คะแนนหลายคนพร้อมกัน
 // ======================================
 function populateBulkAssignmentOptions(data){
-
-  const select =
-    document.getElementById("bulkAssignment");
-
-  const assignments =
-    Array.isArray(data.assignments)
-    ? data.assignments
-    : [];
-
-  let html =
-    `<option value="">เลือกงานที่ต้องการให้คะแนน</option>`;
-
-  assignments.forEach((item, index) => {
-    html += `
-      <option value="${escapeAttribute(index)}">
-        ${escapeHtml(item.topic || "")}
-      </option>
-    `;
-  });
-
-  select.innerHTML = html;
+  // เปลี่ยนเป็นเลือกงานโดยคลิกหัวตารางแทน dropdown แล้ว
 }
 // ======================================
 // ใส่คะแนนเดียวกันให้ผู้ที่ส่งงานแล้วในงานที่เลือก
 // ======================================
 function applyBulkScoreToColumn(){
 
-  const assignmentIndex =
-    document.getElementById("bulkAssignment").value;
-
-  const score =
-    document.getElementById("bulkScore").value;
-
   const statusBox =
     document.getElementById("bulkScoreStatus");
 
-  if(assignmentIndex === ""){
-    statusBox.innerHTML =
-      `<div class="status-box">❌ กรุณาเลือกงานก่อน</div>`;
-    return;
-  }
-
-  if(score === ""){
-    statusBox.innerHTML =
-      `<div class="status-box">❌ กรุณากรอกคะแนนก่อน</div>`;
-    return;
-  }
-
-  const inputs =
-    document.querySelectorAll(
-      `.score-input[data-assignment-index="${assignmentIndex}"]`
-    );
-
-  if(inputs.length === 0){
-    statusBox.innerHTML =
-      `<div class="status-box">
-        ไม่พบผู้ที่ส่งงานแล้วในงานนี้
-      </div>`;
-    return;
-  }
-
-  inputs.forEach(input => {
-    input.value = score;
-    markScoreChanged(input);
-  });
-
   statusBox.innerHTML =
     `<div class="status-box">
-      ใส่คะแนน ${escapeHtml(score)}
-      ให้ ${inputs.length} คนแล้ว
-      กรุณากด “บันทึกคะแนนทั้งหมดลงชีตงาน”
+      กรุณาคลิกชื่องานบนหัวตารางเพื่อเลือกช่องคะแนน แล้วกด “ใส่คะแนนให้ช่องที่เลือก”
     </div>`;
 }
 // ======================================
@@ -3026,25 +3079,28 @@ function renderScoreCell(cell){
     </span>
   `;
 }
-function selectScoreCellsByAssignment(){
-
-  const assignmentIndex =
-    document.getElementById("bulkAssignment").value;
+function selectScoreCellsByAssignment(assignmentIndex){
 
   const statusBox =
     document.getElementById("bulkScoreStatus");
 
-  if(assignmentIndex === ""){
+  if(
+    assignmentIndex === "" ||
+    assignmentIndex === null ||
+    assignmentIndex === undefined
+  ){
     statusBox.innerHTML =
-      `<div class="status-box">❌ กรุณาเลือกงานก่อน</div>`;
+      `<div class="status-box">❌ กรุณาคลิกชื่องานบนหัวตารางก่อน</div>`;
     return;
   }
 
-  clearSelectedScoreCells();
+  assignmentIndex = String(assignmentIndex);
+
+  clearSelectedScoreCells(false);
 
   const inputs =
     document.querySelectorAll(
-      `.score-input[data-assignment-index="${assignmentIndex}"]`
+      `.score-input[data-assignment-index="${CSS.escape(assignmentIndex)}"]`
     );
 
   if(inputs.length === 0){
@@ -3071,9 +3127,30 @@ function selectScoreCellsByAssignment(){
     }
   });
 
+  if(
+    lastScoreTableData &&
+    Array.isArray(lastScoreTableData.assignments)
+  ){
+    const assignment =
+      lastScoreTableData.assignments[Number(assignmentIndex)];
+
+    const fullScore =
+      getFullScoreForAssignment(assignment);
+
+    if(fullScore){
+      const bulkScoreInput =
+        document.getElementById("bulkScore");
+
+      if(bulkScoreInput){
+        bulkScoreInput.value = fullScore;
+      }
+    }
+  }
+
   statusBox.innerHTML =
     `<div class="status-box">
-      เลือกผู้ที่ส่งงานแล้วในงานนี้ ${inputs.length} ช่อง
+      เลือกช่องคะแนนของงานนี้ ${inputs.length} ช่องแล้ว
+      ${document.getElementById("bulkScore").value ? " และเติมคะแนนจากคะแนนเต็มไว้ในช่องคะแนนรวมแล้ว" : ""}
     </div>`;
 }
 function downloadScoreTableImage(){
