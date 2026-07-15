@@ -1,1724 +1,2678 @@
-<!DOCTYPE html>
-<html>
-<head>
+function doGet(e) {
 
-<meta charset="UTF-8">
-<title>Matrix Student System</title>
+  e = e || { parameter: {} };
 
-<style>
+  const action = String(e.parameter.action || "").trim();
 
-body{
-  margin:0;
-  overflow-x:hidden;
-  background:black;
-  color:#00ff41;
-  font-family:monospace;
-}
-
-canvas{
-  position:fixed;
-  top:0;
-  left:0;
-  z-index:-1;
-}
-
-.login-box{
-  width:320px;
-  margin:100px auto;
-  background:rgba(0,0,0,0.88);
-  border:1px solid #00ff41;
-  padding:22px;
-  box-shadow:0 0 20px #00ff41;
-}
-
-.panel{
-  display:none;
-  padding:20px;
-  max-width:1100px;
-  margin:auto;
-}
-
-input,
-select,
-button{
-  width:100%;
-  box-sizing:border-box;
-  margin-top:10px;
-  padding:11px;
-  background:black;
-  color:#00ff41;
-  border:1px solid #00ff41;
-  font-family:monospace;
-}
-
-button{
-  cursor:pointer;
-}
-
-button:hover{
-  background:#00ff41;
-  color:black;
-}
-
-h2,h3,h4{
-  text-shadow:0 0 8px #00ff41;
-}
-
-.toolbar{
-  display:grid;
-  grid-template-columns:140px 2fr 1fr 1fr 48px;
-  gap:10px;
-  margin-bottom:10px;
-  align-items:stretch;
-}
-
-.toolbar > button,
-.toolbar > select,
-.toolbar > input,
-.toolbar .gear-button{
-  height:46px;
-  min-height:46px;
-  margin-top:0;
-}
-
-.toolbar-button{
-  margin-top:10px;
-}
-.settings-wrap{
-  position:relative;
-  display:flex;
-  align-items:stretch;
-}
-
-.gear-button{
-  width:48px;
-  min-width:48px;
-  font-size:20px;
-  text-align:center;
-}
-
-.settings-popup{
-  display:none;
-  position:absolute;
-  right:0;
-  top:58px;
-  width:300px;
-  z-index:999;
-  padding:14px;
-  border:1px solid #00ff41;
-  background:rgba(0,0,0,0.96);
-  box-shadow:0 0 18px #00ff41;
-}
-
-.settings-popup.show{
-  display:block;
-}
-
-.settings-title{
-  font-weight:bold;
-  margin-bottom:8px;
-  text-shadow:0 0 8px #00ff41;
-}
-
-.settings-popup label{
-  display:block;
-  margin-top:10px;
-}
-
-.settings-popup select,
-.settings-popup button{
-  width:100%;
-}
-.status-box{
-  margin-top:15px;
-  padding:12px;
-  border:1px solid #00ff41;
-  background:rgba(0,0,0,0.88);
-}
-
-.card{
-  position:relative;
-  border:1px solid #00ff41;
-  margin:20px 0;
-  padding:20px;
-  background:rgba(17,17,17,0.96);
-  box-shadow:0 0 15px #00ff41;
-}
-
-.meta{
-  line-height:1.7;
-}
-.score-tools{
-  display:none;
-  margin-top:15px;
-  padding:12px;
-  border:1px dashed #00ff41;
-  background:rgba(0,0,0,0.75);
-}
-
-.score-tools-row{
-  display:grid;
-  grid-template-columns:1.45fr 1fr 1fr 1fr 1fr 1fr 48px;
-  gap:10px;
-  margin-top:10px;
-  align-items:stretch;
-}
-
-.hide-score-box{
-  display:inline-flex;
-  align-items:center;
-  gap:8px;
-  margin-top:10px;
-}
-
-.hide-score-box input{
-  width:auto;
-  margin-top:0;
-}
-
-.score-input{
-  width:170px;
-  min-width:170px;
-  min-height:43px;
-  text-align:center;
-}
-
-.changed-score{
-  border:2px solid #ffd43b !important;
-  box-shadow:0 0 8px #ffd43b;
-}
-
-.hidden-score{
-  display:inline-block;
-  padding:4px 10px;
-  border:1px solid #00ff41;
-  background:rgba(0,0,0,0.8);
-  letter-spacing:3px;
-}
-.work-box{
-  margin-top:16px;
-  padding:14px;
-  border:1px dashed #00ff41;
-  background:rgba(0,0,0,0.72);
-}
-
-.text-work{
-  white-space:pre-wrap;
-  line-height:1.7;
-  word-break:break-word;
-}
-
-.drive-preview{
-  width:100%;
-  max-width:620px;
-  height:520px;
-  border:1px solid #00ff41;
-  background:#000;
-  display:block;
-  margin-top:10px;
-}
-
-.direct-image{
-  width:100%;
-  max-width:620px;
-  max-height:520px;
-  object-fit:contain;
-  border:1px solid #00ff41;
-  background:#000;
-  display:block;
-  margin-top:10px;
-}
-
-.file-link{
-  display:inline-block;
-  margin-top:10px;
-  padding:8px 12px;
-  border:1px solid #00ff41;
-  color:#00ff41;
-  text-decoration:none;
-}
-
-.file-link:hover{
-  background:#00ff41;
-  color:#000;
-}
-
-.score-area{
-  margin-top:18px;
-}
-
-.work-card-actions{
-  position:absolute;
-  top:10px;
-  right:10px;
-  display:flex;
-  gap:8px;
-  z-index:5;
-}
-
-.work-card-actions button{
-  width:auto;
-  min-width:90px;
-  margin-top:0;
-  padding:7px 10px;
-  font-size:13px;
-}
-
-.score-area{
-  display:flex;
-  align-items:center;
-  gap:10px;
-  margin-top:18px;
-}
-
-.score-area input{
-  width:120px;
-  margin-top:0;
-}
-
-.score-area button{
-  width:auto;
-  margin-top:0;
-}
-
-.empty-text{
-  opacity:0.9;
-}
-.submit-time{
-  display:inline-block;
-  margin-top:8px;
-  padding:8px 12px;
-  border:1px solid #00ff41;
-  background:rgba(0,0,0,0.75);
-}
-
-.normal-time{
-  border:1px solid #00ff41;
-}
-
-.late-time{
-  border:1px solid #ff3b3b;
-  background:#8b0000;
-  color:#ffffff;
-  box-shadow:0 0 10px #ff3b3b;
-}
-
-.late-label{
-  display:inline-block;
-  margin-left:8px;
-  padding:3px 8px;
-  border-radius:999px;
-  background:#ff3b3b;
-  color:#ffffff;
-  font-weight:bold;
-}
-
-.due-date{
-  margin-top:6px;
-  font-size:0.95em;
-  opacity:0.95;
-}
-.panel-divider{
-  border:0;
-  border-top:1px solid #00ff41;
-  margin:40px 0 30px;
-}
-
-.score-toolbar{
-  display:grid;
-  grid-template-columns:1fr 1fr 1fr;
-  gap:10px;
-  margin-bottom:10px;
-}
-
-.score-table-wrap{
-  margin-top:15px;
-  overflow-x:auto;
-  border:1px solid #00ff41;
-  background:rgba(0,0,0,0.88);
-}
-
-.score-table{
-  width:100%;
-  min-width:900px;
-  border-collapse:collapse;
-}
-
-.score-table th,
-.score-table td{
-  border:1px solid #00ff41;
-  padding:10px;
-  text-align:center;
-  vertical-align:middle;
-  white-space:nowrap;
-}
-
-.score-table th{
-  background:rgba(0,255,65,0.12);
-}
-
-.score-table td.student-name{
-  text-align:left;
-  min-width:180px;
-}
-
-.score-value{
-  font-weight:bold;
-  font-size:1.05em;
-}
-
-.score-pending{
-  display:inline-block;
-  padding:4px 8px;
-  border:1px solid #ffd43b;
-  color:#ffd43b;
-}
-
-.score-missing{
-  display:inline-block;
-  padding:4px 8px;
-  border:1px solid #ff3b3b;
-  background:#8b0000;
-  color:#fff;
-}
-
-.score-error{
-  display:inline-block;
-  padding:4px 8px;
-  border:1px solid #ff9800;
-  color:#ffcc80;
-}  
-@media(max-width:700px){
-  .toolbar{
-    grid-template-columns:1fr;
-  }
-.score-tools-row{
-  grid-template-columns:1fr;
-}
-.score-toolbar{
-  grid-template-columns:1fr;
-}
-  .login-box{
-    width:auto;
-    margin:70px 20px;
+  if (action === "login") {
+    return login(e);
   }
 
-  .drive-preview{
-    height:420px;
-  }
-  .settings-popup{
-    position:static;
-    width:100%;
-    margin-top:10px;
-  }
-}
-.work-status{
-  display:inline-block;
-  margin-top:10px;
-  margin-bottom:10px;
-  padding:6px 14px;
-  border-radius:999px;
-  font-weight:bold;
-}
-
-.submitted-status{
-  background:#006b2d;
-  color:#ffffff;
-  border:1px solid #00ff41;
-  box-shadow:0 0 8px #00ff41;
-}
-
-.missing-status{
-  background:#8b0000;
-  color:#ffffff;
-  border:1px solid #ff3b3b;
-  box-shadow:0 0 10px #ff3b3b;
-}
-.score-late{
-  display:inline-block;
-  margin-top:5px;
-  padding:4px 8px;
-  border:1px solid #ff3b3b;
-  background:#8b0000;
-  color:#ffffff;
-  box-shadow:0 0 8px #ff3b3b;
-  font-weight:bold;
-}
-.select-score-box{
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  gap:6px;
-}
-
-.select-score-box input[type="checkbox"]{
-  width:auto;
-  margin-top:0;
-}
-
-.selected-score-cell{
-  outline:2px solid #ffd43b;
-  box-shadow:0 0 8px #ffd43b;
-}
-.assignment-header{
-  min-width:190px;
-  vertical-align:top;
-}
-
-.assignment-title-button{
-  width:100%;
-  margin-top:0;
-  padding:7px 8px;
-  white-space:normal;
-  line-height:1.35;
-}
-
-.full-score-box{
-  margin-top:6px;
-  font-size:12px;
-  opacity:0.95;
-}
-
-.full-score-input{
-  width:80px !important;
-  margin-top:4px !important;
-  padding:6px !important;
-  text-align:center;
-}
-
-.bulk-score-hint{
-  padding:11px;
-  border:1px dashed #00ff41;
-  background:rgba(0,0,0,0.7);
-  line-height:1.5;
-}
-
-.refresh-work-button{
-  display:none;
-}
-
-.score-input.score-late-input{
-  border-color:#ff9800 !important;
-  background:#3a2400;
-  color:#ffcc80;
-  box-shadow:0 0 8px #ff9800;
-}
-
-.score-input::placeholder{
-  color:#ffcc80;
-  opacity:1;
-}
-
-.score-cell-display,
-.score-missing,
-.score-error{
-  min-height:43px;
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  box-sizing:border-box;
-}
-
-.assignment-title-button.selected-assignment{
-  background:#00ff41;
-  color:#000;
-  box-shadow:0 0 10px #00ff41;
-}
-
-.score-check-wrap{
-  display:flex;
-  align-items:center;
-  justify-content:center;
-}
-
-
-.score-tools-row > button,
-.score-tools-row > input,
-.score-tools-row .score-gear-button{
-  height:46px;
-  min-height:46px;
-  margin-top:0;
-}
-
-.score-settings-wrap{
-  position:relative;
-  display:flex;
-  align-items:stretch;
-}
-
-.score-gear-button{
-  width:48px;
-  min-width:48px;
-  font-size:20px;
-  text-align:center;
-}
-
-.score-settings-popup{
-  display:none;
-  position:absolute;
-  right:0;
-  top:58px;
-  width:320px;
-  z-index:999;
-  padding:14px;
-  border:1px solid #00ff41;
-  background:rgba(0,0,0,0.96);
-  box-shadow:0 0 18px #00ff41;
-}
-
-.score-settings-popup.show{
-  display:block;
-}
-
-.score-export-row{
-  display:none;
-  grid-template-columns:1fr 1fr;
-  gap:10px;
-  margin-top:10px;
-}
-
-.score-export-row .score-export-button{
-  display:block;
-  width:100%;
-}
-
-.score-input.locked-score-input{
-  opacity:0.92;
-  border-style:dashed;
-  cursor:not-allowed;
-}
-
-.score-input.status-background::placeholder{
-  white-space:normal;
-  text-overflow:clip;
-}
-
-.student-worksheet-box{
-  margin-top:12px;
-}
-
-.my-worksheet-toggle{
-  width:auto;
-  margin-top:12px;
-}
-
-
-.student-announcement{
-  border-color:#ffd43b;
-  box-shadow:0 0 10px #ffd43b;
-}
-
-.student-announcement ul{
-  margin:8px 0 0 18px;
-  padding:0;
-  line-height:1.8;
-}
-
-.overdue-label{
-  display:inline-block;
-  padding:2px 8px;
-  margin-right:6px;
-  border:1px solid #ff9800;
-  background:#3a2400;
-  color:#ffcc80;
-  font-weight:bold;
-}
-
-.student-work-actions{
-  display:flex;
-  flex-wrap:wrap;
-  gap:10px;
-  margin-top:12px;
-}
-
-.student-work-actions button{
-  width:auto;
-  margin-top:0;
-}
-
-.student-submit-modal,
-.custom-confirm-modal{
-  display:none;
-  position:fixed;
-  inset:0;
-  z-index:5000;
-  align-items:center;
-  justify-content:center;
-  background:rgba(0,0,0,0.82);
-  padding:20px;
-}
-
-.student-submit-dialog,
-.custom-confirm-dialog{
-  position:relative;
-  width:min(680px, 96vw);
-  max-height:90vh;
-  overflow:auto;
-  border:1px solid #00ff41;
-  background:rgba(0,0,0,0.98);
-  box-shadow:0 0 22px #00ff41;
-  padding:20px;
-}
-
-.student-submit-dialog textarea{
-  width:100%;
-  min-height:120px;
-  margin-top:10px;
-  background:black;
-  color:#00ff41;
-  border:1px solid #00ff41;
-  font-family:monospace;
-  box-sizing:border-box;
-}
-
-.student-submit-actions,
-.custom-confirm-actions{
-  display:flex;
-  gap:10px;
-  margin-top:10px;
-}
-
-.student-submit-actions button,
-.custom-confirm-actions button{
-  width:50%;
-}
-
-.student-delete-button{
-  position:absolute;
-  top:10px;
-  right:10px;
-  width:auto !important;
-  min-width:42px;
-  margin-top:0;
-  padding:7px 10px;
-  color:#ffffff;
-  border-color:#ff3b3b;
-  background:#8b0000;
-  box-shadow:0 0 8px #ff3b3b;
-  z-index:10;
-}
-
-.student-delete-button:hover{
-  background:#ff3b3b;
-  color:#ffffff;
-}
-
-</style>
-
-</head>
-
-<body>
-
-<canvas id="matrix"></canvas>
-
-<div class="login-box" id="loginBox">
-
-  <h2>LOGIN</h2>
-
-  <input id="id" placeholder="Student ID">
-
-  <input
-    id="pass"
-    type="password"
-    placeholder="Password"
-  >
-
-  <button onclick="login()">
-    เข้าสู่ระบบ
-  </button>
-
-  <p id="msg"></p>
-
-</div>
-
-
-<div id="teacherPanel" class="panel">
-
-  <h2>Teacher Dashboard</h2>
-
-  <div class="toolbar">
-
-  <button class="toolbar-button" onclick="loadWork()">
-    โหลดงาน
-  </button>
-
-  <select id="topic" onchange="updateWorkClassFilterByTopic()">
-    <option value="">กำลังโหลดหัวข้องาน...</option>
-  </select>
-
-  <select id="classFilter">
-    <option value="">ทุกห้อง</option>
-  </select>
-
-  <input
-    id="noFilter"
-    type="number"
-    placeholder="กรองเลขที่"
-  >
-
-  <div class="settings-wrap">
-
-    <button
-      type="button"
-      class="gear-button"
-      onclick="toggleWorkSettingsPopup()"
-      title="ตั้งค่าการแสดงผล"
-    >
-      ⚙
-    </button>
-
-    <div id="workSettingsPopup" class="settings-popup">
-
-      <div class="settings-title">
-        ตั้งค่าการตรวจงาน
-      </div>
-
-      <button
-        type="button"
-        id="autoRefreshToggleBtn"
-        onclick="toggleAutoRefreshWork()"
-      >
-        ⏸ อัปเดตอัตโนมัติ: ปิด
-      </button>
-
-      <button
-        type="button"
-        onclick="stopLoadedWork()"
-      >
-        ⏹ หยุดโหลดงาน
-      </button>
-
-      <button
-        type="button"
-        onclick="loadAllWork()"
-      >
-        📚 โหลดทุกงานทุกชั้น
-      </button>
-
-      <label>เรียงลำดับผลงาน</label>
-
-      <select id="workSortMode" onchange="applyWorkSortAndRender()">
-        <option value="latest">ส่งล่าสุดก่อน</option>
-        <option value="oldest">ส่งก่อนสุดก่อน</option>
-        <option value="noAsc">เลขที่น้อยไปมาก</option>
-        <option value="noDesc">เลขที่มากไปน้อย</option>
-        <option value="nameAsc">ชื่อนักเรียน ก-ฮ</option>
-        <option value="groupAsc">ชื่อกลุ่ม ก-ฮ</option>
-      </select>
-
-      <button type="button" onclick="sortCurrentWorkSheet()">
-        🔃 เรียงในชีต
-      </button>
-
-    </div>
-
-  </div>
-
-</div>
-
-<button
-  type="button"
-  id="refreshWorkButton"
-  class="refresh-work-button"
-  onclick="refreshWorkList()"
->
-  🔄 รีเฟรชผลงาน
-</button>
-
-<label class="hide-score-box">
-  <input
-    type="checkbox"
-    id="hideViewedWorksToggle"
-    onchange="toggleHideViewedWorks()"
-  >
-  ซ่อนงานที่ตรวจแล้ว
-</label>
-
-  <div id="workStatus"></div>
-  <div id="work"></div>
-<hr class="panel-divider">
-
-<h2>ตารางคะแนนรายงาน</h2>
-
-<div class="score-toolbar">
-
-  <select id="scoreLevel">
-    <option value="">กำลังโหลดระดับชั้น...</option>
-  </select>
-
-  <select id="scoreClass">
-    <option value="">ทุกห้อง</option>
-  </select>
-
-  <button onclick="loadScoreTable()">
-    โหลดตารางคะแนน
-  </button>
-
-</div>
-
-<div id="scoreTableStatus"></div>
-
-<div id="scoreToolsPanel" class="score-tools">
-
-  <div class="score-tools-row">
-
-    <button onclick="saveAllScoreChanges()">
-      บันทึกคะแนนทั้งหมดลงชีตงาน
-    </button>
-
-    <input
-      id="bulkScore"
-      type="number"
-      placeholder="คะแนนที่จะใส่ให้ช่องที่เลือก"
-    >
-
-    <button onclick="applyScoreToSelectedCells()">
-      ใส่คะแนนให้ช่องที่เลือก
-    </button>
-
-    <button onclick="applyFullScoreToSelectedCells()">
-      ให้คะแนนเต็ม
-    </button>
-
-    <button onclick="markSelectedCellsChecked()">
-      ตรวจแล้ว
-    </button>
-
-    <button onclick="clearSelectedScoreCells()">
-      ยกเลิกทั้งหมด
-    </button>
-
-    <div class="score-settings-wrap">
-      <button
-        type="button"
-        class="score-gear-button"
-        onclick="toggleScoreSettingsPopup()"
-        title="ตั้งค่าตารางคะแนน"
-      >
-        ⚙
-      </button>
-
-      <div id="scoreSettingsPopup" class="score-settings-popup">
-        <div class="settings-title">
-          ตั้งค่าตารางคะแนน
-        </div>
-
-        <label class="hide-score-box">
-          <input
-            type="checkbox"
-            id="hideScoresToggle"
-            checked
-            onchange="toggleHideScores()"
-          >
-          ซ่อนคะแนนในตาราง
-        </label>
-
-        <label class="hide-score-box">
-          <input
-            type="checkbox"
-            id="lockScoredToggle"
-            checked
-            onchange="toggleLockScoredScores()"
-          >
-          ล็อกช่องที่มีคะแนนแล้ว
-        </label>
-
-        <button
-          type="button"
-          onclick="stopLoadedScoreTable()"
-        >
-          ⏹ หยุดโหลดตาราง
-        </button>
-      </div>
-    </div>
-
-  </div>
-
-  <div id="bulkScoreStatus"></div>
-
-</div>
-
-<div id="scoreTableWrap" class="score-table-wrap"></div>
-<div id="scoreExportRow" class="score-export-row">
-  <button id="exportScoreSummaryButton" class="toolbar-button score-export-button" onclick="exportScoreSummary()">
-    บันทึกตารางคะแนนลง Sheet
-  </button>
-  <button id="downloadScoreTableImageButton" class="toolbar-button score-export-button" onclick="downloadScoreTableImage()">
-    บันทึกตารางเป็นรูปภาพ
-  </button>
-</div>
-
-<div id="exportSummaryStatus"></div>
-</div>
-
-
-<div id="studentPanel" class="panel">
-
-  <h2>Student Dashboard</h2>
-
-  <div id="studentData"></div>
-
-  <div id="studentSubmitModal" class="student-submit-modal">
-    <div class="student-submit-dialog">
-
-      <button
-        type="button"
-        class="student-delete-button"
-        onclick="closeStudentSubmitModal()"
-        title="ปิด"
-      >
-        ✕
-      </button>
-
-      <h3 id="studentSubmitModalTitle">ส่งงาน</h3>
-
-      <select id="submitTopic" onchange="handleSubmitTopicChange()" style="display:none;">
-        <option value="">กำลังโหลดหัวข้องาน...</option>
-      </select>
-
-      <div id="worksheetBox" class="status-box" style="display:none;"></div>
-
-      <div id="submitModeBox" style="display:none;">
-        <label>เลือกรูปแบบการส่ง</label>
-        <select id="submitMode">
-          <option value="งานเดี่ยว">ส่งเดี่ยว</option>
-          <option value="งานกลุ่ม">ส่งกลุ่ม</option>
-        </select>
-      </div>
-
-      <textarea
-        id="submitWorkText"
-        placeholder="พิมพ์คำตอบ หรือวางลิงก์งาน/ลิงก์รูป"
-      ></textarea>
-
-      <input
-        id="submitFile"
-        type="file"
-        accept="image/*,.pdf,.doc,.docx,.ppt,.pptx"
-      />
-
-      <div class="student-submit-actions">
-        <button onclick="submitStudentWork()">ส่งงาน</button>
-        <button type="button" onclick="closeStudentSubmitModal()">ยกเลิก</button>
-      </div>
-
-      <div id="submitWorkStatus"></div>
-    </div>
-  </div>
-
-  <div id="myWorkStatus"></div>
-  <div id="myWork"></div>
-
-</div>
-
-
-<script>
-
-// ใช้ API URL เดิมของคุณ
-const API_URL =
-  "https://script.google.com/macros/s/AKfycbz2zbVkttAPciPTjNIGDOVi0doD_cmhPqYgeZY5dIOAK_9WCxa3_2i9TwL9BlAmFjm1mg/exec";
-
-let currentWorkData = [];
-let currentSheetUrl = "";
-let autoRefreshWorkTimer = null;
-let autoRefreshWorkEnabled = false;
-let currentStudentId = "";
-let currentStudentName = "";
-let currentStudentLevel = "";
-let currentStudentClass = "";
-let currentStudentNo = "";
-let scoreOptionsData = [];
-let lastScoreTableData = null;
-let hideScoreValues = true;
-let lockScoredScores = true;
-let changedScoreMap = {};
-let selectedAssignmentIndexes = new Set();
-let hideViewedWorksEnabled = false;
-
-const VIEWED_WORKS_STORAGE_KEY = "matrixViewedWorks";
-const HIDE_VIEWED_STORAGE_KEY = "matrixHideViewedWorks";
-const COLLAPSED_WORKS_STORAGE_KEY = "matrixCollapsedWorks";
-const FULL_SCORE_STORAGE_KEY_PREFIX = "matrixFullScore::";
-const LOCK_SCORED_STORAGE_KEY = "matrixLockScoredScores";
-const HIDE_SCORES_STORAGE_KEY = "matrixHideScores";
-
-// ======================================
-// LOGIN
-// ======================================
-function login(){
-
-  const id = document
-    .getElementById("id")
-    .value
-    .trim();
-
-  const pass = document
-    .getElementById("pass")
-    .value
-    .trim();
-
-  const msg = document.getElementById("msg");
-
-  if(!id || !pass){
-    msg.innerHTML = "❌ กรุณากรอก ID และ Password";
-    return;
+  if (action === "topics") {
+    return getTopics();
   }
 
-  msg.innerHTML = "กำลังเข้าสู่ระบบ...";
+  if (action === "studentWork") {
+    return getStudentWork(e);
+  }
 
-  fetch(
-    API_URL
-    + "?action=login"
-    + "&id=" + encodeURIComponent(id)
-    + "&pass=" + encodeURIComponent(pass)
-  )
+  if (action === "updateScore") {
+    return updateScore(e);
+  }
 
-  .then(res => res.json())
-
-  .then(data => {
-
-    if(data.status === "success"){
-
-      document
-        .getElementById("loginBox")
-        .style.display = "none";
-
-      if(String(data.role).trim() === "teacher"){
-
-        document
-          .getElementById("teacherPanel")
-          .style.display = "block";
-
-        loadTopics();
-        loadScoreOptions();
-        loadHideViewedWorksSetting();
-        loadScoreTableSettings();
-      }
-
-      else{
-
-currentStudentId = data.id;
-currentStudentName = data.name;
-currentStudentLevel = data.level || "";
-currentStudentClass = data.className || "";
-currentStudentNo = data.no || "";
-
-  document
-    .getElementById("studentPanel")
-    .style.display = "block";
-
-  document
-    .getElementById("studentData")
-    .innerHTML =
-    `<div class="status-box">
-      ยินดีต้อนรับ ${escapeHtml(data.name)}
-    </div>`;
-
-  loadMyWork();
-  loadSubmitTopics();
+  if (action === "myWork") {
+  return getMyWork(e);
+  }
+  
+  if (action === "scoreOptions") {
+  return getScoreOptions();
 }
-    }
 
-    else{
-      msg.innerHTML =
-        "❌ " + escapeHtml(data.message || "Login Failed");
-    }
-  })
+if (action === "scoreTable") {
+  return getScoreTable(e);
+}
+if (action === "exportScoreSummary") {
+  return exportScoreSummary(e);
+}
+  return jsonOutput({
+    status: "error",
+    message: "Unknown action"
+  });
+}
+function doPost(e) {
 
-  .catch(error => {
-    console.error(error);
-    msg.innerHTML = "❌ เชื่อมต่อ API ไม่สำเร็จ";
+  e = e || { parameter: {}, postData: { contents: "" } };
+
+  const action =
+    String(e.parameter.action || "").trim();
+
+  if (action === "batchUpdateScores") {
+    return batchUpdateScores(e);
+  }
+
+  if (action === "submitWork") {
+    return submitWork(e);
+  }
+
+  if (action === "deleteSubmission") {
+    return deleteSubmission(e);
+  }
+
+  if (action === "studentDeleteSubmission") {
+    return studentDeleteSubmission(e);
+  }
+
+  if (action === "sortWorkSheet") {
+    return sortWorkSheet(e);
+  }
+
+  return jsonOutput({
+    status: "error",
+    message: "Unknown POST action"
   });
 }
 
-
 // ======================================
-// โหลดหัวข้องาน
+// 1. LOGIN
 // ======================================
-function loadTopics(){
+function login(e) {
 
-  const topicSelect = document.getElementById("topic");
+  try {
 
-  topicSelect.innerHTML =
-    `<option value="">กำลังโหลดหัวข้องาน...</option>`;
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sheet = ss.getSheetByName("Users");
 
-  fetch(API_URL + "?action=topics")
-
-  .then(res => res.json())
-
-  .then(response => {
-
-    let topics = [];
-
-    // รองรับ API เวอร์ชันใหม่
-    if(
-      response &&
-      response.status === "success" &&
-      Array.isArray(response.data)
-    ){
-      topics = response.data;
+    if (!sheet) {
+      return jsonOutput({
+        status: "error",
+        message: "ไม่พบชีท Users"
+      });
     }
 
-    // รองรับ API เก่าที่ส่ง array ตรง ๆ
-    else if(Array.isArray(response)){
-      topics = response;
+    const data = sheet.getDataRange().getValues();
+
+    const id = String(e.parameter.id || "").trim();
+    const pass = String(e.parameter.pass || "").trim();
+
+    for (let i = 1; i < data.length; i++) {
+
+      const userId = String(data[i][0] || "").trim();
+      const password = String(data[i][1] || "").trim();
+      const role = String(data[i][2] || "").trim();
+      const name = String(data[i][3] || "").trim();
+
+      if (userId === id && password === pass) {
+
+        return jsonOutput({
+  status: "success",
+  role: role,
+  name: name,
+  id: userId,
+  level: String(data[i][4] || "").trim(),
+  className: String(data[i][5] || "").trim(),
+  no: String(data[i][6] || "").trim()
+});
+      }
     }
 
-    else{
-      topicSelect.innerHTML =
-        `<option value="">โหลดหัวข้องานไม่สำเร็จ</option>`;
-
-      console.log("Topics API Response:", response);
-      return;
-    }
-
-    if(topics.length === 0){
-      topicSelect.innerHTML =
-        `<option value="">ยังไม่มีหัวข้องาน</option>`;
-      return;
-    }
-
-    let html =
-      `<option value="">-- เลือกหัวข้องาน --</option>`;
-
-    topics.forEach(t => {
-
-html += `
-  <option
-    value="${escapeAttribute(t.url)}"
-    data-level="${escapeAttribute(t.level || "")}"
-    data-work-type="${escapeAttribute(t.workType || "งานเดี่ยว")}"
-  >
-    ${escapeHtml(t.level)} - ${escapeHtml(t.topic)}
-    ${t.workType === "งานกลุ่ม" ? " [งานกลุ่ม]" : ""}
-    ${t.workType === "เลือกส่ง" ? " [เลือกส่ง]" : ""}
-  </option>
-`;
+    return jsonOutput({
+      status: "fail",
+      message: "รหัสผู้ใช้หรือรหัสผ่านไม่ถูกต้อง"
     });
 
-    topicSelect.innerHTML = html;
-updateWorkClassFilterByTopic();
-  })
+  } catch (error) {
 
-  .catch(error => {
-    console.error(error);
-    topicSelect.innerHTML =
-      `<option value="">โหลดหัวข้องานไม่สำเร็จ</option>`;
-  });
+    return jsonOutput({
+      status: "error",
+      message: error.message
+    });
+  }
 }
-function normalizeOptionKey(value){
-  return String(value || "")
-    .trim()
+
+
+// ======================================
+// 2. โหลดหัวข้องานจากชีท Main
+// ======================================
+function getTopics() {
+
+  try {
+
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sheet = ss.getSheetByName("Main");
+
+    if (!sheet) {
+      return jsonOutput({
+        status: "error",
+        message: "ไม่พบชีท Main"
+      });
+    }
+
+    const data = sheet.getDataRange().getValues();
+
+    let result = [];
+
+    for (let i = 1; i < data.length; i++) {
+
+      const level = String(data[i][0] || "").trim();
+      const topic = String(data[i][1] || "").trim();
+      const url = String(data[i][2] || "").trim();
+
+      const workType =
+        normalizeWorkType(data[i][3] || "งานเดี่ยว");
+
+      const folderId =
+        String(data[i][4] || "").trim();
+
+      const worksheetUrl =
+        String(data[i][5] || "").trim();
+
+      const worksheetVisible =
+        normalizeVisible(data[i][6], true);
+
+      if (!level || !topic || !url) {
+        continue;
+      }
+
+      result.push({
+        level: level,
+        topic: topic,
+        url: url,
+        workType: workType,
+        folderId: folderId,
+        worksheetUrl: worksheetUrl,
+        worksheetVisible: worksheetVisible
+      });
+    }
+
+    return jsonOutput({
+      status: "success",
+      data: result
+    });
+
+  } catch (error) {
+
+    return jsonOutput({
+      status: "error",
+      message: error.message
+    });
+  }
+}
+// ======================================
+// 3. โหลดงานนักเรียน พร้อมตรวจส่งช้าแยกตามห้อง
+// โครงสร้างชีตงาน:
+// A Timestamp
+// B Class
+// C No
+// D StudentID
+// E Name
+// F Work
+// G Score
+// ======================================
+function getStudentWork(e) {
+
+  try {
+
+    const url = String(e.parameter.url || "").trim();
+
+    const hideChecked =
+      String(e.parameter.hideChecked || "").trim() === "true";
+
+    if (!url) {
+      return jsonOutput({
+        status: "error",
+        message: "ไม่พบ URL ของชีทงาน"
+      });
+    }
+
+    const workType =
+      getWorkTypeByUrl(url);
+
+    const ss = SpreadsheetApp.openByUrl(url);
+    const sheet = ss.getSheets()[0];
+    const data = sheet.getDataRange().getValues();
+
+    const deadlineMap =
+      getDeadlineMap(url);
+
+    let result = [];
+
+    for (let i = 1; i < data.length; i++) {
+
+      const rowValues = data[i];
+
+      const isGroupRow =
+        isGroupSubmissionRow(rowValues, workType);
+
+      const timestamp =
+        rowValues[0] || "";
+
+      const className =
+        String(rowValues[1] || "").trim();
+
+      const dueDate =
+        deadlineMap[className] || "";
+
+      const isLate =
+        checkLateSubmission(timestamp, dueDate);
+
+      let row;
+
+      if (isGroupRow) {
+
+        row = {
+          rowIndex: i + 1,
+          timestamp: timestamp,
+          class: className,
+          submitMode: String(rowValues[2] || "งานกลุ่ม").trim(),
+          no: "",
+          groupName: String(rowValues[3] || "").trim(),
+          id: String(rowValues[4] || "").trim(),
+          name: String(rowValues[5] || "").trim(),
+          work: rowValues[6] || "",
+          score: rowValues[7] || "",
+          fileId: rowValues[8] || "",
+          dueDate: dueDate,
+          isLate: isLate,
+          isGroup: true
+        };
+
+      } else {
+
+        row = {
+          rowIndex: i + 1,
+          timestamp: timestamp,
+          class: className,
+          submitMode: "งานเดี่ยว",
+          no: rowValues[2] || "",
+          groupName: "",
+          id: rowValues[3] || "",
+          name: rowValues[4] || "",
+          work: rowValues[5] || "",
+          score: rowValues[6] || "",
+          fileId: rowValues[7] || "",
+          dueDate: dueDate,
+          isLate: isLate,
+          isGroup: false
+        };
+      }
+
+      if (
+        hideChecked &&
+        hasScoreForLock(row.score)
+      ) {
+        continue;
+      }
+
+      if (
+        row.class ||
+        row.no ||
+        row.id ||
+        row.name ||
+        row.groupName ||
+        row.work ||
+        row.score
+      ) {
+        result.push(row);
+      }
+    }
+
+    return jsonOutput({
+      status: "success",
+      data: result
+    });
+
+  } catch (error) {
+
+    return jsonOutput({
+      status: "error",
+      message: error.message
+    });
+  }
+}
+
+
+// ======================================
+// 4. บันทึกคะแนนกลับลงคอลัมน์ G
+// ======================================
+function updateScore(e) {
+
+  try {
+
+    const url = String(e.parameter.url || "").trim();
+    const studentId = String(e.parameter.studentId || "").trim();
+    const rowIndex = Number(e.parameter.rowIndex || 0);
+    const score = e.parameter.score;
+
+    if (!url || !studentId) {
+      return jsonOutput({
+        status: "error",
+        message: "ข้อมูลไม่ครบ: url หรือ studentId หายไป"
+      });
+    }
+
+    const workType =
+      getWorkTypeByUrl(url);
+
+    const ss = SpreadsheetApp.openByUrl(url);
+    const sheet = ss.getSheets()[0];
+    const data = sheet.getDataRange().getValues();
+
+    if (rowIndex >= 2 && rowIndex <= data.length) {
+
+      const rowValues =
+        data[rowIndex - 1];
+
+      const isGroupRow =
+        isGroupSubmissionRow(rowValues, workType);
+
+      const idAtRow =
+        String(
+          isGroupRow
+            ? rowValues[4]
+            : rowValues[3]
+        || "").trim();
+
+      const scoreColumn =
+        isGroupRow ? 8 : 7;
+
+      if (sameStudentId(idAtRow, studentId)) {
+
+        sheet
+          .getRange(rowIndex, scoreColumn)
+          .setValue(score);
+
+        return jsonOutput({
+          status: "success",
+          message: "บันทึกคะแนนแล้ว"
+        });
+      }
+    }
+
+    for (let i = 1; i < data.length; i++) {
+
+      const rowValues =
+        data[i];
+
+      const isGroupRow =
+        isGroupSubmissionRow(rowValues, workType);
+
+      const idInSheet =
+        String(
+          isGroupRow
+            ? rowValues[4]
+            : rowValues[3]
+        || "").trim();
+
+      const scoreColumn =
+        isGroupRow ? 8 : 7;
+
+      if (sameStudentId(idInSheet, studentId)) {
+
+        sheet
+          .getRange(i + 1, scoreColumn)
+          .setValue(score);
+
+        return jsonOutput({
+          status: "success",
+          message: "บันทึกคะแนนแล้ว"
+        });
+      }
+    }
+
+    return jsonOutput({
+      status: "fail",
+      message: "ไม่พบรหัสนักเรียนในชีท"
+    });
+
+  } catch (error) {
+
+    return jsonOutput({
+      status: "error",
+      message: error.message
+    });
+  }
+}
+// ======================================
+// ดึงรายการงานของนักเรียน
+// ตรวจจับการส่งงานด้วย StudentID
+// และสำรองด้วย Class + No
+// ======================================
+function getMyWork(e) {
+
+  try {
+
+    const studentId =
+      cleanText(e.parameter.studentId);
+
+    if (!studentId) {
+      return jsonOutput({
+        status: "error",
+        message: "ไม่พบรหัสนักเรียน"
+      });
+    }
+
+    const ss =
+      SpreadsheetApp.getActiveSpreadsheet();
+
+    const usersSheet =
+      ss.getSheetByName("Users");
+
+    const mainSheet =
+      ss.getSheetByName("Main");
+
+    if (!usersSheet) {
+      return jsonOutput({
+        status: "error",
+        message: "ไม่พบชีท Users"
+      });
+    }
+
+    if (!mainSheet) {
+      return jsonOutput({
+        status: "error",
+        message: "ไม่พบชีท Main"
+      });
+    }
+
+    const usersData =
+      usersSheet.getDataRange().getValues();
+
+    const mainData =
+      mainSheet.getDataRange().getValues();
+
+    let studentInfo = null;
+
+    for (let i = 1; i < usersData.length; i++) {
+
+      const idInUsers =
+        cleanText(usersData[i][0]);
+
+      if (sameStudentId(idInUsers, studentId)) {
+
+        studentInfo = {
+          id: idInUsers,
+          name: cleanText(usersData[i][3]),
+          level: cleanText(usersData[i][4]),
+          class: cleanText(usersData[i][5]),
+          no: cleanText(usersData[i][6])
+        };
+
+        break;
+      }
+    }
+
+    if (!studentInfo) {
+      return jsonOutput({
+        status: "error",
+        message: "ไม่พบข้อมูลนักเรียนในชีท Users"
+      });
+    }
+
+    if (!studentInfo.level) {
+      return jsonOutput({
+        status: "error",
+        message: "ยังไม่ได้ระบุ Level ของนักเรียนในชีท Users"
+      });
+    }
+
+    let result = [];
+
+    for (let i = 1; i < mainData.length; i++) {
+
+      const level =
+        cleanText(mainData[i][0]);
+
+      const topic =
+        cleanText(mainData[i][1]);
+
+      const sheetUrl =
+        cleanText(mainData[i][2]);
+
+      const workType =
+        normalizeWorkType(mainData[i][3] || "งานเดี่ยว");
+
+      const worksheetUrl =
+        cleanText(mainData[i][5]);
+
+      const worksheetVisible =
+        normalizeVisible(mainData[i][6], true);
+
+      const deadlineMap =
+        getDeadlineMap(sheetUrl);
+
+      const studentDueDate =
+        deadlineMap[studentInfo.class] || "";
+
+      if (normalizeKey(level) !== normalizeKey(studentInfo.level)) {
+        continue;
+      }
+
+      if (!sheetUrl) {
+        continue;
+      }
+
+      let submission = null;
+
+      try {
+
+        const workSS =
+          SpreadsheetApp.openByUrl(sheetUrl);
+
+        const workSheet =
+          workSS.getSheets()[0];
+
+        const workData =
+          workSheet.getDataRange().getValues();
+
+        const myGroup =
+          getMyGroup(studentInfo.id, studentInfo.class);
+
+        for (let j = 1; j < workData.length; j++) {
+
+          const row =
+            workData[j];
+
+          const isGroupRow =
+            isGroupSubmissionRow(row, workType);
+
+          if (isGroupRow) {
+
+            const workClass =
+              cleanText(row[1]);
+
+            const groupName =
+              cleanText(row[3]);
+
+            const submitterId =
+              cleanText(row[4]);
+
+            const submitterName =
+              cleanText(row[5]);
+
+            const groupWork =
+              row[6] || "";
+
+            const groupScore =
+              row[7] || "";
+
+            const matchedBySubmitterId =
+              sameStudentId(submitterId, studentInfo.id);
+
+            const matchedByGroupClass =
+              myGroup &&
+              normalizeKey(workClass) === normalizeKey(myGroup.className || studentInfo.class);
+
+            const matchedByGroupName =
+              myGroup &&
+              matchedByGroupClass &&
+              normalizeKey(groupName) === normalizeKey(myGroup.groupName);
+
+            if (matchedBySubmitterId || matchedByGroupName) {
+
+              submission = {
+                rowIndex: j + 1,
+                timestamp: row[0] || "",
+                class: workClass,
+                no: "",
+                id: submitterId,
+                name: submitterName,
+                submitterName: submitterName,
+                groupName: groupName,
+                submitMode: "งานกลุ่ม",
+                work: groupWork,
+                score: groupScore
+              };
+            }
+
+          } else {
+
+            const workClass =
+              cleanText(row[1]);
+
+            const workNo =
+              cleanText(row[2]);
+
+            const idInWork =
+              cleanText(row[3]);
+
+            const matchedById =
+              sameStudentId(idInWork, studentInfo.id);
+
+            if (matchedById) {
+
+              submission = {
+                rowIndex: j + 1,
+                timestamp: row[0] || "",
+                class: workClass,
+                no: workNo,
+                id: idInWork,
+                name: cleanText(row[4]),
+                submitterName: cleanText(row[4]),
+                groupName: "",
+                submitMode: "งานเดี่ยว",
+                work: row[5] || "",
+                score: row[6] || ""
+              };
+            }
+          }
+        }
+
+      } catch (sheetError) {
+        // ข้ามชีตที่เปิดไม่ได้
+      }
+
+      if (submission) {
+
+        const submissionDueDate =
+          deadlineMap[submission.class] || studentDueDate || "";
+
+        const submissionIsLate =
+          checkLateSubmission(submission.timestamp, submissionDueDate);
+
+        result.push({
+          level: level,
+          topic: topic,
+          status: "submitted",
+          timestamp: submission.timestamp,
+          class: submission.class,
+          no: submission.no,
+          id: submission.id,
+          name: submission.name,
+          submitterName: submission.submitterName || submission.name || "",
+          groupName: submission.groupName || "",
+          submitMode: submission.submitMode || "งานเดี่ยว",
+          work: submission.work,
+          score: submission.score || "",
+          rowIndex: submission.rowIndex || "",
+          sheetUrl: sheetUrl,
+          worksheetUrl: worksheetUrl,
+          worksheetVisible: worksheetVisible,
+          dueDate: submissionDueDate,
+          isLate: submissionIsLate,
+          isOverdue: false,
+          canDelete: !hasScoreForLock(submission.score)
+        });
+
+      } else {
+
+        result.push({
+          level: level,
+          topic: topic,
+          status: "missing",
+          timestamp: "",
+          class: studentInfo.class,
+          no: studentInfo.no,
+          id: studentInfo.id,
+          name: studentInfo.name,
+          submitterName: studentInfo.name,
+          groupName: "",
+          submitMode: "งานเดี่ยว",
+          work: "",
+          score: "",
+          rowIndex: "",
+          sheetUrl: sheetUrl,
+          worksheetUrl: worksheetUrl,
+          worksheetVisible: worksheetVisible,
+          dueDate: studentDueDate,
+          isLate: false,
+          isOverdue: checkLateSubmission(new Date(), studentDueDate),
+          canDelete: false
+        });
+      }
+    }
+
+    return jsonOutput({
+      status: "success",
+      data: result
+    });
+
+  } catch (error) {
+
+    return jsonOutput({
+      status: "error",
+      message: error.message
+    });
+  }
+}
+// ======================================
+// อ่านกำหนดส่งจากชีต Deadlines
+// A = SheetURL
+// B = Class
+// C = DueDate
+// ======================================
+function getDeadlineMap(targetSheetUrl) {
+
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName("Deadlines");
+
+  let map = {};
+
+  if (!sheet) {
+    return map;
+  }
+
+  const data = sheet.getDataRange().getValues();
+
+  const targetUrl =
+    String(targetSheetUrl || "").trim();
+
+  for (let i = 1; i < data.length; i++) {
+
+    const sheetUrl =
+      String(data[i][0] || "").trim();
+
+    const className =
+      String(data[i][1] || "").trim();
+
+    const dueDate =
+      data[i][2] || "";
+
+    if (
+      sheetUrl === targetUrl &&
+      className
+    ) {
+      map[className] = dueDate;
+    }
+  }
+
+  return map;
+}
+
+
+// ======================================
+// ตรวจว่าส่งช้าหรือไม่
+// ======================================
+function checkLateSubmission(submittedAt, dueDate) {
+
+  if (!submittedAt || !dueDate) {
+    return false;
+  }
+
+  const submitTime =
+    submittedAt instanceof Date
+      ? submittedAt
+      : new Date(submittedAt);
+
+  const deadlineTime =
+    dueDate instanceof Date
+      ? dueDate
+      : new Date(dueDate);
+
+  if (
+    isNaN(submitTime.getTime()) ||
+    isNaN(deadlineTime.getTime())
+  ) {
+    return false;
+  }
+
+  return submitTime.getTime() > deadlineTime.getTime();
+}
+
+function canonicalStudentIdKey_(value) {
+
+  const text = cleanText(value);
+
+  if (/^\d+$/.test(text)) {
+    return String(Number(text));
+  }
+
+  return text;
+}
+
+function groupMemberLookupKey_(className, studentId) {
+
+  return normalizeKey(className) + "::" + canonicalStudentIdKey_(studentId);
+}
+
+function groupNameLookupKey_(className, groupName) {
+
+  return normalizeKey(className) + "::" + normalizeKey(groupName);
+}
+
+function buildGroupLookup_() {
+
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName("Groups");
+
+  const lookup = {
+    byStudent: {},
+    byGroup: {}
+  };
+
+  if (!sheet) {
+    return lookup;
+  }
+
+  const data = sheet.getDataRange().getValues();
+
+  for (let i = 1; i < data.length; i++) {
+
+    const className = cleanText(data[i][1]);
+    const groupName = cleanText(data[i][2]);
+
+    const memberIds =
+      String(data[i][3] || "")
+        .split(",")
+        .map(x => cleanText(x))
+        .filter(Boolean);
+
+    if (!className || !groupName || memberIds.length === 0) {
+      continue;
+    }
+
+    const groupInfo = {
+      className: className,
+      groupName: groupName,
+      memberIds: memberIds
+    };
+
+    lookup.byGroup[groupNameLookupKey_(className, groupName)] = groupInfo;
+
+    memberIds.forEach(memberId => {
+      lookup.byStudent[groupMemberLookupKey_(className, memberId)] = groupInfo;
+    });
+  }
+
+  return lookup;
+}
+
+function getStudentGroupFromLookup_(lookup, studentId, className) {
+
+  if (!lookup || !lookup.byStudent) {
+    return null;
+  }
+
+  return lookup.byStudent[groupMemberLookupKey_(className, studentId)] || null;
+}
+
+// ======================================
+// 7. ตารางคะแนนรายงานแบบแยกแต่ละงาน
+// ไม่รวมคะแนนเป็นยอดเดียว
+// ======================================
+// ======================================
+// 7. ตารางคะแนนรายงานแบบแยกแต่ละงาน
+// ไม่รวมคะแนนเป็นยอดเดียว
+// ======================================
+function getScoreTable(e) {
+
+  try {
+
+    const level =
+      String(e.parameter.level || "").trim();
+
+    const className =
+      String(e.parameter.className || "").trim();
+
+    if (!level) {
+      return jsonOutput({
+        status: "error",
+        message: "กรุณาเลือกระดับชั้น"
+      });
+    }
+
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+
+    const usersSheet =
+      ss.getSheetByName("Users");
+
+    const mainSheet =
+      ss.getSheetByName("Main");
+
+    if (!usersSheet) {
+      return jsonOutput({
+        status: "error",
+        message: "ไม่พบชีท Users"
+      });
+    }
+
+    if (!mainSheet) {
+      return jsonOutput({
+        status: "error",
+        message: "ไม่พบชีท Main"
+      });
+    }
+
+    const usersData =
+      usersSheet.getDataRange().getValues();
+
+    const mainData =
+      mainSheet.getDataRange().getValues();
+
+    const groupLookup =
+      buildGroupLookup_();
+
+    let students = [];
+
+    for (let i = 1; i < usersData.length; i++) {
+
+      const studentId =
+        String(usersData[i][0] || "").trim();
+
+      const role =
+        String(usersData[i][2] || "").trim();
+
+      const name =
+        String(usersData[i][3] || "").trim();
+
+      const studentLevel =
+        String(usersData[i][4] || "").trim();
+
+      const studentClass =
+        String(usersData[i][5] || "").trim();
+
+      const studentNo =
+        String(usersData[i][6] || "").trim();
+
+      if (role !== "student") {
+        continue;
+      }
+
+      if (studentLevel !== level) {
+        continue;
+      }
+
+      if (
+        className &&
+        studentClass !== className
+      ) {
+        continue;
+      }
+
+      students.push({
+        id: studentId,
+        name: name,
+        level: studentLevel,
+        class: studentClass,
+        no: studentNo,
+        groupInfo: getStudentGroupFromLookup_(groupLookup, studentId, studentClass),
+        scores: []
+      });
+    }
+
+    students.sort((a, b) => {
+
+      const classCompare =
+        String(a.class).localeCompare(String(b.class));
+
+      if (classCompare !== 0) {
+        return classCompare;
+      }
+
+      const noA = Number(a.no);
+      const noB = Number(b.no);
+
+      if (!isNaN(noA) && !isNaN(noB)) {
+        return noA - noB;
+      }
+
+      return String(a.no).localeCompare(String(b.no));
+    });
+
+    let assignments = [];
+
+    for (let i = 1; i < mainData.length; i++) {
+
+      const assignmentLevel =
+        String(mainData[i][0] || "").trim();
+
+      const topic =
+        String(mainData[i][1] || "").trim();
+
+      const url =
+        String(mainData[i][2] || "").trim();
+
+      const workType =
+        normalizeWorkType(mainData[i][3] || "งานเดี่ยว");
+
+      if (assignmentLevel !== level) {
+        continue;
+      }
+
+      if (!topic || !url) {
+        continue;
+      }
+
+      assignments.push({
+        topic: topic,
+        url: url,
+        workType: workType
+      });
+    }
+
+    students.forEach(student => {
+      student.scores = assignments.map((assignment, index) => ({
+        status: "missing",
+        score: "",
+        sheetUrl: assignment.url,
+        rowIndex: "",
+        studentId: student.id,
+        assignmentIndex: index,
+        isLate: false,
+        dueDate: ""
+      }));
+    });
+
+    let warnings = [];
+
+    assignments.forEach((assignment, assignmentIndex) => {
+
+      try {
+
+        const deadlineMap =
+          getDeadlineMap(assignment.url);
+
+        const workSS =
+          SpreadsheetApp.openByUrl(assignment.url);
+
+        const workSheet =
+          workSS.getSheets()[0];
+
+        const workData =
+          workSheet.getDataRange().getValues();
+
+        const latestByStudent = {};
+        const latestByGroup = {};
+
+        for (let j = 1; j < workData.length; j++) {
+
+          const row = workData[j];
+
+          const isGroupRow =
+            isGroupSubmissionRow(row, assignment.workType);
+
+          const workClass =
+            String(row[1] || "").trim();
+
+          const timestamp =
+            row[0] || "";
+
+          const dueDate =
+            deadlineMap[workClass] || "";
+
+          const isLate =
+            checkLateSubmission(timestamp, dueDate);
+
+          if (isGroupRow) {
+
+            const groupName =
+              String(row[3] || "").trim();
+
+            const submitterId =
+              String(row[4] || "").trim();
+
+            if (!workClass || !groupName) {
+              continue;
+            }
+
+            const rawScore = row[7];
+            const scoreStatus = getScoreStatusData(rawScore);
+
+            const cellData = {
+              status: scoreStatus.status,
+              score: scoreStatus.score,
+              sheetUrl: assignment.url,
+              rowIndex: j + 1,
+              studentId: submitterId,
+              submitterId: submitterId,
+              assignmentIndex: assignmentIndex,
+              isLate: isLate,
+              dueDate: dueDate,
+              groupName: groupName,
+              class: workClass
+            };
+
+            const groupKey =
+              groupNameLookupKey_(workClass, groupName);
+
+            const oldData =
+              latestByGroup[groupKey];
+
+            if (
+              !oldData ||
+              getSheetTimeValue(timestamp) >= getSheetTimeValue(oldData.timestamp)
+            ) {
+              latestByGroup[groupKey] = Object.assign({ timestamp: timestamp }, cellData);
+            }
+
+          } else {
+
+            const studentId =
+              String(row[3] || "").trim();
+
+            if (!studentId) {
+              continue;
+            }
+
+            const rawScore = row[6];
+            const scoreStatus = getScoreStatusData(rawScore);
+
+            const cellData = {
+              status: scoreStatus.status,
+              score: scoreStatus.score,
+              sheetUrl: assignment.url,
+              rowIndex: j + 1,
+              studentId: studentId,
+              assignmentIndex: assignmentIndex,
+              isLate: isLate,
+              dueDate: dueDate,
+              class: workClass
+            };
+
+            const studentKey =
+              canonicalStudentIdKey_(studentId);
+
+            const oldData =
+              latestByStudent[studentKey];
+
+            if (
+              !oldData ||
+              getSheetTimeValue(timestamp) >= getSheetTimeValue(oldData.timestamp)
+            ) {
+              latestByStudent[studentKey] = Object.assign({ timestamp: timestamp }, cellData);
+            }
+          }
+        }
+
+        students.forEach(student => {
+
+          let scoreData = null;
+
+          if (assignment.workType === "งานกลุ่ม") {
+
+            const groupInfo =
+              student.groupInfo;
+
+            if (groupInfo) {
+              scoreData =
+                latestByGroup[groupNameLookupKey_(groupInfo.className, groupInfo.groupName)] || null;
+            }
+
+          } else {
+            scoreData =
+              latestByStudent[canonicalStudentIdKey_(student.id)] || null;
+          }
+
+          if (scoreData) {
+            student.scores[assignmentIndex] = Object.assign({}, scoreData, {
+              studentId: student.id
+            });
+          }
+        });
+
+      } catch (sheetError) {
+
+        warnings.push(
+          assignment.topic + ": " + sheetError.message
+        );
+
+        students.forEach(student => {
+          student.scores[assignmentIndex] = {
+            status: "error",
+            score: "",
+            sheetUrl: assignment.url,
+            rowIndex: "",
+            studentId: student.id,
+            assignmentIndex: assignmentIndex,
+            isLate: false,
+            dueDate: ""
+          };
+        });
+      }
+    });
+
+    students.forEach(student => {
+      delete student.groupInfo;
+    });
+
+    return jsonOutput({
+      status: "success",
+      data: {
+        level: level,
+        className: className,
+        assignments: assignments.map(a => ({
+          topic: a.topic,
+          url: a.url,
+          workType: a.workType
+        })),
+        students: students,
+        warnings: warnings
+      }
+    });
+
+  } catch (error) {
+
+    return jsonOutput({
+      status: "error",
+      message: error.message
+    });
+  }
+}
+// ======================================
+// 6. โหลดตัวเลือกระดับชั้น / ห้อง
+// จากชีต Users
+// ======================================
+function getScoreOptions() {
+
+  try {
+
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sheet = ss.getSheetByName("Users");
+
+    if (!sheet) {
+      return jsonOutput({
+        status: "error",
+        message: "ไม่พบชีท Users"
+      });
+    }
+
+    const data = sheet.getDataRange().getValues();
+
+    const levelMap = {};
+
+    for (let i = 1; i < data.length; i++) {
+
+      const role = String(data[i][2] || "").trim();
+      const level = String(data[i][4] || "").trim();
+      const className = String(data[i][5] || "").trim();
+
+      if (role !== "student") {
+        continue;
+      }
+
+      if (!level) {
+        continue;
+      }
+
+      if (!levelMap[level]) {
+        levelMap[level] = {};
+      }
+
+      if (className) {
+        levelMap[level][className] = true;
+      }
+    }
+
+    const result = Object.keys(levelMap)
+      .sort()
+      .map(level => ({
+        level: level,
+        classes: Object.keys(levelMap[level]).sort()
+      }));
+
+    return jsonOutput({
+      status: "success",
+      data: result
+    });
+
+  } catch (error) {
+
+    return jsonOutput({
+      status: "error",
+      message: error.message
+    });
+  }
+}
+// ======================================
+// จัดข้อความให้สะอาด
+// ======================================
+function cleanText(value) {
+  return String(value ?? "").trim();
+}
+
+
+// ======================================
+// ใช้เทียบข้อความโดยตัดช่องว่างออก
+// เช่น ป.4 กับ ป. 4
+// ======================================
+function normalizeKey(value) {
+  return cleanText(value)
     .replace(/\s+/g, "")
-    .replace(/\./g, "")
     .toLowerCase();
 }
-function updateWorkClassFilterByTopic(keepClassValue){
 
-  const topicSelect =
-    document.getElementById("topic");
 
-  const classSelect =
-    document.getElementById("classFilter");
+// ======================================
+// เทียบ StudentID แบบยืดหยุ่น
+// รองรับ 001 เทียบกับ 1
+// ======================================
+function sameStudentId(a, b) {
 
-  const noFilter =
-    document.getElementById("noFilter");
+  const idA = cleanText(a);
+  const idB = cleanText(b);
 
-  if(!topicSelect || !classSelect){
-    return;
+  if (!idA || !idB) {
+    return false;
   }
 
-  const selectedOption =
-    topicSelect.options[topicSelect.selectedIndex];
-
-  const selectedLevel =
-    selectedOption
-      ? String(selectedOption.getAttribute("data-level") || "").trim()
-      : "";
-
-  const oldClassValue =
-    keepClassValue !== undefined
-      ? String(keepClassValue || "").trim()
-      : String(classSelect.value || "").trim();
-
-  let classes = [];
-
-  if(selectedLevel && Array.isArray(scoreOptionsData)){
-
-    const foundLevel =
-      scoreOptionsData.find(item =>
-        normalizeOptionKey(item.level) === normalizeOptionKey(selectedLevel)
-      );
-
-    if(foundLevel && Array.isArray(foundLevel.classes)){
-      classes = foundLevel.classes;
-    }
+  if (idA === idB) {
+    return true;
   }
 
-  let html =
-    `<option value="">ทุกห้อง</option>`;
-
-  classes.forEach(className => {
-    html += `
-      <option value="${escapeAttribute(className)}">
-        ${escapeHtml(className)}
-      </option>
-    `;
-  });
-
-  classSelect.innerHTML = html;
-
-  if(oldClassValue){
-    const hasOldClass =
-      Array.from(classSelect.options)
-        .some(option => option.value === oldClassValue);
-
-    if(hasOldClass){
-      classSelect.value = oldClassValue;
-    }
+  if (
+    /^\d+$/.test(idA) &&
+    /^\d+$/.test(idB)
+  ) {
+    return Number(idA) === Number(idB);
   }
 
-  classSelect.onchange = renderWorkCards;
-
-  if(noFilter){
-    noFilter.oninput = renderWorkCards;
-  }
-}
-function toggleWorkSettingsPopup(){
-
-  const popup =
-    document.getElementById("workSettingsPopup");
-
-  if(!popup){
-    return;
-  }
-
-  popup.classList.toggle("show");
-}
-
-
-document.addEventListener("click", function(event){
-
-  const wrap =
-    document.querySelector(".settings-wrap");
-
-  const popup =
-    document.getElementById("workSettingsPopup");
-
-  if(wrap && popup && !wrap.contains(event.target)){
-    popup.classList.remove("show");
-  }
-
-  const scoreWrap =
-    document.querySelector(".score-settings-wrap");
-
-  const scorePopup =
-    document.getElementById("scoreSettingsPopup");
-
-  if(scoreWrap && scorePopup && !scoreWrap.contains(event.target)){
-    scorePopup.classList.remove("show");
-  }
-});
-function refreshWorkList(){
-  loadWork();
-}
-
-function stopLoadedWork(){
-
-  stopAutoRefreshWork();
-  autoRefreshWorkEnabled = false;
-  currentWorkData = [];
-  currentSheetUrl = "";
-
-  const autoButton =
-    document.getElementById("autoRefreshToggleBtn");
-
-  if(autoButton){
-    autoButton.textContent = "⏸ อัปเดตอัตโนมัติ: ปิด";
-  }
-
-  const refreshButton =
-    document.getElementById("refreshWorkButton");
-
-  if(refreshButton){
-    refreshButton.style.display = "none";
-  }
-
-  const workStatus =
-    document.getElementById("workStatus");
-
-  const workBox =
-    document.getElementById("work");
-
-  if(workStatus){
-    workStatus.innerHTML = "";
-  }
-
-  if(workBox){
-    workBox.innerHTML = "";
-  }
-}
-function startAutoRefreshWork(){
-
-  stopAutoRefreshWork();
-
-  autoRefreshWorkTimer = setInterval(() => {
-
-    if(!autoRefreshWorkEnabled){
-      return;
-    }
-
-    const topicSelect =
-      document.getElementById("topic");
-
-    if(!topicSelect || !topicSelect.value){
-      return;
-    }
-
-    refreshWorkList();
-
-  }, 30000);
-}
-
-
-function stopAutoRefreshWork(){
-
-  if(autoRefreshWorkTimer){
-    clearInterval(autoRefreshWorkTimer);
-    autoRefreshWorkTimer = null;
-  }
-}
-
-
-function toggleAutoRefreshWork(){
-
-  const button =
-    document.getElementById("autoRefreshToggleBtn");
-
-  autoRefreshWorkEnabled =
-    !autoRefreshWorkEnabled;
-
-  if(autoRefreshWorkEnabled){
-
-    if(button){
-      button.textContent = "▶ อัปเดตอัตโนมัติ: เปิด";
-    }
-
-    startAutoRefreshWork();
-
-  } else {
-
-    stopAutoRefreshWork();
-
-    if(button){
-      button.textContent = "⏸ อัปเดตอัตโนมัติ: ปิด";
-    }
-  }
+  return false;
 }
 // ======================================
-// โหลดงานนักเรียน
+// 8. บันทึกตารางคะแนนรายงานลงชีต ScoreSummary
+// แสดงคะแนนแยกแต่ละงาน ไม่รวมยอด
 // ======================================
-function loadWork(){
 
-  const url = document
-    .getElementById("topic")
-    .value;
-  const selectedClassBeforeLoad =
-  document.getElementById("classFilter").value;
-  const workBox = document.getElementById("work");
-  const workStatus = document.getElementById("workStatus");
+function exportScoreSummary(e) {
 
-  if(!url){
-    workStatus.innerHTML =
-      `<div class="status-box">❌ กรุณาเลือกหัวข้องานก่อน</div>`;
-    workBox.innerHTML = "";
-    return;
-  }
+  try {
 
-  currentSheetUrl = url;
+    const level = String(e.parameter.level || "").trim();
+    const className = String(e.parameter.className || "").trim();
 
-  const refreshButton =
-    document.getElementById("refreshWorkButton");
-
-  if(refreshButton){
-    refreshButton.style.display = "block";
-  }
-
-  workStatus.innerHTML =
-    `<div class="status-box">กำลังโหลดงาน...</div>`;
-
-  workBox.innerHTML = "";
-
-  fetch(
-    API_URL
-    + "?action=studentWork"
-    + "&url="
-    + encodeURIComponent(url)
-    + "&hideChecked="
-    + encodeURIComponent(hideViewedWorksEnabled ? "true" : "false")
-  )
-
-  .then(res => res.json())
-
-  .then(response => {
-
-    let data = [];
-
-    // API ใหม่
-    if(
-      response &&
-      response.status === "success" &&
-      Array.isArray(response.data)
-    ){
-      data = response.data;
+    if (!level) {
+      return jsonOutput({
+        status: "error",
+        message: "กรุณาเลือกระดับชั้น"
+      });
     }
 
-    // เผื่อ API เก่าที่ยังส่ง array ตรง ๆ
-    else if(Array.isArray(response)){
-      data = response;
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const usersSheet = ss.getSheetByName("Users");
+    const mainSheet = ss.getSheetByName("Main");
+
+    if (!usersSheet) {
+      return jsonOutput({ status: "error", message: "ไม่พบชีท Users" });
     }
 
-    else{
-      workStatus.innerHTML =
-        `<div class="status-box">
-          ❌ โหลดงานไม่สำเร็จ:
-          ${escapeHtml(response.message || "รูปแบบข้อมูลจาก API ไม่ถูกต้อง")}
-        </div>`;
-
-      console.log("StudentWork API Response:", response);
-      return;
+    if (!mainSheet) {
+      return jsonOutput({ status: "error", message: "ไม่พบชีท Main" });
     }
 
-    currentWorkData = data.map(item => ({
-      ...item,
-      sheetUrl: item.sheetUrl || url
-    }));
+    const usersData = usersSheet.getDataRange().getValues();
+    const mainData = mainSheet.getDataRange().getValues();
 
-    applyDefaultCollapsedForCheckedWorks(currentWorkData);
+    let students = [];
 
-    if(currentWorkData.length === 0){
+    for (let i = 1; i < usersData.length; i++) {
 
-      workStatus.innerHTML =
-        `<div class="status-box">ยังไม่มีข้อมูลงานนักเรียนในชีทนี้</div>`;
+      const studentId = String(usersData[i][0] || "").trim();
+      const role = String(usersData[i][2] || "").trim();
+      const name = String(usersData[i][3] || "").trim();
+      const studentLevel = String(usersData[i][4] || "").trim();
+      const studentClass = String(usersData[i][5] || "").trim();
+      const studentNo = String(usersData[i][6] || "").trim();
 
-      return;
+      if (role !== "student") continue;
+      if (studentLevel !== level) continue;
+      if (className && studentClass !== className) continue;
+
+      students.push({
+        id: studentId,
+        name: name,
+        level: studentLevel,
+        class: studentClass,
+        no: studentNo,
+        scores: []
+      });
     }
 
-    updateWorkClassFilterByTopic(selectedClassBeforeLoad);
+    students.sort((a, b) => {
+      const c = String(a.class).localeCompare(String(b.class));
+      if (c !== 0) return c;
 
-    workStatus.innerHTML =
-      `<div class="status-box">
-        พบงานทั้งหมด ${currentWorkData.length} รายการ
-      </div>`;
+      const noA = Number(a.no);
+      const noB = Number(b.no);
 
-    applyWorkSortAndRender();
-  })
+      if (!isNaN(noA) && !isNaN(noB)) return noA - noB;
 
-  .catch(error => {
+      return String(a.no).localeCompare(String(b.no));
+    });
 
-    console.error(error);
+    let assignments = [];
 
-    workStatus.innerHTML =
-      `<div class="status-box">
-        ❌ เกิดข้อผิดพลาดในการเชื่อมต่อ API
-      </div>`;
-  });
-}
+    for (let i = 1; i < mainData.length; i++) {
 
+      const assignmentLevel = String(mainData[i][0] || "").trim();
+      const topic = String(mainData[i][1] || "").trim();
+      const url = String(mainData[i][2] || "").trim();
 
+      if (assignmentLevel !== level) continue;
+      if (!topic || !url) continue;
 
-function loadAllWork(){
+      assignments.push({
+        topic: topic,
+        url: url
+      });
+    }
 
-  const workBox = document.getElementById("work");
-  const workStatus = document.getElementById("workStatus");
-  const refreshButton = document.getElementById("refreshWorkButton");
+    students.forEach(student => {
+      student.scores = assignments.map(() => ({
+        status: "missing",
+        score: "",
+        isLate: false
+      }));
+    });
 
-  currentSheetUrl = "";
-  currentWorkData = [];
+    assignments.forEach((assignment, assignmentIndex) => {
 
-  if(refreshButton){
-    refreshButton.style.display = "block";
-  }
+      try {
 
-  workBox.innerHTML = "";
-  workStatus.innerHTML =
-    `<div class="status-box">กำลังโหลดทุกงานของทุกชั้น...</div>`;
+        const deadlineMap = getDeadlineMap(assignment.url);
+        const workSS = SpreadsheetApp.openByUrl(assignment.url);
+        const workSheet = workSS.getSheets()[0];
+        const workData = workSheet.getDataRange().getValues();
 
-  fetch(API_URL + "?action=topics")
-    .then(res => res.json())
-    .then(response => {
+        const latestSubmissionMap = {};
 
-      const topics =
-        response && response.status === "success" && Array.isArray(response.data)
-          ? response.data
-          : (Array.isArray(response) ? response : []);
+        for (let j = 1; j < workData.length; j++) {
 
-      if(topics.length === 0){
-        workStatus.innerHTML =
-          `<div class="status-box">ยังไม่มีหัวข้องานให้โหลด</div>`;
-        return;
+          const studentId = String(workData[j][3] || "").trim();
+
+          if (!studentId) continue;
+
+          const rawScore = workData[j][6];
+
+          const hasScore =
+            rawScore !== "" &&
+            rawScore !== null &&
+            rawScore !== undefined;
+
+          const workClass = String(workData[j][1] || "").trim();
+          const timestamp = workData[j][0] || "";
+          const dueDate = deadlineMap[workClass] || "";
+          const isLate = checkLateSubmission(timestamp, dueDate);
+
+          latestSubmissionMap[studentId] = {
+            status: hasScore ? "scored" : "pending",
+            score: hasScore ? rawScore : "",
+            isLate: isLate
+          };
+        }
+
+        students.forEach(student => {
+
+          let scoreData = latestSubmissionMap[student.id];
+
+          if (!scoreData) {
+            const matchedId = Object.keys(latestSubmissionMap)
+              .find(id => sameStudentId(id, student.id));
+
+            if (matchedId) {
+              scoreData = latestSubmissionMap[matchedId];
+            }
+          }
+
+          if (scoreData) {
+            student.scores[assignmentIndex] = scoreData;
+          }
+        });
+
+      } catch (error) {
+
+        students.forEach(student => {
+          student.scores[assignmentIndex] = {
+            status: "error",
+            score: "",
+            isLate: false
+          };
+        });
+      }
+    });
+
+    const classGroups = {};
+
+    students.forEach(student => {
+
+      const key = student.class || "ไม่ระบุห้อง";
+
+      if (!classGroups[key]) {
+        classGroups[key] = [];
       }
 
-      const requests = topics.map(topic => {
-        return fetch(
-          API_URL
-          + "?action=studentWork"
-          + "&url=" + encodeURIComponent(topic.url)
-          + "&hideChecked=" + encodeURIComponent(hideViewedWorksEnabled ? "true" : "false")
-        )
-        .then(res => res.json())
-        .then(result => {
-          const rows =
-            result && result.status === "success" && Array.isArray(result.data)
-              ? result.data
-              : [];
+      classGroups[key].push(student);
+    });
 
-          return rows.map(row => ({
-            ...row,
-            level: topic.level || row.level || "",
-            topic: topic.topic || row.topic || "",
-            sheetUrl: topic.url || row.sheetUrl || "",
-            workType: topic.workType || row.workType || "งานเดี่ยว"
-          }));
-        })
-        .catch(error => {
-          console.error(error);
-          return [];
-        });
+    const createdSheets = [];
+
+    Object.keys(classGroups).forEach(roomName => {
+
+      const roomStudents = classGroups[roomName];
+
+      const headers = [
+        "เลขที่",
+        "ห้อง",
+        "รหัสนักเรียน",
+        "ชื่อ"
+      ];
+
+      assignments.forEach(item => {
+        headers.push(item.topic);
       });
 
-      return Promise.all(requests);
-    })
-    .then(groups => {
+      const output = [headers];
 
-      if(!groups){
-        return;
+      roomStudents.forEach(student => {
+
+        const row = [
+          student.no,
+          student.class,
+          student.id,
+          student.name
+        ];
+
+        assignments.forEach((assignment, index) => {
+
+          const cell = student.scores[index] || {
+            status: "missing",
+            score: "",
+            isLate: false
+          };
+
+          if (cell.status === "scored") {
+            row.push(cell.isLate ? String(cell.score) + " (ส่งช้า)" : cell.score);
+          }
+
+          else if (cell.status === "pending") {
+            row.push(cell.isLate ? "รอตรวจ (ส่งช้า)" : "รอตรวจ");
+          }
+
+          else if (cell.status === "error") {
+            row.push("เปิดชีตไม่ได้");
+          }
+
+          else {
+            row.push("ยังไม่ส่ง");
+          }
+        });
+
+        output.push(row);
+      });
+
+      const sheetName =
+        "Score_" +
+        safeSheetName(level) +
+        "_" +
+        safeSheetName(roomName);
+
+      let summarySheet = ss.getSheetByName(sheetName);
+
+      if (!summarySheet) {
+        summarySheet = ss.insertSheet(sheetName);
       }
 
-      currentWorkData = groups.flat();
-      applyDefaultCollapsedForCheckedWorks(currentWorkData);
+      summarySheet.clear();
 
-      if(currentWorkData.length === 0){
-        workStatus.innerHTML =
-          `<div class="status-box">ไม่พบงานที่ต้องตรวจ</div>`;
-        workBox.innerHTML = "";
-        return;
-      }
+      summarySheet
+        .getRange(1, 1, output.length, headers.length)
+        .setValues(output);
 
-      populateClassFilter(currentWorkData);
+      summarySheet
+        .getRange(1, 1, 1, headers.length)
+        .setFontWeight("bold");
 
-      workStatus.innerHTML =
-        `<div class="status-box">พบงานทั้งหมด ${currentWorkData.length} รายการ จากทุกชั้น</div>`;
+      summarySheet.setFrozenRows(1);
+      summarySheet.autoResizeColumns(1, headers.length);
 
-      applyWorkSortAndRender();
-    })
-    .catch(error => {
-      console.error(error);
-      workStatus.innerHTML =
-        `<div class="status-box">❌ โหลดทุกงานไม่สำเร็จ</div>`;
+      createdSheets.push(sheetName);
     });
+
+    return jsonOutput({
+      status: "success",
+      message: "บันทึกตารางคะแนนแยกตามห้องแล้ว",
+      data: {
+        level: level,
+        className: className || "ทุกห้อง",
+        sheetNames: createdSheets,
+        sheetCount: createdSheets.length,
+        studentCount: students.length
+      }
+    });
+
+  } catch (error) {
+
+    return jsonOutput({
+      status: "error",
+      message: error.message
+    });
+  }
 }
 
 // ======================================
-// สร้างตัวเลือกห้องเรียน
+// บันทึกคะแนนหลายคน / หลายงานพร้อมกัน
+// รับข้อมูลจากหน้าเว็บ แล้วเขียนกลับชีตงานจริง
 // ======================================
-function populateClassFilter(data){
+function batchUpdateScores(e) {
 
-  const classSelect = document.getElementById("classFilter");
+  try {
 
-  const classes = [
-    ...new Set(
-      data
-        .map(item => String(item.class || "").trim())
-        .filter(Boolean)
-    )
-  ];
+    const bodyText =
+      e.postData && e.postData.contents
+        ? e.postData.contents
+        : "";
 
-  let html = `<option value="">ทุกห้อง</option>`;
-
-  classes.forEach(className => {
-    html += `
-      <option value="${escapeAttribute(className)}">
-        ${escapeHtml(className)}
-      </option>
-    `;
-  });
-
-  classSelect.innerHTML = html;
-
-  classSelect.onchange = renderWorkCards;
-  document.getElementById("noFilter").oninput = renderWorkCards;
-}
-
-
-// ======================================
-// แสดงการ์ดงาน พร้อมกรองห้อง/เลขที่
-// ======================================
-function applyWorkSortAndRender(){
-  renderWorkCards();
-}
-
-
-function getSortedWorkData(data){
-
-  const sortSelect =
-    document.getElementById("workSortMode");
-
-  const sortMode =
-    sortSelect ? sortSelect.value : "latest";
-
-  const sorted =
-    [...data];
-
-  sorted.sort((a, b) => {
-
-    if(sortMode === "latest"){
-      return getTimeValue(b.timestamp) - getTimeValue(a.timestamp);
+    if (!bodyText) {
+      return jsonOutput({
+        status: "error",
+        message: "ไม่พบข้อมูลคะแนนที่ส่งมา"
+      });
     }
 
-    if(sortMode === "oldest"){
-      return getTimeValue(a.timestamp) - getTimeValue(b.timestamp);
+    const payload =
+      JSON.parse(bodyText);
+
+    const updates =
+      Array.isArray(payload.updates)
+        ? payload.updates
+        : [];
+
+    if (updates.length === 0) {
+      return jsonOutput({
+        status: "error",
+        message: "ไม่มีรายการคะแนนให้บันทึก"
+      });
     }
 
-    if(sortMode === "noAsc" || sortMode === "noDesc"){
-      const aIsGroup = isGroupWorkItem(a);
-      const bIsGroup = isGroupWorkItem(b);
+    let successCount = 0;
+    let failCount = 0;
+    let messages = [];
 
-      if(aIsGroup !== bIsGroup){
-        return aIsGroup ? 1 : -1;
+    const grouped = {};
+
+    updates.forEach(item => {
+
+      const url =
+        String(item.url || "").trim();
+
+      if (!url) {
+        failCount++;
+        return;
       }
 
-      return sortMode === "noAsc"
-        ? getNoValue(a.no) - getNoValue(b.no)
-        : getNoValue(b.no) - getNoValue(a.no);
+      if (!grouped[url]) {
+        grouped[url] = [];
+      }
+
+      grouped[url].push(item);
+    });
+
+    Object.keys(grouped).forEach(url => {
+
+      try {
+
+        const workType =
+          getWorkTypeByUrl(url);
+
+        const ss =
+          SpreadsheetApp.openByUrl(url);
+
+        const sheet =
+          ss.getSheets()[0];
+
+        const data =
+          sheet.getDataRange().getValues();
+
+        grouped[url].forEach(item => {
+
+          const studentId =
+            String(item.studentId || "").trim();
+
+          const rowIndex =
+            Number(item.rowIndex || 0);
+
+          const score =
+            item.score;
+
+          if (!studentId || rowIndex < 2 || rowIndex > data.length) {
+            failCount++;
+            return;
+          }
+
+          const rowValues =
+            data[rowIndex - 1];
+
+          const isGroupRow =
+            isGroupSubmissionRow(rowValues, workType);
+
+          const scoreColumn =
+            isGroupRow ? 8 : 7;
+
+          if (isGroupRow) {
+            sheet.getRange(rowIndex, scoreColumn).setValue(score);
+            successCount++;
+            return;
+          }
+
+          const idAtRow =
+            String(rowValues[3] || "").trim();
+
+          if (sameStudentId(idAtRow, studentId)) {
+            sheet.getRange(rowIndex, scoreColumn).setValue(score);
+            successCount++;
+            return;
+          }
+
+          let updated = false;
+
+          for (let i = 1; i < data.length; i++) {
+
+            const idInSheet =
+              String(data[i][3] || "").trim();
+
+            if (sameStudentId(idInSheet, studentId)) {
+              sheet.getRange(i + 1, scoreColumn).setValue(score);
+              successCount++;
+              updated = true;
+              break;
+            }
+          }
+
+          if (!updated) {
+            failCount++;
+          }
+        });
+
+      } catch (error) {
+
+        failCount += grouped[url].length;
+        messages.push(error.message);
+      }
+    });
+
+    return jsonOutput({
+      status: "success",
+      message: "บันทึกคะแนนสำเร็จ",
+      data: {
+        successCount: successCount,
+        failCount: failCount,
+        messages: messages
+      }
+    });
+
+  } catch (error) {
+
+    return jsonOutput({
+      status: "error",
+      message: error.message
+    });
+  }
+}
+
+function safeSheetName(value) {
+
+  return String(value || "")
+    .replace(/[\\\/\?\*\[\]\:]/g, "")
+    .replace(/\./g, "")
+    .replace(/\s+/g, "")
+    .substring(0, 40);
+}
+function normalizeWorkType(value) {
+
+  const text = String(value || "").trim();
+
+  if (text === "individual") return "งานเดี่ยว";
+  if (text === "group") return "งานกลุ่ม";
+  if (text === "choice") return "เลือกส่ง";
+
+  if (text === "เดี่ยว") return "งานเดี่ยว";
+  if (text === "กลุ่ม") return "งานกลุ่ม";
+  if (text === "เลือก") return "เลือกส่ง";
+
+  if (text === "งานเดี่ยว") return "งานเดี่ยว";
+  if (text === "งานกลุ่ม") return "งานกลุ่ม";
+  if (text === "เลือกส่ง") return "เลือกส่ง";
+
+  return "งานเดี่ยว";
+}
+function getWorkTypeByUrl(targetUrl) {
+
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName("Main");
+
+  if (!sheet) {
+    return "งานเดี่ยว";
+  }
+
+  const data = sheet.getDataRange().getValues();
+  const url = String(targetUrl || "").trim();
+
+  for (let i = 1; i < data.length; i++) {
+
+    const sheetUrl = String(data[i][2] || "").trim();
+    const workType = normalizeWorkType(data[i][3] || "งานเดี่ยว");
+
+    if (sheetUrl === url) {
+      return workType || "งานเดี่ยว";
+    }
+  }
+
+  return "งานเดี่ยว";
+}
+
+function deleteUnscoredGroupDuplicateSubmissions_(sheet, sourceSheetUrl, className, groupName, workType) {
+
+  const data = sheet.getDataRange().getValues();
+  const normalizedClass = normalizeKey(className);
+  const normalizedGroup = normalizeKey(groupName);
+  let deletedCount = 0;
+
+  for (let i = data.length - 1; i >= 1; i--) {
+
+    const row = data[i];
+    const isGroupRow = isGroupSubmissionRow(row, workType);
+
+    if (!isGroupRow) {
+      continue;
     }
 
-    if(sortMode === "nameAsc"){
-      return getStudentDisplayName(a)
-        .localeCompare(
-          getStudentDisplayName(b),
-          "th",
-          { numeric: true }
-        );
+    const rowClass = cleanText(row[1]);
+    const rowGroup = cleanText(row[3]);
+
+    if (
+      normalizeKey(rowClass) !== normalizedClass ||
+      normalizeKey(rowGroup) !== normalizedGroup
+    ) {
+      continue;
     }
 
-    if(sortMode === "groupAsc"){
-      return getGroupDisplayName(a)
-        .localeCompare(
-          getGroupDisplayName(b),
-          "th",
-          { numeric: true }
-        );
+    const scoreValue = cleanText(row[7]);
+
+    if (scoreValue) {
+      throw new Error("ครูตรวจแล้วหรือให้คะแนนแล้ว จึงไม่สามารถส่งงานกลุ่มซ้ำได้");
     }
 
-    return 0;
-  });
+    let fileId = cleanText(row[8]);
 
-  return sorted;
+    if (!fileId) {
+      fileId = extractDriveFileIdFromText(row[6] || "");
+    }
+
+    logDeletedSubmission({
+      sourceSheetName: sheet.getName(),
+      sourceSheetUrl: sourceSheetUrl,
+      rowIndex: i + 1,
+      workType: "งานกลุ่ม",
+      fileId: fileId,
+      rowValues: row
+    });
+
+    if (fileId) {
+      try {
+        DriveApp.getFileById(fileId).setTrashed(true);
+      } catch (fileError) {
+        // ลบไฟล์ไม่ได้ไม่ต้องหยุดการลบแถวซ้ำ
+      }
+    }
+
+    sheet.deleteRow(i + 1);
+    deletedCount++;
+  }
+
+  return deletedCount;
+}
+
+function submitWork(e) {
+  let uploadedFileId = "";
+
+  try {
+
+    const payload = JSON.parse(e.postData.contents || "{}");
+
+    const url = String(payload.url || "").trim();
+    const studentId = String(payload.studentId || "").trim();
+    const name = String(payload.name || "").trim();
+    const className = String(payload.className || "").trim();
+    const no = String(payload.no || "").trim();
+
+    let submitMode =
+    normalizeWorkType(payload.submitMode || "งานเดี่ยว");
+
+    const workText = String(payload.work || "").trim();
+
+    const fileName = String(payload.fileName || "").trim();
+    const mimeType = String(payload.mimeType || "").trim();
+    const fileData = String(payload.fileData || "").trim();
+
+    if (!url || !studentId) {
+      return jsonOutput({
+        status: "error",
+        message: "ข้อมูลไม่ครบ กรุณาเลือกงานก่อน"
+      });
+    }
+
+    if (!workText && !fileData) {
+      return jsonOutput({
+        status: "error",
+        message: "กรุณาพิมพ์คำตอบหรือแนบไฟล์ก่อน"
+      });
+    }
+
+    const workType = getWorkTypeByUrl(url);
+    if (workType === "งานเดี่ยว") {
+  submitMode = "งานเดี่ยว";
+}
+
+else if (workType === "งานกลุ่ม") {
+  submitMode = "งานกลุ่ม";
+}
+
+else if (workType === "เลือกส่ง") {
+  submitMode = normalizeWorkType(submitMode);
+}
+    const folderId = getUploadFolderIdByUrl(url);
+
+    const ss = SpreadsheetApp.openByUrl(url);
+    const sheet = ss.getSheets()[0];
+
+    let finalWork = workText;
+    let fileId = "";
+
+    // ตรวจงานกลุ่มก่อนอัปโหลดไฟล์
+    let group = null;
+
+    if (submitMode === "งานกลุ่ม") {
+      group = getMyGroup(studentId, className);
+
+      if (!group) {
+        return jsonOutput({
+          status: "error",
+          message: "ไม่พบกลุ่มของคุณ กรุณาติดต่อครู"
+        });
+      }
+    }
+
+    // อัปโหลดไฟล์หลังจากตรวจข้อมูลครบแล้ว
+    if (fileData && fileName && mimeType) {
+
+      const uploaded = uploadWorkFileToDrive({
+        folderId: folderId,
+        fileName: fileName,
+        mimeType: mimeType,
+        fileData: fileData,
+        studentId: studentId,
+        studentName: name,
+        className: className
+      });
+
+      fileId = uploaded.fileId;
+      uploadedFileId = uploaded.fileId;
+
+      finalWork = workText
+        ? workText + "\n" + uploaded.fileUrl
+        : uploaded.fileUrl;
+    }
+
+    if (submitMode === "งานกลุ่ม") {
+
+      deleteUnscoredGroupDuplicateSubmissions_(
+        sheet,
+        url,
+        className,
+        group.groupName,
+        workType
+      );
+
+      sheet.appendRow([
+        new Date(),
+        className,
+        "งานกลุ่ม",
+        group.groupName,
+        studentId,
+        name,
+        finalWork,
+        "",
+        fileId
+      ]);
+
+      SpreadsheetApp.flush();
+
+      return jsonOutput({
+        status: "success",
+        message: "ส่งงานกลุ่มเรียบร้อยแล้ว"
+      });
+    }
+
+    sheet.appendRow([
+      new Date(),
+      className,
+      no,
+      studentId,
+      name,
+      finalWork,
+      "",
+      fileId
+    ]);
+
+    SpreadsheetApp.flush();
+
+    return jsonOutput({
+      status: "success",
+      message: "ส่งงานเรียบร้อยแล้ว"
+    });
+
+  } catch (error) {
+
+    // ถ้าอัปโหลดไฟล์ไปแล้ว แต่บันทึกชีตไม่สำเร็จ ให้ย้ายไฟล์ไปถังขยะกันไฟล์ค้าง
+    if (uploadedFileId) {
+      try {
+        DriveApp.getFileById(uploadedFileId).setTrashed(true);
+      } catch (deleteError) {
+        // ไม่ต้องหยุดระบบ
+      }
+    }
+
+    return jsonOutput({
+      status: "error",
+      message: "ส่งไฟล์แล้วแต่บันทึกลงชีตไม่สำเร็จ: " + error.message
+    });
+  }
+}
+function getMyGroup(studentId, className) {
+
+  const ss =
+    SpreadsheetApp.getActiveSpreadsheet();
+
+  const sheet =
+    ss.getSheetByName("Groups");
+
+  if (!sheet) {
+    return null;
+  }
+
+  const data =
+    sheet.getDataRange().getValues();
+
+  const targetId =
+    cleanText(studentId);
+
+  const targetClass =
+    cleanText(className);
+
+  for (let i = 1; i < data.length; i++) {
+
+    const rowClass =
+      cleanText(data[i][1]);
+
+    const groupName =
+      cleanText(data[i][2]);
+
+    const memberIds =
+      String(data[i][3] || "")
+        .split(",")
+        .map(x => cleanText(x))
+        .filter(Boolean);
+
+    const sameClass =
+      normalizeKey(rowClass) === normalizeKey(targetClass);
+
+    const isMember =
+      memberIds.some(id =>
+        sameStudentId(id, targetId)
+      );
+
+    if (sameClass && isMember) {
+      return {
+        className: rowClass,
+        groupName: groupName,
+        memberIds: memberIds
+      };
+    }
+  }
+
+  return null;
+}
+function normalizeWorkType(value) {
+
+  const text = String(value || "").trim();
+
+  if (text === "individual") return "งานเดี่ยว";
+  if (text === "group") return "งานกลุ่ม";
+  if (text === "choice") return "เลือกส่ง";
+
+  if (text === "เดี่ยว") return "งานเดี่ยว";
+  if (text === "กลุ่ม") return "งานกลุ่ม";
+  if (text === "เลือก") return "เลือกส่ง";
+
+  if (text === "งานเดี่ยว") return "งานเดี่ยว";
+  if (text === "งานกลุ่ม") return "งานกลุ่ม";
+  if (text === "เลือกส่ง") return "เลือกส่ง";
+
+  return "งานเดี่ยว";
 }
 
 
-function getTimeValue(value){
+function getUploadFolderIdByUrl(targetUrl) {
+
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName("Main");
+
+  if (!sheet) {
+    return "";
+  }
+
+  const data = sheet.getDataRange().getValues();
+  const url = String(targetUrl || "").trim();
+
+  for (let i = 1; i < data.length; i++) {
+
+    const sheetUrl = String(data[i][2] || "").trim();
+    const folderId = String(data[i][4] || "").trim();
+
+    if (sheetUrl === url) {
+      return folderId;
+    }
+  }
+
+  return "";
+}
+
+
+function uploadWorkFileToDrive(info) {
+
+  const folderId = String(info.folderId || "").trim();
+
+  if (!folderId) {
+    throw new Error("ยังไม่ได้ใส่ FolderID ของงานนี้ในชีท Main");
+  }
+
+  const folder = DriveApp.getFolderById(folderId);
+
+  const base64 = String(info.fileData || "").split(",").pop();
+
+  const blob = Utilities.newBlob(
+    Utilities.base64Decode(base64),
+    info.mimeType,
+    info.fileName
+  );
+
+  const safeName =
+    String(info.className || "") + "_" +
+    String(info.studentId || "") + "_" +
+    String(info.studentName || "") + "_" +
+    String(new Date().getTime()) + "_" +
+    String(info.fileName || "");
+
+  blob.setName(safeName);
+
+  const file = folder.createFile(blob);
+
+  return {
+    fileId: file.getId(),
+    fileUrl: file.getUrl()
+  };
+}
+
+
+
+function getScoreStatusData(rawScore) {
+
+  const text =
+    String(rawScore ?? "").trim();
+
+  if (text === "") {
+    return {
+      status: "pending",
+      score: ""
+    };
+  }
+
+  if (text === "ตรวจแล้ว") {
+    return {
+      status: "checked",
+      score: ""
+    };
+  }
+
+  return {
+    status: "scored",
+    score: rawScore
+  };
+}
+
+function hasScoreForLock(score) {
+
+  return score !== "" &&
+    score !== null &&
+    score !== undefined &&
+    String(score).trim() !== "";
+}
+
+function studentDeleteSubmission(e) {
+
+  try {
+
+    const payload =
+      JSON.parse(e.postData.contents || "{}");
+
+    const url =
+      String(payload.url || "").trim();
+
+    const rowIndex =
+      Number(payload.rowIndex || 0);
+
+    const studentId =
+      String(payload.studentId || "").trim();
+
+    const workType =
+      normalizeWorkType(payload.workType || "งานเดี่ยว");
+
+    if (!url || rowIndex < 2 || !studentId) {
+      return jsonOutput({
+        status: "error",
+        message: "ข้อมูลไม่ครบ ไม่สามารถลบงานได้"
+      });
+    }
+
+    const workSS = SpreadsheetApp.openByUrl(url);
+    const sheet = workSS.getSheets()[0];
+    const lastColumn = sheet.getLastColumn();
+
+    const rowValues =
+      sheet
+        .getRange(rowIndex, 1, 1, lastColumn)
+        .getValues()[0];
+
+    const isGroupRow =
+      isGroupSubmissionRow(rowValues, workType);
+
+    const idColIndex = isGroupRow ? 4 : 3;
+    const scoreCol = isGroupRow ? 8 : 7;
+    const workCol = isGroupRow ? 7 : 6;
+    const fileIdCol = isGroupRow ? 9 : 8;
+
+    const idAtRow =
+      String(rowValues[idColIndex] || "").trim();
+
+    if (!sameStudentId(idAtRow, studentId)) {
+      return jsonOutput({
+        status: "error",
+        message: "ลบได้เฉพาะงานที่ตนเองเป็นผู้ส่งเท่านั้น"
+      });
+    }
+
+    const scoreValue =
+      String(rowValues[scoreCol - 1] || "").trim();
+
+    if (scoreValue) {
+      return jsonOutput({
+        status: "error",
+        message: "ครูตรวจแล้วหรือให้คะแนนแล้ว นักเรียนจึงลบงานเองไม่ได้"
+      });
+    }
+
+    let fileId = "";
+
+    if (lastColumn >= fileIdCol) {
+      fileId = String(rowValues[fileIdCol - 1] || "").trim();
+    }
+
+    if (!fileId && lastColumn >= workCol) {
+      fileId = extractDriveFileIdFromText(rowValues[workCol - 1] || "");
+    }
+
+    logDeletedSubmission({
+      sourceSheetName: sheet.getName(),
+      sourceSheetUrl: url,
+      rowIndex: rowIndex,
+      workType: workType,
+      fileId: fileId,
+      rowValues: rowValues
+    });
+
+    let fileDeleted = false;
+    let fileDeleteMessage = "";
+
+    if (fileId) {
+      try {
+        DriveApp.getFileById(fileId).setTrashed(true);
+        fileDeleted = true;
+      } catch (fileError) {
+        fileDeleteMessage = fileError.message;
+      }
+    }
+
+    sheet.deleteRow(rowIndex);
+
+    return jsonOutput({
+      status: "success",
+      message: fileId
+        ? (
+            fileDeleted
+              ? "ลบงานของคุณและย้ายไฟล์ไปถังขยะแล้ว"
+              : "ลบแถวงานแล้ว แต่ลบไฟล์ไม่ได้: " + fileDeleteMessage
+          )
+        : "ลบงานของคุณแล้ว"
+    });
+
+  } catch (error) {
+
+    return jsonOutput({
+      status: "error",
+      message: error.message
+    });
+  }
+}
+
+function deleteSubmission(e) {
+  try {
+
+    const payload =
+      JSON.parse(e.postData.contents || "{}");
+
+    const url =
+      String(payload.url || "").trim();
+
+    const rowIndex =
+      Number(payload.rowIndex || 0);
+
+    const workType =
+      normalizeWorkType(payload.workType || "งานเดี่ยว");
+
+    if (!url || rowIndex < 2) {
+      return jsonOutput({
+        status: "error",
+        message: "ข้อมูลไม่ครบ ไม่สามารถลบงานได้"
+      });
+    }
+
+    const workSS =
+      SpreadsheetApp.openByUrl(url);
+
+    const sheet =
+      workSS.getSheets()[0];
+
+    const lastColumn =
+      sheet.getLastColumn();
+
+    const rowValues =
+      sheet
+        .getRange(rowIndex, 1, 1, lastColumn)
+        .getValues()[0];
+
+    const rowMode =
+      String(rowValues[2] || "").trim();
+
+    const isGroupRow =
+      rowMode === "งานกลุ่ม" ||
+      rowMode === "group" ||
+      workType === "งานกลุ่ม";
+
+    const workCol =
+      isGroupRow ? 7 : 6;
+
+    const fileIdCol =
+      isGroupRow ? 9 : 8;
+
+    let fileId = "";
+
+    if (lastColumn >= fileIdCol) {
+      fileId =
+        String(
+          sheet
+            .getRange(rowIndex, fileIdCol)
+            .getValue() || ""
+        ).trim();
+    }
+
+    if (!fileId && lastColumn >= workCol) {
+      const workText =
+        String(
+          sheet
+            .getRange(rowIndex, workCol)
+            .getValue() || ""
+        ).trim();
+
+      fileId =
+        extractDriveFileIdFromText(workText);
+    }
+
+    logDeletedSubmission({
+      sourceSheetName: sheet.getName(),
+      sourceSheetUrl: url,
+      rowIndex: rowIndex,
+      workType: workType,
+      fileId: fileId,
+      rowValues: rowValues
+    });
+
+    let fileDeleted = false;
+    let fileDeleteMessage = "";
+
+    if (fileId) {
+      try {
+        DriveApp
+          .getFileById(fileId)
+          .setTrashed(true);
+
+        fileDeleted = true;
+
+      } catch (fileError) {
+        fileDeleteMessage =
+          fileError.message;
+      }
+    }
+
+    sheet.deleteRow(rowIndex);
+
+    return jsonOutput({
+      status: "success",
+      message: fileId
+        ? (
+            fileDeleted
+              ? "ลบงานและย้ายไฟล์ไปถังขยะแล้ว"
+              : "ลบแถวงานแล้ว แต่ลบไฟล์ไม่ได้: " + fileDeleteMessage
+          )
+        : "ลบแถวงานแล้ว แต่ไม่พบ FileID สำหรับลบไฟล์"
+    });
+
+  } catch (error) {
+
+    return jsonOutput({
+      status: "error",
+      message: error.message
+    });
+  }
+}
+
+
+function extractDriveFileIdFromText(text) {
+
+  const value =
+    String(text || "").trim();
+
+  if (!value) {
+    return "";
+  }
+
+  const matchById =
+    value.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+
+  if (matchById && matchById[1]) {
+    return matchById[1];
+  }
+
+  const matchByD =
+    value.match(/\/d\/([a-zA-Z0-9_-]+)/);
+
+  if (matchByD && matchByD[1]) {
+    return matchByD[1];
+  }
+
+  return "";
+}
+
+
+function logDeletedSubmission(info) {
+
+  const ss =
+    SpreadsheetApp.getActiveSpreadsheet();
+
+  let sheet =
+    ss.getSheetByName("DeletedSubmissions");
+
+  if (!sheet) {
+    sheet =
+      ss.insertSheet("DeletedSubmissions");
+
+    sheet.appendRow([
+      "DeletedAt",
+      "SourceSheetName",
+      "SourceSheetUrl",
+      "RowIndex",
+      "WorkType",
+      "FileID",
+      "OriginalRowData"
+    ]);
+  }
+
+  const rowText =
+    info.rowValues
+      .map(value => {
+        if (value instanceof Date) {
+          return Utilities.formatDate(
+            value,
+            "Asia/Bangkok",
+            "yyyy-MM-dd HH:mm:ss"
+          );
+        }
+
+        return String(value ?? "");
+      })
+      .join(" | ");
+
+  sheet.appendRow([
+    new Date(),
+    info.sourceSheetName || "",
+    info.sourceSheetUrl || "",
+    info.rowIndex || "",
+    info.workType || "",
+    info.fileId || "",
+    rowText
+  ]);
+}
+function authorizeDrive() {
+  const folderId = "14QmG-W_NOlN_YqF1DFd3CUlH1RdJKQlgRW1DJbNuzpVweXZOjhY-i__MKqDvXJb5KVKhZFsP";
+  const folder = DriveApp.getFolderById(folderId);
+  Logger.log("เข้าถึงโฟลเดอร์ได้แล้ว: " + folder.getName());
+}
+function sortWorkSheet(e) {
+  try {
+
+    const payload =
+      JSON.parse(e.postData.contents || "{}");
+
+    const url =
+      String(payload.url || "").trim();
+
+    const sortMode =
+      String(payload.sortMode || "latest").trim();
+
+    const workType =
+      normalizeWorkType(payload.workType || getWorkTypeByUrl(url));
+
+    if (!url) {
+      return jsonOutput({
+        status: "error",
+        message: "ไม่พบลิงก์ชีตงาน"
+      });
+    }
+
+    const ss =
+      SpreadsheetApp.openByUrl(url);
+
+    const sheet =
+      ss.getSheets()[0];
+
+    const lastRow =
+      sheet.getLastRow();
+
+    const lastColumn =
+      sheet.getLastColumn();
+
+    if (lastRow <= 2) {
+      return jsonOutput({
+        status: "success",
+        message: "ข้อมูลยังน้อย ไม่จำเป็นต้องเรียง"
+      });
+    }
+
+    const range =
+      sheet.getRange(2, 1, lastRow - 1, lastColumn);
+
+    const values =
+      range.getValues();
+
+    values.sort((a, b) => {
+
+      if (sortMode === "latest") {
+        return getSheetTimeValue(b[0]) - getSheetTimeValue(a[0]);
+      }
+
+      if (sortMode === "oldest") {
+        return getSheetTimeValue(a[0]) - getSheetTimeValue(b[0]);
+      }
+
+      if (sortMode === "noAsc" || sortMode === "noDesc") {
+
+        const aIsGroup =
+          isGroupSubmissionRow(a, workType);
+
+        const bIsGroup =
+          isGroupSubmissionRow(b, workType);
+
+        if (aIsGroup !== bIsGroup) {
+          return aIsGroup ? 1 : -1;
+        }
+
+        return sortMode === "noAsc"
+          ? getSheetNoValue(a, workType) - getSheetNoValue(b, workType)
+          : getSheetNoValue(b, workType) - getSheetNoValue(a, workType);
+      }
+
+      if (sortMode === "nameAsc") {
+        return getSheetStudentName(a, workType)
+          .localeCompare(
+            getSheetStudentName(b, workType),
+            "th",
+            { numeric: true }
+          );
+      }
+
+      if (sortMode === "groupAsc") {
+        return getSheetGroupName(a, workType)
+          .localeCompare(
+            getSheetGroupName(b, workType),
+            "th",
+            { numeric: true }
+          );
+      }
+
+      return 0;
+    });
+
+    range.setValues(values);
+
+    SpreadsheetApp.flush();
+
+    return jsonOutput({
+      status: "success",
+      message: "เรียงลำดับข้อมูลในชีตเรียบร้อยแล้ว"
+    });
+
+  } catch (error) {
+
+    return jsonOutput({
+      status: "error",
+      message: error.message
+    });
+  }
+}
+
+
+function getSheetTimeValue(value) {
+
+  if (value instanceof Date) {
+    return value.getTime();
+  }
 
   const time =
     new Date(value).getTime();
@@ -1727,3192 +2681,90 @@ function getTimeValue(value){
 }
 
 
-function getNoValue(value){
+function getSheetNoValue(row, workType) {
+
+  if (isGroupSubmissionRow(row, workType)) {
+    return 999999;
+  }
 
   const number =
-    parseInt(value, 10);
+    parseInt(row[2], 10);
 
   return isNaN(number) ? 999999 : number;
 }
 
 
-function isGroupWorkItem(item){
+function getSheetStudentName(row, workType) {
 
-  return item.isGroup === true ||
-    String(item.submitMode || "").trim() === "งานกลุ่ม" ||
-    String(item.groupName || "").trim() !== "";
+  if (isGroupSubmissionRow(row, workType)) {
+    return String(row[5] || "").trim();
+  }
+
+  return String(row[4] || "").trim();
 }
 
 
-function getStudentDisplayName(item){
+function getSheetGroupName(row, workType) {
 
-  return String(
-    item.name ||
-    item.studentName ||
-    ""
-  ).trim();
-}
-
-
-function getGroupDisplayName(item){
-
-  if(isGroupWorkItem(item)){
-    return String(item.groupName || "").trim();
+  if (isGroupSubmissionRow(row, workType)) {
+    return String(row[3] || "").trim();
   }
 
   return "\uffff";
 }
 
 
-function sortCurrentWorkSheet(){
+function isGroupSubmissionRow(row, workType) {
 
-  const topicSelect =
-    document.getElementById("topic");
+  const normalizedWorkType =
+    normalizeWorkType(workType || "งานเดี่ยว");
 
-  const sortSelect =
-    document.getElementById("workSortMode");
+  const submitMode =
+    String(row[2] || "").trim();
 
-  if(!topicSelect || !topicSelect.value){
-    alert("กรุณาเลือกหัวข้องานก่อน");
-    return;
-  }
-
-  const selectedOption =
-    topicSelect.options[topicSelect.selectedIndex];
-
-  const workType =
-    workTypeOverride ||
-    (selectedOption ? selectedOption.getAttribute("data-work-type") : "") ||
-    "งานเดี่ยว";
-
-  const sortMode =
-    sortSelect ? sortSelect.value : "latest";
-
-  const confirmed =
-    confirm(
-      "ต้องการเรียงลำดับข้อมูลในชีตจริงหรือไม่?\n\n" +
-      "หลังเรียงแล้ว ลำดับแถวใน Google Sheet จะเปลี่ยนตาม"
-    );
-
-  if(!confirmed){
-    return;
-  }
-
-  fetch(API_URL + "?action=sortWorkSheet", {
-    method: "POST",
-    body: JSON.stringify({
-      url: topicSelect.value,
-      sortMode: sortMode,
-      workType: workType
-    })
-  })
-
-  .then(res => res.json())
-
-  .then(response => {
-
-    if(response.status !== "success"){
-      alert("❌ " + (response.message || "เรียงข้อมูลในชีตไม่สำเร็จ"));
-      return;
-    }
-
-    alert("✅ " + response.message);
-    refreshWorkList();
-  })
-
-  .catch(error => {
-    console.error(error);
-    alert("❌ เชื่อมต่อ API ไม่สำเร็จ");
-  });
-}
-function loadHideViewedWorksSetting(){
-
-  const saved =
-    localStorage.getItem(HIDE_VIEWED_STORAGE_KEY);
-
-  hideViewedWorksEnabled =
-    saved === "true";
-
-  const checkbox =
-    document.getElementById("hideViewedWorksToggle");
-
-  if(checkbox){
-    checkbox.checked = hideViewedWorksEnabled;
-  }
-}
-
-
-function toggleHideViewedWorks(){
-
-  const checkbox =
-    document.getElementById("hideViewedWorksToggle");
-
-  hideViewedWorksEnabled =
-    checkbox ? checkbox.checked : false;
-
-  localStorage.setItem(
-    HIDE_VIEWED_STORAGE_KEY,
-    hideViewedWorksEnabled ? "true" : "false"
-  );
-
-  const topicSelect =
-    document.getElementById("topic");
-
-  if(topicSelect && topicSelect.value){
-    loadWork();
-  } else {
-    renderWorkCards();
-  }
-}
-
-
-function getViewedWorksMap(){
-
-  try {
-    return JSON.parse(
-      localStorage.getItem(VIEWED_WORKS_STORAGE_KEY) || "{}"
-    );
-  } catch(error) {
-    return {};
-  }
-}
-
-
-function saveViewedWorksMap(map){
-
-  localStorage.setItem(
-    VIEWED_WORKS_STORAGE_KEY,
-    JSON.stringify(map || {})
-  );
-}
-
-
-function getWorkViewedKey(rowIndex, sheetUrl){
-
-  return String(sheetUrl || currentSheetUrl || "") + "::" + String(rowIndex || "");
-}
-
-
-function markWorkAsViewed(rowIndex, sheetUrl){
-
-  if(!rowIndex){
-    return;
-  }
-
-  const map =
-    getViewedWorksMap();
-
-  map[getWorkViewedKey(rowIndex, sheetUrl)] = true;
-
-  saveViewedWorksMap(map);
-}
-
-
-function getCollapsedWorksMap(){
-
-  try {
-    return JSON.parse(
-      localStorage.getItem(COLLAPSED_WORKS_STORAGE_KEY) || "{}"
-    );
-  } catch(error) {
-    return {};
-  }
-}
-
-
-function saveCollapsedWorksMap(map){
-
-  localStorage.setItem(
-    COLLAPSED_WORKS_STORAGE_KEY,
-    JSON.stringify(map || {})
-  );
-}
-
-
-function getCollapsedWorkKey(rowIndex, sheetUrl){
-
-  return String(sheetUrl || currentSheetUrl || "") + "::" + String(rowIndex || "");
-}
-
-
-function applyDefaultCollapsedForCheckedWorks(data){
-
-  const map =
-    getCollapsedWorksMap();
-
-  let changed = false;
-
-  (Array.isArray(data) ? data : []).forEach(item => {
-
-    if(
-      item &&
-      item.rowIndex &&
-      hasScoreValue(item.score)
-    ){
-      const key =
-        getCollapsedWorkKey(item.rowIndex, item.sheetUrl);
-
-      if(map[key] !== true){
-        map[key] = true;
-        changed = true;
-      }
-    }
-  });
-
-  if(changed){
-    saveCollapsedWorksMap(map);
-  }
-}
-
-
-function isWorkCollapsed(item){
-
-  const map =
-    getCollapsedWorksMap();
-
-  const key =
-    getCollapsedWorkKey(item.rowIndex, item.sheetUrl);
-
-  if(Object.prototype.hasOwnProperty.call(map, key)){
-    return map[key] === true;
-  }
-
-  return hasScoreValue(item.score);
-}
-
-
-function setWorkCollapsed(rowIndex, collapsed, sheetUrl){
-
-  if(!rowIndex){
-    return;
-  }
-
-  const map =
-    getCollapsedWorksMap();
-
-  map[getCollapsedWorkKey(rowIndex, sheetUrl)] =
-    collapsed === true;
-
-  saveCollapsedWorksMap(map);
-
-  renderWorkCards();
-}
-
-
-function markWorkAsViewedAndHide(rowIndex){
-
-  markWorkAsViewed(rowIndex);
-  setWorkCollapsed(rowIndex, true);
-}
-
-
-function hasScoreValue(score){
-
-  return score !== "" &&
-    score !== null &&
-    score !== undefined &&
-    String(score).trim() !== "";
-}
-
-
-function isWorkViewedOrChecked(item){
-
-  if(hasScoreValue(item.score)){
+  if (normalizedWorkType === "งานกลุ่ม") {
     return true;
   }
 
-  const map =
-    getViewedWorksMap();
-
-  return map[getWorkViewedKey(item.rowIndex)] === true;
-}
-function renderWorkCards(){
-
-  const workBox = document.getElementById("work");
-
-  const selectedClass =
-    document.getElementById("classFilter").value;
-
-  const selectedNo =
-    document.getElementById("noFilter").value.trim();
-
-  const sortedWorkData =
-    getSortedWorkData(currentWorkData);
-
-  let html = "";
-  let visibleCount = 0;
-
-  sortedWorkData.forEach(s => {
-
-    const isCollapsed =
-      isWorkCollapsed(s);
-
-    const studentClass =
-      String(s.class || "").trim();
-
-    const studentNo =
-      String(s.no || "").trim();
-
-    const isGroup =
-      isGroupWorkItem(s);
-
-    const displayTitle =
-      isGroup
-        ? String(s.groupName || "ไม่ระบุชื่อกลุ่ม").trim()
-        : String(s.name || "-").trim();
-
-    const displayDetail =
-      isGroup
-        ? "ผู้ส่ง: " + String(s.name || "-").trim()
-        : "เลขที่: " + String(studentNo || "-").trim();
-
-    const scoreText =
-      String(s.score ?? "").trim();
-
-    const checkedLabel =
-      scoreText === "ตรวจแล้ว"
-        ? "ตรวจแล้ว แต่ยังไม่ให้คะแนน"
-        : (scoreText ? "คะแนน: " + scoreText : "ยังไม่ได้ตรวจ");
-
-    if(selectedClass && studentClass !== selectedClass){
-      return;
-    }
-
-    if(selectedNo && !isGroup && studentNo !== selectedNo){
-      return;
-    }
-
-    if(selectedNo && isGroup){
-      return;
-    }
-
-    visibleCount++;
-
-    const workValue =
-      s.work !== undefined
-      ? s.work
-      : (s.image !== undefined ? s.image : "");
-
-    const itemSheetUrl =
-      String(s.sheetUrl || currentSheetUrl || "").trim();
-
-    const itemWorkType =
-      String(s.workType || (isGroup ? "งานกลุ่ม" : "งานเดี่ยว")).trim();
-
-    html += `
-      <div class="card">
-
-        <div class="work-card-actions">
-
-          <button
-            type="button"
-            onclick="setWorkCollapsed(
-              '${escapeJsString(s.rowIndex || "")}',
-              ${isCollapsed ? "false" : "true"},
-              '${escapeJsString(itemSheetUrl)}'
-            )"
-          >
-            ${isCollapsed ? "👁 แสดงงาน" : "🙈 ซ่อนงาน"}
-          </button>
-
-          <button
-            type="button"
-            onclick="deleteSubmission(
-              '${escapeJsString(itemSheetUrl)}',
-              '${escapeJsString(s.rowIndex || "")}',
-              '${escapeJsString(itemWorkType)}'
-            )"
-          >
-            ลบงาน
-          </button>
-
-        </div>
-
-        <h3>
-          ${s.topic ? escapeHtml((s.level ? s.level + " - " : "") + s.topic) + " | " : ""}
-          ${escapeHtml(studentClass)}
-          ${isGroup ? "งานกลุ่ม" : escapeHtml("เลขที่ " + studentNo)}
-        </h3>
-
-        <div class="meta">
-          <div>${isGroup ? "ชื่อกลุ่ม" : "ชื่อ"}: ${escapeHtml(displayTitle)}</div>
-          <div>${escapeHtml(displayDetail)}</div>
-          <div>รหัสผู้ส่ง: ${escapeHtml(s.id || "")}</div>
-          <div>สถานะตรวจ: ${escapeHtml(checkedLabel)}</div>
-
-          <div class="submit-time ${s.isLate ? "late-time" : "normal-time"}">
-            เวลาส่งงาน: ${escapeHtml(formatTimestamp(s.timestamp))}
-            ${s.isLate ? `<span class="late-label">ส่งช้า</span>` : ``}
-          </div>
-
-          ${
-            s.dueDate
-            ? `
-              <div class="due-date">
-                กำหนดส่งของห้องนี้:
-                ${escapeHtml(formatTimestamp(s.dueDate))}
-              </div>
-            `
-            : ``
-          }
-        </div>
-
-        ${
-          isCollapsed
-          ? `
-            <div class="work-box">
-              <p class="empty-text">
-                ย่อแผ่นงานแล้ว กด “แสดงงาน” เพื่อดูงานที่ส่งและให้คะแนน
-              </p>
-            </div>
-          `
-          : `
-            <div class="work-box">
-              <h4>งานที่ส่ง</h4>
-              ${renderWorkContent(workValue)}
-            </div>
-
-            <div class="score-area">
-
-              <input
-                type="number"
-                id="score_${escapeAttribute(s.rowIndex || s.id)}"
-                value="${scoreText === "ตรวจแล้ว" ? "" : escapeAttribute(s.score || "")}"
-                placeholder="คะแนน"
-              >
-
-              <button
-                onclick="saveScore(
-                  '${escapeJsString(itemSheetUrl)}',
-                  '${escapeJsString(s.id || "")}',
-                  '${escapeJsString(s.rowIndex || "")}'
-                )"
-              >
-                บันทึกคะแนน
-              </button>
-
-              <button
-                type="button"
-                onclick="markCheckedNoScore(
-                  '${escapeJsString(itemSheetUrl)}',
-                  '${escapeJsString(s.id || "")}',
-                  '${escapeJsString(s.rowIndex || "")}'
-                )"
-              >
-                ตรวจแล้ว แต่ยังไม่ให้คะแนน
-              </button>
-
-              <button
-                type="button"
-                onclick="giveFullScore(
-                  '${escapeJsString(itemSheetUrl)}',
-                  '${escapeJsString(s.id || "")}',
-                  '${escapeJsString(s.rowIndex || "")}'
-                )"
-              >
-                ให้คะแนนเต็ม
-              </button>
-
-            </div>
-          `
-        }
-
-      </div>
-    `;
-  });
-
-  if(visibleCount === 0){
-    html =
-      `<div class="status-box">ไม่พบข้อมูลตามตัวกรอง</div>`;
-  }
-
-  workBox.innerHTML = html;
-}
-// ======================================
-// แสดงงานในช่อง Work
-// ถ้าเป็น Drive URL = พรีวิวไฟล์
-// ถ้าเป็น image URL โดยตรง = แสดงรูป
-// ถ้าเป็น URL ทั่วไป = แสดงลิงก์
-// ถ้าไม่ใช่ URL = แสดงข้อความ
-// ======================================
-function renderWorkContent(work){
-
-  const value = String(work || "").trim();
-
-  if(!value){
-    return `<p class="empty-text">ยังไม่มีข้อมูลงานที่ส่ง</p>`;
-  }
-
-  const driveFileId = extractDriveFileId(value);
-
-  if(driveFileId){
-
-    const previewUrl =
-      "https://drive.google.com/file/d/"
-      + driveFileId
-      + "/preview";
-
-    return `
-      <iframe
-        class="drive-preview"
-        src="${escapeAttribute(previewUrl)}"
-        allow="autoplay"
-      ></iframe>
-
-      <a
-        class="file-link"
-        href="${escapeAttribute(value)}"
-        target="_blank"
-        rel="noopener noreferrer"
-      >
-        เปิดไฟล์ในแท็บใหม่
-      </a>
-    `;
-  }
-
-  if(isDirectImageUrl(value)){
-
-    return `
-      <img
-        class="direct-image"
-        src="${escapeAttribute(value)}"
-        alt="Student work"
-        onerror="this.outerHTML='<p>❌ ไม่สามารถแสดงรูปได้</p>';"
-      >
-    `;
-  }
-
-  if(isUrl(value)){
-
-    return `
-      <a
-        class="file-link"
-        href="${escapeAttribute(value)}"
-        target="_blank"
-        rel="noopener noreferrer"
-      >
-        เปิดลิงก์งาน
-      </a>
-    `;
-  }
-
-  return `
-    <div class="text-work">
-      ${escapeHtml(value)}
-    </div>
-  `;
-}
-
-
-// ======================================
-// บันทึกคะแนน
-// ======================================
-function saveScore(url, studentId, rowIndex){
-
-  const inputId =
-    "score_" + (rowIndex || studentId);
-
-  const scoreInput =
-    document.getElementById(inputId);
-
-  if(!scoreInput){
-    alert("ไม่พบช่องกรอกคะแนน");
-    return;
-  }
-
-  const score = scoreInput.value;
-
-  if(score === ""){
-    alert("กรุณากรอกคะแนน หรือกดปุ่ม ตรวจแล้ว แต่ยังไม่ให้คะแนน");
-    return;
-  }
-
-  saveScoreValue(
-    url,
-    studentId,
-    rowIndex,
-    score,
-    "✅ บันทึกคะแนนแล้ว"
-  );
-}
-
-function saveScoreValue(url, studentId, rowIndex, score, successMessage){
-
-  fetch(
-    API_URL
-    + "?action=updateScore"
-    + "&url=" + encodeURIComponent(url)
-    + "&studentId=" + encodeURIComponent(studentId)
-    + "&rowIndex=" + encodeURIComponent(rowIndex)
-    + "&score=" + encodeURIComponent(score)
-  )
-
-  .then(res => res.json())
-
-  .then(data => {
-
-    if(data.status === "success"){
-
-      markWorkAsViewed(rowIndex, url);
-      setWorkCollapsed(rowIndex, true, url);
-
-      alert(successMessage || "✅ บันทึกแล้ว");
-
-      refreshWorkList();
-    }
-
-    else{
-      alert("❌ " + (data.message || "บันทึกไม่สำเร็จ"));
-    }
-  })
-
-  .catch(error => {
-    console.error(error);
-    alert("❌ เชื่อมต่อ API ไม่สำเร็จ");
-  });
-}
-
-function markCheckedNoScore(url, studentId, rowIndex){
-
-  saveScoreValue(
-    url,
-    studentId,
-    rowIndex,
-    "ตรวจแล้ว",
-    "✅ บันทึกสถานะตรวจแล้วเรียบร้อย"
-  );
-}
-
-function giveFullScore(url, studentId, rowIndex){
-
-  const storageKey =
-    FULL_SCORE_STORAGE_KEY_PREFIX + String(url || "");
-
-  const oldFullScore =
-    localStorage.getItem(storageKey) || "10";
-
-  const fullScore =
-    prompt("กรอกคะแนนเต็มของงานนี้", oldFullScore);
-
-  if(fullScore === null){
-    return;
-  }
-
-  const cleanedScore =
-    String(fullScore || "").trim();
-
-  if(cleanedScore === ""){
-    alert("กรุณากรอกคะแนนเต็ม");
-    return;
-  }
-
-  localStorage.setItem(storageKey, cleanedScore);
-
-  saveScoreValue(
-    url,
-    studentId,
-    rowIndex,
-    cleanedScore,
-    "✅ ให้คะแนนเต็มแล้ว"
-  );
-}
-function deleteSubmission(url, rowIndex, workTypeOverride){
-  if(!url || !rowIndex){
-    alert("ไม่พบข้อมูลงานที่ต้องการลบ");
-    return;
-  }
-
-  const confirmed =
-    confirm(
-      "ยืนยันลบงานนี้หรือไม่?\n\n" +
-      "ระบบจะลบแถวงานออกจากชีต และถ้ามีไฟล์แนบ จะย้ายไฟล์ไปถังขยะของ Drive"
-    );
-
-  if(!confirmed){
-    return;
-  }
-
-  const topicSelect =
-    document.getElementById("topic");
-
-  const selectedOption =
-    topicSelect.options[topicSelect.selectedIndex];
-
-  const workType =
-    workTypeOverride ||
-    (selectedOption ? selectedOption.getAttribute("data-work-type") : "") ||
-    "งานเดี่ยว";
-
-  fetch(API_URL + "?action=deleteSubmission", {
-    method: "POST",
-    body: JSON.stringify({
-      url: url,
-      rowIndex: rowIndex,
-      workType: workType
-    })
-  })
-  .then(res => res.json())
-  .then(response => {
-    if(response.status !== "success"){
-      alert("❌ " + (response.message || "ลบงานไม่สำเร็จ"));
-      return;
-    }
-
-    alert("✅ " + response.message);
-    loadWork();
-  })
-  .catch(error => {
-    console.error(error);
-    alert("❌ เชื่อมต่อ API ไม่สำเร็จ");
-  });
-}
-
-// ======================================
-// แยก FILE ID จากลิงก์ Google Drive
-// รองรับ:
-// - open?id=...
-// - /file/d/.../view
-// - uc?id=...
-// ======================================
-function extractDriveFileId(url){
-
-  const value = String(url || "").trim();
-
-  const matchById =
-    value.match(/[?&]id=([a-zA-Z0-9_-]+)/);
-
-  if(matchById && matchById[1]){
-    return matchById[1];
-  }
-
-  const matchByD =
-    value.match(/\/d\/([a-zA-Z0-9_-]+)/);
-
-  if(matchByD && matchByD[1]){
-    return matchByD[1];
-  }
-
-  return "";
-}
-
-
-// ======================================
-// ตรวจ URL
-// ======================================
-function isUrl(value){
-  return /^https?:\/\/\S+$/i.test(String(value || "").trim());
-}
-
-
-// ======================================
-// ตรวจ direct image url
-// ======================================
-function isDirectImageUrl(value){
-  return /^https?:\/\/\S+\.(png|jpg|jpeg|gif|webp|bmp|svg)(\?\S*)?$/i
-    .test(String(value || "").trim());
-}
-
-
-// ======================================
-// ป้องกัน HTML แตก
-// ======================================
-function escapeHtml(value){
-
-  return String(value ?? "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
-}
-
-function escapeAttribute(value){
-  return escapeHtml(value);
-}
-
-function escapeJsString(value){
-
-  return String(value ?? "")
-    .replace(/\\/g, "\\\\")
-    .replace(/'/g, "\\'")
-    .replace(/"/g, '\"')
-    .replace(/\n/g, "\\n")
-    .replace(/\r/g, "\\r");
-}
-// ======================================
-// จัดรูปแบบวันและเวลาส่งงาน
-// ======================================
-function formatTimestamp(value){
-
-  if(!value){
-    return "-";
-  }
-
-  const date = new Date(value);
-
-  if(isNaN(date.getTime())){
-    return String(value);
-  }
-
-  return new Intl.DateTimeFormat("th-TH", {
-    timeZone: "Asia/Bangkok",
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit"
-  }).format(date);
-}
-// ======================================
-// โหลดงานและคะแนนของนักเรียนที่ล็อกอิน
-// ======================================
-function loadMyWork(){
-
-  const statusBox =
-    document.getElementById("myWorkStatus");
-
-  const workBox =
-    document.getElementById("myWork");
-
-  statusBox.innerHTML =
-    `<div class="status-box">กำลังโหลดข้อมูลงานของคุณ...</div>`;
-
-  workBox.innerHTML = "";
-
-  fetch(
-    API_URL
-    + "?action=myWork"
-    + "&studentId="
-    + encodeURIComponent(currentStudentId)
-  )
-
-  .then(res => res.json())
-
-  .then(response => {
-
-    if(
-      response.status !== "success" ||
-      !Array.isArray(response.data)
-    ){
-
-      statusBox.innerHTML =
-        `<div class="status-box">
-          ❌ โหลดข้อมูลไม่สำเร็จ:
-          ${escapeHtml(response.message || "รูปแบบข้อมูลไม่ถูกต้อง")}
-        </div>`;
-
-      return;
-    }
-
-    const data = response.data;
-
-    if(data.length === 0){
-
-      statusBox.innerHTML =
-        `<div class="status-box">
-          ยังไม่พบข้อมูลงานที่ส่งของคุณ
-        </div>`;
-
-      return;
-    }
-
-    statusBox.innerHTML = "";
-
-    renderMyWorkCards(data);
-  })
-
-  .catch(error => {
-
-    console.error(error);
-
-    statusBox.innerHTML =
-      `<div class="status-box">
-        ❌ เชื่อมต่อ API ไม่สำเร็จ
-      </div>`;
-  });
-}
-// ======================================
-// แสดงรายการงานของนักเรียน
-// ทั้ง "ส่งแล้ว" และ "ยังไม่ได้ส่ง"
-// ======================================
-function renderMyWorkCards(data){
-
-  const workBox =
-    document.getElementById("myWork");
-
-  let html = "";
-
-  const missingItems =
-    (Array.isArray(data) ? data : [])
-      .filter(item => item.status !== "submitted");
-
-  if(missingItems.length > 0){
-    html += `
-      <div class="status-box student-announcement">
-        <h3>ป้ายประกาศงานที่ยังไม่ได้ส่ง</h3>
-        <ul>
-          ${missingItems.map(item => `
-            <li>
-              ${item.isOverdue ? `<span class="overdue-label">เลยกำหนด</span>` : ``}
-              ${escapeHtml(item.level || "")}
-              - ${escapeHtml(item.topic || "")}
-              ${item.dueDate ? ` | กำหนดส่ง: ${escapeHtml(formatTimestamp(item.dueDate))}` : ``}
-            </li>
-          `).join("")}
-        </ul>
-      </div>
-    `;
-  }
-
-  data.forEach((item, index) => {
-
-    const isSubmitted =
-      item.status === "submitted";
-
-    const scoreText =
-      String(item.score ?? "").trim();
-
-    const isCheckedOnly =
-      scoreText === "ตรวจแล้ว";
-
-    const canDelete =
-      isSubmitted &&
-      !scoreText &&
-      item.sheetUrl &&
-      item.rowIndex;
-
-    const studentScoreStatus =
-      isSubmitted
-        ? (
-            scoreText
-              ? (isCheckedOnly ? "ตรวจแล้ว" : "ให้คะแนนแล้ว")
-              : "ยังไม่ได้ตรวจ"
-          )
-        : "";
-
-    const scoreStatusHtml =
-      isSubmitted
-      ? `
-        <div class="work-status ${scoreText ? "submitted-status" : "missing-status"}">
-          ${escapeHtml(studentScoreStatus)}
-        </div>
-      `
-      : ``;
-
-    const worksheetHtml =
-      renderMyWorkWorksheet(item, isSubmitted, index);
-
-    html += `
-
-      <div class="card">
-
-        ${
-          canDelete
-          ? `
-            <button
-              type="button"
-              class="student-delete-button"
-              title="ลบงาน"
-              onclick="deleteMySubmission(
-                '${escapeJsString(item.sheetUrl || "")}',
-                '${escapeJsString(item.rowIndex || "")}',
-                '${escapeJsString(item.submitMode || "งานเดี่ยว")}'
-              )"
-            >
-              🗑
-            </button>
-          `
-          : ``
-        }
-
-        <h3>
-          ${!isSubmitted && item.isOverdue ? `<span class="overdue-label">เลยกำหนด</span>` : ``}
-          ${escapeHtml(item.level || "")}
-          - ${escapeHtml(item.topic || "")}
-        </h3>
-
-        <div class="work-status ${isSubmitted ? "submitted-status" : "missing-status"}">
-          ${isSubmitted ? "✅ ส่งแล้ว" : "❌ ยังไม่ได้ส่ง"}
-        </div>
-
-        ${scoreStatusHtml}
-
-        ${worksheetHtml}
-
-        ${
-          isSubmitted
-          ? `
-            <div class="meta">
-              <div>ห้อง: ${escapeHtml(item.class || "")}</div>
-              ${
-                item.submitMode === "งานกลุ่ม"
-                ? `<div>กลุ่ม: ${escapeHtml(item.groupName || "-")}</div>
-                   <div>ผู้ส่งงานกลุ่ม: ${escapeHtml(item.submitterName || item.name || "-")}</div>`
-                : `<div>เลขที่: ${escapeHtml(item.no || "")}</div>`
-              }
-              <div>เวลาส่งงาน: ${escapeHtml(formatTimestamp(item.timestamp))}</div>
-              ${item.isLate ? `<div class="score-late">ส่งช้า</div>` : ``}
-            </div>
-
-            <div class="work-box">
-              <h4>งานที่ส่ง</h4>
-              ${renderWorkContent(item.work)}
-            </div>
-          `
-          : `
-            <div class="meta">
-              <div>ห้อง: ${escapeHtml(item.class || "")}</div>
-              <div>เลขที่: ${escapeHtml(item.no || "")}</div>
-              ${item.dueDate ? `<div>กำหนดส่ง: ${escapeHtml(formatTimestamp(item.dueDate))}</div>` : ``}
-            </div>
-
-            <div class="work-box">
-              <p class="empty-text">
-                ยังไม่พบการส่งงานของคุณในหัวข้อนี้
-              </p>
-            </div>
-          `
-        }
-
-      </div>
-    `;
-  });
-
-  workBox.innerHTML = html;
-}
-
-function renderMyWorkWorksheet(item, isSubmitted, index){
-
-  const worksheetUrl =
-    String(item.worksheetUrl || "").trim();
-
-  const worksheetVisible =
-    item.worksheetVisible === false ||
-    String(item.worksheetVisible || "").trim() === "false"
-      ? false
-      : true;
-
-  const worksheetId =
-    "myWorksheet_" + index;
-
-  const canShowWorksheet =
-    worksheetUrl && worksheetVisible;
-
-  const startVisible =
-    canShowWorksheet && !isSubmitted;
-
-  let buttons = `
-    <div class="student-work-actions">
-  `;
-
-  if(canShowWorksheet){
-    buttons += `
-      <button
-        type="button"
-        class="my-worksheet-toggle"
-        onclick="toggleMyWorksheet('${escapeJsString(worksheetId)}', this)"
-      >
-        ${startVisible ? "ซ่อนใบงาน" : "แสดงใบงาน"}
-      </button>
-    `;
-  }
-
-  if(!isSubmitted){
-    buttons += `
-      <button
-        type="button"
-        onclick="openStudentSubmitModal(
-          '${escapeJsString(item.sheetUrl || "")}',
-          '${escapeJsString(item.topic || "")}',
-          '${escapeJsString(item.submitMode || "งานเดี่ยว")}',
-          '${escapeJsString(item.worksheetUrl || "")}',
-          '${item.worksheetVisible === false ? "false" : "true"}'
-        )"
-      >
-        ส่งงาน
-      </button>
-    `;
-  }
-
-  buttons += `</div>`;
-
-  if(!canShowWorksheet){
-    return buttons;
-  }
-
-  return `
-    ${buttons}
-    <div
-      id="${escapeAttribute(worksheetId)}"
-      class="work-box student-worksheet-box"
-      style="display:${startVisible ? "block" : "none"};"
-    >
-      <h4>ใบงาน / เอกสารประกอบ</h4>
-      ${renderWorksheetContent(worksheetUrl)}
-    </div>
-  `;
-}
-
-function toggleMyWorksheet(id, button){
-
-  const box =
-    document.getElementById(id);
-
-  if(!box){
-    return;
-  }
-
-  const willShow =
-    box.style.display === "none" || box.style.display === "";
-
-  box.style.display = willShow ? "block" : "none";
-
-  if(button){
-    button.textContent = willShow ? "ซ่อนใบงาน" : "แสดงใบงาน";
-  }
-}
-
-function openStudentSubmitModal(sheetUrl, topicTitle, workType, worksheetUrl, worksheetVisible){
-
-  const modal =
-    document.getElementById("studentSubmitModal");
-
-  const title =
-    document.getElementById("studentSubmitModalTitle");
-
-  const topicSelect =
-    document.getElementById("submitTopic");
-
-  const textBox =
-    document.getElementById("submitWorkText");
-
-  const fileInput =
-    document.getElementById("submitFile");
-
-  const statusBox =
-    document.getElementById("submitWorkStatus");
-
-  if(!modal || !topicSelect){
-    return;
-  }
-
-  let option =
-    Array.from(topicSelect.options)
-      .find(item => item.value === sheetUrl);
-
-  if(!option){
-    option = new Option(topicTitle || "ส่งงาน", sheetUrl);
-    option.setAttribute("data-work-type", workType || "งานเดี่ยว");
-    option.setAttribute("data-worksheet-url", worksheetUrl || "");
-    option.setAttribute("data-worksheet-visible", worksheetVisible === "false" ? "false" : "true");
-    topicSelect.appendChild(option);
-  }
-
-  topicSelect.value = sheetUrl;
-
-  if(title){
-    title.textContent = "ส่งงาน: " + (topicTitle || "");
-  }
-
-  if(textBox){
-    textBox.value = "";
-  }
-
-  if(fileInput){
-    fileInput.value = "";
-  }
-
-  if(statusBox){
-    statusBox.innerHTML = "";
-  }
-
-  handleSubmitTopicChange();
-  modal.style.display = "flex";
-}
-
-function closeStudentSubmitModal(){
-
-  const modal =
-    document.getElementById("studentSubmitModal");
-
-  const topicSelect =
-    document.getElementById("submitTopic");
-
-  const textBox =
-    document.getElementById("submitWorkText");
-
-  const fileInput =
-    document.getElementById("submitFile");
-
-  const statusBox =
-    document.getElementById("submitWorkStatus");
-
-  if(modal){
-    modal.style.display = "none";
-  }
-
-  if(topicSelect){
-    topicSelect.value = "";
-    handleSubmitTopicChange();
-  }
-
-  if(textBox){
-    textBox.value = "";
-  }
-
-  if(fileInput){
-    fileInput.value = "";
-  }
-
-  if(statusBox){
-    statusBox.innerHTML = "";
-  }
-}
-
-function showCustomConfirm(message, onConfirm){
-
-  let modal =
-    document.getElementById("customConfirmModal");
-
-  if(!modal){
-    modal = document.createElement("div");
-    modal.id = "customConfirmModal";
-    modal.className = "custom-confirm-modal";
-    modal.innerHTML = `
-      <div class="custom-confirm-dialog">
-        <div id="customConfirmMessage" class="status-box"></div>
-        <div class="custom-confirm-actions">
-          <button type="button" id="customConfirmYes">ยืนยัน</button>
-          <button type="button" id="customConfirmNo">ยกเลิก</button>
-        </div>
-      </div>
-    `;
-    document.body.appendChild(modal);
-  }
-
-  const messageBox =
-    document.getElementById("customConfirmMessage");
-
-  const yesButton =
-    document.getElementById("customConfirmYes");
-
-  const noButton =
-    document.getElementById("customConfirmNo");
-
-  if(messageBox){
-    messageBox.textContent = message;
-  }
-
-  modal.style.display = "flex";
-
-  yesButton.onclick = function(){
-    modal.style.display = "none";
-    if(typeof onConfirm === "function"){
-      onConfirm();
-    }
-  };
-
-  noButton.onclick = function(){
-    modal.style.display = "none";
-  };
-}
-
-function deleteMySubmission(url, rowIndex, workType){
-
-  if(!url || !rowIndex){
-    alert("ไม่พบข้อมูลงานที่ต้องการลบ");
-    return;
-  }
-
-  showCustomConfirm("ยืนยันที่จะลบหรือไม่", function(){
-
-    fetch(API_URL + "?action=studentDeleteSubmission", {
-      method: "POST",
-      body: JSON.stringify({
-        url: url,
-        rowIndex: rowIndex,
-        studentId: currentStudentId,
-        workType: workType || "งานเดี่ยว"
-      })
-    })
-
-    .then(res => res.json())
-
-    .then(response => {
-
-      if(response.status !== "success"){
-        alert("❌ " + (response.message || "ลบงานไม่สำเร็จ"));
-        return;
-      }
-
-      alert("✅ " + response.message);
-      loadMyWork();
-    })
-
-    .catch(error => {
-      console.error(error);
-      alert("❌ เชื่อมต่อ API ไม่สำเร็จ");
-    });
-  });
-}
-
-// ======================================
-// โหลดตัวเลือกระดับชั้น / ห้อง
-// สำหรับตารางคะแนนรายงาน
-// ======================================
-function loadScoreOptions(){
-
-  const levelSelect =
-    document.getElementById("scoreLevel");
-
-  const classSelect =
-    document.getElementById("scoreClass");
-
-  levelSelect.innerHTML =
-    `<option value="">กำลังโหลดระดับชั้น...</option>`;
-
-  classSelect.innerHTML =
-    `<option value="">ทุกห้อง</option>`;
-
-  fetch(API_URL + "?action=scoreOptions")
-
-  .then(res => res.json())
-
-  .then(response => {
-
-    if(
-      response.status !== "success" ||
-      !Array.isArray(response.data)
-    ){
-      levelSelect.innerHTML =
-        `<option value="">โหลดระดับชั้นไม่สำเร็จ</option>`;
-      return;
-    }
-
-    scoreOptionsData = response.data;
-    updateWorkClassFilterByTopic();
-
-    if(scoreOptionsData.length === 0){
-      levelSelect.innerHTML =
-        `<option value="">ยังไม่มีข้อมูลระดับชั้น</option>`;
-      return;
-    }
-
-    let html =
-      `<option value="">-- เลือกระดับชั้น --</option>`;
-
-    scoreOptionsData.forEach(item => {
-      html += `
-        <option value="${escapeAttribute(item.level)}">
-          ${escapeHtml(item.level)}
-        </option>
-      `;
-    });
-
-    levelSelect.innerHTML = html;
-
-    levelSelect.onchange =
-      updateScoreClassOptions;
-  })
-
-  .catch(error => {
-    console.error(error);
-    levelSelect.innerHTML =
-      `<option value="">โหลดระดับชั้นไม่สำเร็จ</option>`;
-  });
-}
-
-
-// ======================================
-// เปลี่ยนรายการห้องตามระดับชั้นที่เลือก
-// ======================================
-function updateScoreClassOptions(){
-
-  const selectedLevel =
-    document.getElementById("scoreLevel").value;
-
-  const classSelect =
-    document.getElementById("scoreClass");
-
-  let html =
-    `<option value="">ทุกห้อง</option>`;
-
-  const selectedData =
-    scoreOptionsData.find(item =>
-      String(item.level) === String(selectedLevel)
-    );
-
-  if(
-    selectedData &&
-    Array.isArray(selectedData.classes)
-  ){
-    selectedData.classes.forEach(className => {
-      html += `
-        <option value="${escapeAttribute(className)}">
-          ${escapeHtml(className)}
-        </option>
-      `;
-    });
-  }
-
-  classSelect.innerHTML = html;
-}
-// ======================================
-// โหลดตารางคะแนนรายงาน
-// ======================================
-function loadScoreTable(){
-
-  const level =
-    document.getElementById("scoreLevel").value;
-
-  const className =
-    document.getElementById("scoreClass").value;
-
-  const statusBox =
-    document.getElementById("scoreTableStatus");
-
-  const tableWrap =
-    document.getElementById("scoreTableWrap");
-
-  setScoreTableToolsVisible(false);
-
-  if(!level){
-    statusBox.innerHTML =
-      `<div class="status-box">❌ กรุณาเลือกระดับชั้นก่อน</div>`;
-    tableWrap.innerHTML = "";
-    return;
-  }
-
-  statusBox.innerHTML =
-    `<div class="status-box">กำลังโหลดตารางคะแนน...</div>`;
-
-  tableWrap.innerHTML = "";
-
-  fetch(
-    API_URL
-    + "?action=scoreTable"
-    + "&level=" + encodeURIComponent(level)
-    + "&className=" + encodeURIComponent(className)
-  )
-
-  .then(res => res.json())
-
-  .then(response => {
-
-    if(
-      response.status !== "success" ||
-      !response.data
-    ){
-      statusBox.innerHTML =
-        `<div class="status-box">
-          ❌ โหลดตารางคะแนนไม่สำเร็จ:
-          ${escapeHtml(response.message || "รูปแบบข้อมูลไม่ถูกต้อง")}
-        </div>`;
-      setScoreTableToolsVisible(false);
-      return;
-    }
-
-    lastScoreTableData = response.data;
-    changedScoreMap = {};
-    selectedAssignmentIndexes.clear();
-
-    renderScoreTable(lastScoreTableData);
-    populateBulkAssignmentOptions(lastScoreTableData);
-    setScoreTableToolsVisible(true);
-    updateBulkScoreStatus("");
-
-    statusBox.innerHTML = "";
-
-    if(
-      Array.isArray(response.data.warnings) &&
-      response.data.warnings.length > 0
-    ){
-      statusBox.innerHTML = `
-        <div class="status-box">
-          ⚠️ บางชีตเปิดไม่ได้:
-          ${escapeHtml(response.data.warnings.join(" | "))}
-        </div>
-      `;
-    }
-  })
-
-  .catch(error => {
-    console.error(error);
-    statusBox.innerHTML =
-      `<div class="status-box">
-        ❌ เชื่อมต่อ API ไม่สำเร็จ
-      </div>`;
-    setScoreTableToolsVisible(false);
-  });
-}
-
-function stopLoadedScoreTable(){
-
-  lastScoreTableData = null;
-  changedScoreMap = {};
-  selectedAssignmentIndexes.clear();
-
-  const statusBox =
-    document.getElementById("scoreTableStatus");
-
-  const tableWrap =
-    document.getElementById("scoreTableWrap");
-
-  const bulkStatus =
-    document.getElementById("bulkScoreStatus");
-
-  const exportStatus =
-    document.getElementById("exportSummaryStatus");
-
-  if(statusBox){
-    statusBox.innerHTML = "";
-  }
-
-  if(tableWrap){
-    tableWrap.innerHTML = "";
-  }
-
-  if(bulkStatus){
-    bulkStatus.innerHTML = "";
-  }
-
-  if(exportStatus){
-    exportStatus.innerHTML = "";
-  }
-
-  setScoreTableToolsVisible(false);
-}
-
-
-function setScoreTableToolsVisible(visible){
-
-  const tools =
-    document.getElementById("scoreToolsPanel");
-
-  const exportRow =
-    document.getElementById("scoreExportRow");
-
-  if(tools){
-    tools.style.display = visible ? "block" : "none";
-  }
-
-  if(exportRow){
-    exportRow.style.display = visible ? "grid" : "none";
-  }
-}
-// ======================================
-// บันทึกตารางคะแนนรายงานลงชีต ScoreSummary
-// ======================================
-function exportScoreSummary(){
-
-  const level =
-    document.getElementById("scoreLevel").value;
-
-  const className =
-    document.getElementById("scoreClass").value;
-
-  const statusBox =
-    document.getElementById("exportSummaryStatus");
-
-  if(!level){
-    statusBox.innerHTML =
-      `<div class="status-box">
-        ❌ กรุณาเลือกระดับชั้นก่อน
-      </div>`;
-    return;
-  }
-
-  statusBox.innerHTML =
-    `<div class="status-box">
-      กำลังบันทึกตารางคะแนนลง Sheet...
-    </div>`;
-
-  fetch(
-    API_URL
-    + "?action=exportScoreSummary"
-    + "&level=" + encodeURIComponent(level)
-    + "&className=" + encodeURIComponent(className)
-  )
-
-  .then(res => res.json())
-
-  .then(response => {
-
-    if(response.status !== "success"){
-
-      statusBox.innerHTML =
-        `<div class="status-box">
-          ❌ บันทึกไม่สำเร็จ:
-          ${escapeHtml(response.message || "เกิดข้อผิดพลาด")}
-        </div>`;
-
-      return;
-    }
-
-   statusBox.innerHTML =
-  `<div class="status-box">
-    ✅ บันทึกตารางคะแนนแยกตามห้องแล้ว
-    <br>
-    ระดับชั้น: ${escapeHtml(response.data.level)}
-    |
-    ห้อง: ${escapeHtml(response.data.className)}
-    <br>
-    จำนวนชีตที่สร้าง/อัปเดต: ${escapeHtml(response.data.sheetCount)}
-    <br>
-    ชีต:
-    ${escapeHtml(response.data.sheetNames.join(", "))}
-  </div>`;
-  })
-
-  .catch(error => {
-
-    console.error(error);
-
-    statusBox.innerHTML =
-      `<div class="status-box">
-        ❌ เชื่อมต่อ API ไม่สำเร็จ
-      </div>`;
-  });
-}
-  
-// ======================================
-// แสดงตารางคะแนนรายงาน
-// ======================================
-function renderScoreTable(data){
-
-  const tableWrap =
-    document.getElementById("scoreTableWrap");
-
-  const assignments =
-    Array.isArray(data.assignments)
-    ? data.assignments
-    : [];
-
-  const students =
-    Array.isArray(data.students)
-    ? data.students
-    : [];
-
-  if(assignments.length === 0){
-    tableWrap.innerHTML =
-      `<div class="status-box">
-        ยังไม่มีหัวข้องานในระดับชั้นนี้
-      </div>`;
-    return;
-  }
-
-  if(students.length === 0){
-    tableWrap.innerHTML =
-      `<div class="status-box">
-        ยังไม่มีรายชื่อนักเรียนตามเงื่อนไขที่เลือก
-      </div>`;
-    return;
-  }
-
-  let html = `
-
-    <table class="score-table">
-
-      <thead>
-        <tr>
-          <th>เลขที่</th>
-          <th>ห้อง</th>
-          <th>รหัส</th>
-          <th>ชื่อ</th>
-  `;
-
-  assignments.forEach((item, index) => {
-
-    const fullScore =
-      getFullScoreForAssignment(item);
-
-    const isSelected =
-      selectedAssignmentIndexes.has(String(index));
-
-    html += `
-      <th class="assignment-header">
-        <button
-          type="button"
-          class="assignment-title-button ${isSelected ? "selected-assignment" : ""}"
-          data-assignment-header="${escapeAttribute(index)}"
-          onclick="toggleScoreCellsByAssignment(${index})"
-          title="คลิกเพื่อเลือก/ยกเลิกช่องคะแนนของงานนี้"
-        >
-          ${escapeHtml(item.topic || "")}
-        </button>
-
-        <div class="full-score-box">
-          คะแนนเต็ม<br>
-          <input
-            type="number"
-            class="full-score-input"
-            value="${escapeAttribute(fullScore)}"
-            placeholder="เต็ม"
-            onclick="event.stopPropagation()"
-            onchange="setFullScoreForAssignment(${index}, this.value)"
-          >
-        </div>
-      </th>
-    `;
-  });
-
-  html += `
-        </tr>
-      </thead>
-      <tbody>
-  `;
-
-  students.forEach(student => {
-
-    html += `
-      <tr>
-        <td>${escapeHtml(student.no || "")}</td>
-        <td>${escapeHtml(student.class || "")}</td>
-        <td>${escapeHtml(student.id || "")}</td>
-        <td class="student-name">${escapeHtml(student.name || "")}</td>
-    `;
-
-    const scores =
-      Array.isArray(student.scores)
-      ? student.scores
-      : [];
-
-    assignments.forEach((assignment, index) => {
-
-      const cell =
-        scores[index] || {
-          status: "missing",
-          score: ""
-        };
-
-      html += `
-        <td>
-          ${renderEditableScoreCell(cell, index)}
-        </td>
-      `;
-    });
-
-    html += `
-      </tr>
-    `;
-  });
-
-  html += `
-      </tbody>
-    </table>
-  `;
-
-  tableWrap.innerHTML = html;
-}
-
-// ======================================
-// แสดงช่องคะแนนแบบแก้ไขได้
-// ======================================
-function renderEditableScoreCell(cell, assignmentIndex){
-
-  const status = cell.status || "missing";
-  const score = cell.score ?? "";
-  const rowIndex = cell.rowIndex || "";
-  const studentId = cell.studentId || "";
-  const sheetUrl = cell.sheetUrl || "";
-  const isLate = cell.isLate === true;
-
-  const assignment =
-    lastScoreTableData &&
-    Array.isArray(lastScoreTableData.assignments)
-    ? lastScoreTableData.assignments[assignmentIndex]
-    : null;
-
-  const fullScore =
-    getFullScoreForAssignment(assignment);
-
-  const key =
-    sheetUrl + "|" + rowIndex + "|" + studentId + "|" + assignmentIndex;
-
-  if(
-    status === "scored" ||
-    status === "pending" ||
-    status === "checked"
-  ){
-
-    let placeholderText = "";
-    let extraInputClass = " status-background";
-
-    if(status === "scored"){
-      placeholderText = isLate
-        ? "ให้คะแนนแล้ว(ส่งช้า)"
-        : "ให้คะแนนแล้ว";
-    }
-
-    else if(status === "checked"){
-      placeholderText = isLate
-        ? "ตรวจแล้ว(ส่งช้า)"
-        : "ตรวจแล้ว";
-    }
-
-    else if(status === "pending" && isLate){
-      placeholderText = "ส่งช้า";
-      extraInputClass += " score-late-input";
-    }
-
-    const shouldHideScore =
-      hideScoreValues &&
-      status === "scored";
-
-    const displayScore =
-      shouldHideScore || status === "checked"
-      ? ""
-      : score;
-
-    const isLockedScored =
-      lockScoredScores &&
-      status === "scored";
-
-    const checkboxHtml = isLockedScored
-      ? ``
-      : `
-        <label class="score-check-wrap">
-          <input
-            type="checkbox"
-            class="score-check"
-            data-input-id="score_input_${escapeAttribute(key)}"
-            data-assignment-index="${escapeAttribute(assignmentIndex)}"
-            onchange="toggleScoreCellSelected(this)"
-          >
-        </label>
-      `;
-
-    return `
-      <div class="select-score-box">
-
-        ${checkboxHtml}
-
-        <input
-          id="score_input_${escapeAttribute(key)}"
-          class="score-input${extraInputClass}${isLockedScored ? " locked-score-input" : ""}"
-          type="number"
-          value="${escapeAttribute(displayScore)}"
-          placeholder="${escapeAttribute(placeholderText)}"
-          title="${escapeAttribute(placeholderText)}"
-          data-key="${escapeAttribute(key)}"
-          data-url="${escapeAttribute(sheetUrl)}"
-          data-row-index="${escapeAttribute(rowIndex)}"
-          data-student-id="${escapeAttribute(studentId)}"
-          data-assignment-index="${escapeAttribute(assignmentIndex)}"
-          data-full-score="${escapeAttribute(fullScore)}"
-          data-is-late="${isLate ? "true" : "false"}"
-          ${isLockedScored ? "readonly" : `onchange="handleScoreInputChange(this)"`}
-        >
-
-      </div>
-    `;
-  }
-
-  if(status === "error"){
-    return `<span class="score-error score-cell-display">เปิดชีตไม่ได้</span>`;
-  }
-
-  return `<span class="score-missing score-cell-display">ยังไม่ส่ง</span>`;
-}
-
-function toggleScoreCellSelected(checkbox){
-
-  const inputId =
-    checkbox.getAttribute("data-input-id");
-
-  const input =
-    document.getElementById(inputId);
-
-  if(!input){
-    return;
-  }
-
-  if(checkbox.checked){
-    input.classList.add("selected-score-cell");
-  } else {
-    input.classList.remove("selected-score-cell");
-  }
-
-  updateSelectedAssignmentsFromChecks();
-  updateBulkScoreStatus("");
-}
-
-function selectAllScoreCells(){
-
-  const checks =
-    document.querySelectorAll(".score-check");
-
-  checks.forEach(check => {
-
-    check.checked = true;
-
-    const inputId =
-      check.getAttribute("data-input-id");
-
-    const input =
-      document.getElementById(inputId);
-
-    if(input){
-      input.classList.add("selected-score-cell");
-    }
-  });
-
-  updateSelectedAssignmentsFromChecks();
-  updateBulkScoreStatus("เลือกทั้งหมดแล้ว");
-}
-
-function clearSelectedScoreCells(showMessage = true){
-
-  selectedAssignmentIndexes.clear();
-
-  const headers =
-    document.querySelectorAll(".assignment-title-button");
-
-  headers.forEach(header => {
-    header.classList.remove("selected-assignment");
-  });
-
-  const checks =
-    document.querySelectorAll(".score-check");
-
-  checks.forEach(check => {
-
-    check.checked = false;
-
-    const inputId =
-      check.getAttribute("data-input-id");
-
-    const input =
-      document.getElementById(inputId);
-
-    if(input){
-      input.classList.remove("selected-score-cell");
-    }
-  });
-
-  if(showMessage){
-    updateBulkScoreStatus("ยกเลิกการเลือกทั้งหมดแล้ว");
-  }
-}
-
-function getSelectedScoreCount(){
-  return document.querySelectorAll(".score-check:checked").length;
-}
-
-function updateSelectedAssignmentsFromChecks(){
-
-  selectedAssignmentIndexes.clear();
-
-  const checks =
-    document.querySelectorAll(".score-check:checked");
-
-  checks.forEach(check => {
-    const assignmentIndex =
-      check.getAttribute("data-assignment-index");
-
-    if(assignmentIndex !== null){
-      selectedAssignmentIndexes.add(String(assignmentIndex));
-    }
-  });
-
-  const headers =
-    document.querySelectorAll(".assignment-title-button");
-
-  headers.forEach(header => {
-    const assignmentIndex =
-      String(header.getAttribute("data-assignment-header") || "");
-
-    header.classList.toggle(
-      "selected-assignment",
-      selectedAssignmentIndexes.has(assignmentIndex)
-    );
-  });
-}
-
-function updateBulkScoreStatus(message){
-
-  const statusBox =
-    document.getElementById("bulkScoreStatus");
-
-  if(!statusBox){
-    return;
-  }
-
-  const selectedWorkCount =
-    selectedAssignmentIndexes.size;
-
-  const selectedScoreCount =
-    getSelectedScoreCount();
-
-  const lead = message
-    ? `${escapeHtml(message)}<br>`
-    : "";
-
-  statusBox.innerHTML =
-    `<div class="status-box">
-      ${lead}
-      เลือกงาน ${selectedWorkCount} งาน | เลือกคน/ช่องคะแนน ${selectedScoreCount} ช่อง
-    </div>`;
-}
-
-function applyScoreToSelectedCells(){
-
-  const score =
-    document.getElementById("bulkScore").value;
-
-  const statusBox =
-    document.getElementById("bulkScoreStatus");
-
-  if(score === ""){
-    statusBox.innerHTML =
-      `<div class="status-box">❌ กรุณากรอกคะแนนก่อน</div>`;
-    return;
-  }
-
-  const checks =
-    document.querySelectorAll(".score-check:checked");
-
-  if(checks.length === 0){
-    statusBox.innerHTML =
-      `<div class="status-box">❌ กรุณาเลือกช่องคะแนนก่อน</div>`;
-    return;
-  }
-
-  let cappedCount = 0;
-
-  checks.forEach(check => {
-
-    const inputId =
-      check.getAttribute("data-input-id");
-
-    const input =
-      document.getElementById(inputId);
-
-    if(input){
-      input.removeAttribute("data-score-override");
-      input.value = score;
-      cappedCount += clampInputScoreToFullScore(input) ? 1 : 0;
-      markScoreChanged(input);
-    }
-  });
-
-  updateBulkScoreStatus(
-    `ใส่คะแนนให้ช่องที่เลือก ${checks.length} ช่องแล้ว` +
-    (cappedCount ? `<br>มี ${cappedCount} ช่องที่คะแนนเกินคะแนนเต็ม จึงปรับเป็นคะแนนเต็มให้แล้ว` : ``)
-  );
-}
-
-
-function handleScoreInputChange(input){
-
-  input.removeAttribute("data-score-override");
-  clampInputScoreToFullScore(input);
-  markScoreChanged(input);
-}
-
-function clampInputScoreToFullScore(input){
-
-  if(!input){
-    return false;
-  }
-
-  const fullScoreText =
-    String(input.getAttribute("data-full-score") || "").trim();
-
-  if(fullScoreText === ""){
-    return false;
-  }
-
-  const fullScore =
-    Number(fullScoreText);
-
-  const currentScore =
-    Number(input.value);
-
-  if(
-    isNaN(fullScore) ||
-    isNaN(currentScore)
-  ){
-    return false;
-  }
-
-  if(currentScore > fullScore){
-    input.value = String(fullScore);
+  if (
+    submitMode === "งานกลุ่ม" ||
+    submitMode === "group"
+  ) {
     return true;
   }
 
   return false;
 }
+function normalizeVisible(value, defaultValue) {
 
-function getSelectedScoreInputs(){
+  const text =
+    String(value || "").trim().toLowerCase();
 
-  const checks =
-    document.querySelectorAll(".score-check:checked");
-
-  const inputs = [];
-
-  checks.forEach(check => {
-
-    const inputId =
-      check.getAttribute("data-input-id");
-
-    const input =
-      document.getElementById(inputId);
-
-    if(input){
-      inputs.push(input);
-    }
-  });
-
-  return inputs;
-}
-
-function applyFullScoreToSelectedCells(){
-
-  const statusBox =
-    document.getElementById("bulkScoreStatus");
-
-  const inputs =
-    getSelectedScoreInputs();
-
-  if(inputs.length === 0){
-    statusBox.innerHTML =
-      `<div class="status-box">❌ กรุณาเลือกช่องคะแนนก่อน</div>`;
-    return;
+  if (!text) {
+    return defaultValue;
   }
 
-  let successCount = 0;
-  let skipCount = 0;
-
-  inputs.forEach(input => {
-
-    const fullScore =
-      String(input.getAttribute("data-full-score") || "").trim();
-
-    if(fullScore === ""){
-      skipCount++;
-      return;
-    }
-
-    input.removeAttribute("data-score-override");
-    input.value = fullScore;
-    markScoreChanged(input);
-    successCount++;
-  });
-
-  updateBulkScoreStatus(
-    `ใส่คะแนนเต็มแล้ว ${successCount} ช่อง` +
-    (skipCount ? `<br>ข้าม ${skipCount} ช่อง เพราะยังไม่ได้กำหนดคะแนนเต็มของงานนั้น` : ``)
-  );
-}
-
-function markSelectedCellsChecked(){
-
-  const statusBox =
-    document.getElementById("bulkScoreStatus");
-
-  const inputs =
-    getSelectedScoreInputs();
-
-  if(inputs.length === 0){
-    statusBox.innerHTML =
-      `<div class="status-box">❌ กรุณาเลือกช่องคะแนนก่อน</div>`;
-    return;
+  if (
+    text === "false" ||
+    text === "no" ||
+    text === "0" ||
+    text === "ซ่อน" ||
+    text === "hide" ||
+    text === "hidden" ||
+    text === "ปิด" ||
+    text === "ไม่แสดง"
+  ) {
+    return false;
   }
 
-  inputs.forEach(input => {
-
-    const isLate =
-      input.getAttribute("data-is-late") === "true";
-
-    input.value = "";
-    input.setAttribute("data-score-override", "ตรวจแล้ว");
-    input.placeholder = isLate ? "ตรวจแล้ว(ส่งช้า)" : "ตรวจแล้ว";
-    input.title = input.placeholder;
-    input.classList.remove("score-late-input");
-    markScoreChanged(input);
-  });
-
-  updateBulkScoreStatus(`ทำเครื่องหมายตรวจแล้ว ${inputs.length} ช่องแล้ว`);
-}
-
-
-function toggleScoreSettingsPopup(){
-
-  const popup =
-    document.getElementById("scoreSettingsPopup");
-
-  if(!popup){
-    return;
-  }
-
-  popup.classList.toggle("show");
-}
-
-function loadScoreTableSettings(){
-
-  const hideSaved =
-    localStorage.getItem(HIDE_SCORES_STORAGE_KEY);
-
-  hideScoreValues =
-    hideSaved === null ? true : hideSaved === "true";
-
-  const hideCheckbox =
-    document.getElementById("hideScoresToggle");
-
-  if(hideCheckbox){
-    hideCheckbox.checked = hideScoreValues;
-  }
-
-  const lockSaved =
-    localStorage.getItem(LOCK_SCORED_STORAGE_KEY);
-
-  lockScoredScores =
-    lockSaved === null ? true : lockSaved === "true";
-
-  const lockCheckbox =
-    document.getElementById("lockScoredToggle");
-
-  if(lockCheckbox){
-    lockCheckbox.checked = lockScoredScores;
-  }
-}
-
-function toggleLockScoredScores(){
-
-  const checkbox =
-    document.getElementById("lockScoredToggle");
-
-  lockScoredScores =
-    checkbox ? checkbox.checked : true;
-
-  localStorage.setItem(
-    LOCK_SCORED_STORAGE_KEY,
-    lockScoredScores ? "true" : "false"
-  );
-
-  clearSelectedScoreCells(false);
-
-  if(lastScoreTableData){
-    renderScoreTable(lastScoreTableData);
-    updateBulkScoreStatus("ล็อกช่องที่มีคะแนนแล้ว: " + (lockScoredScores ? "เปิด" : "ปิด"));
-  }
-}
-
-// ======================================
-// ซ่อน / แสดงคะแนนในตาราง
-// ======================================
-function toggleHideScores(){
-
-  const checkbox =
-    document.getElementById("hideScoresToggle");
-
-  hideScoreValues =
-    checkbox ? checkbox.checked : true;
-
-  localStorage.setItem(
-    HIDE_SCORES_STORAGE_KEY,
-    hideScoreValues ? "true" : "false"
-  );
-
-  if(lastScoreTableData){
-    renderScoreTable(lastScoreTableData);
-    updateBulkScoreStatus("ซ่อนคะแนนในตาราง: " + (hideScoreValues ? "เปิด" : "ปิด"));
-  }
-}
-
-function getAssignmentStorageKey(assignment){
-
-  const keySource =
-    assignment && assignment.url
-    ? assignment.url
-    : (assignment && assignment.topic ? assignment.topic : "");
-
-  return FULL_SCORE_STORAGE_KEY_PREFIX + String(keySource || "");
-}
-
-function getFullScoreForAssignment(assignment){
-
-  if(!assignment){
-    return "";
-  }
-
-  return localStorage.getItem(
-    getAssignmentStorageKey(assignment)
-  ) || "";
-}
-
-function setFullScoreForAssignment(assignmentIndex, value){
-
-  if(!lastScoreTableData || !Array.isArray(lastScoreTableData.assignments)){
-    return;
-  }
-
-  const assignment =
-    lastScoreTableData.assignments[assignmentIndex];
-
-  if(!assignment){
-    return;
-  }
-
-  const cleaned =
-    String(value || "").trim();
-
-  const storageKey =
-    getAssignmentStorageKey(assignment);
-
-  if(cleaned === ""){
-    localStorage.removeItem(storageKey);
-  } else {
-    localStorage.setItem(storageKey, cleaned);
-  }
-
-  const inputs =
-    document.querySelectorAll(
-      `.score-input[data-assignment-index="${CSS.escape(String(assignmentIndex))}"]`
-    );
-
-  inputs.forEach(input => {
-    input.setAttribute("data-full-score", cleaned);
-
-    if(cleaned !== "" && input.value !== ""){
-      if(clampInputScoreToFullScore(input)){
-        markScoreChanged(input);
-      }
-    }
-  });
-}
-
-
-  // ======================================
-// จำคะแนนที่มีการแก้ไข
-// ======================================
-function markScoreChanged(input){
-
-  const key =
-    input.getAttribute("data-key");
-
-  const overrideScore =
-    input.getAttribute("data-score-override");
-
-  if(!overrideScore){
-    clampInputScoreToFullScore(input);
-  }
-
-  changedScoreMap[key] = {
-    url: input.getAttribute("data-url"),
-    rowIndex: input.getAttribute("data-row-index"),
-    studentId: input.getAttribute("data-student-id"),
-    score: overrideScore || input.value
-  };
-
-  input.classList.add("changed-score");
-}
-
-// ======================================
-// เติมตัวเลือกงานสำหรับให้คะแนนหลายคนพร้อมกัน
-// ======================================
-function populateBulkAssignmentOptions(data){
-  // เปลี่ยนเป็นเลือกงานโดยคลิกหัวตารางแทน dropdown แล้ว
+  return true;
 }
 // ======================================
-// ใส่คะแนนเดียวกันให้ผู้ที่ส่งงานแล้วในงานที่เลือก
+// 5. ส่งข้อมูลกลับเป็น JSON
 // ======================================
-function applyBulkScoreToColumn(){
+function jsonOutput(data) {
 
-  const statusBox =
-    document.getElementById("bulkScoreStatus");
-
-  updateBulkScoreStatus("กรุณาเลือกช่องคะแนนก่อน");
+  return ContentService
+    .createTextOutput(JSON.stringify(data))
+    .setMimeType(ContentService.MimeType.JSON);
 }
-// ======================================
-// บันทึกคะแนนทั้งหมดที่แก้ลงชีตงานจริง
-// ======================================
-function saveAllScoreChanges(){
-
-  const statusBox =
-    document.getElementById("bulkScoreStatus");
-
-  const updates =
-    Object.values(changedScoreMap);
-
-  if(updates.length === 0){
-    statusBox.innerHTML =
-      `<div class="status-box">
-        ยังไม่มีคะแนนที่แก้ไข
-      </div>`;
-    return;
-  }
-
-  const selectedWorkCount =
-    selectedAssignmentIndexes.size;
-
-  const selectedScoreCount =
-    getSelectedScoreCount();
-
-  const confirmed =
-    confirm(
-      "ยืนยันบันทึกคะแนนลงชีตหรือไม่?\n\n" +
-      "งานที่เลือก: " + selectedWorkCount + " งาน\n" +
-      "คน/ช่องคะแนนที่เลือก: " + selectedScoreCount + " ช่อง\n" +
-      "รายการที่มีการแก้ไขจริง: " + updates.length + " รายการ"
-    );
-
-  if(!confirmed){
-    updateBulkScoreStatus("ยกเลิกการบันทึกคะแนนแล้ว");
-    return;
-  }
-
-  statusBox.innerHTML =
-    `<div class="status-box">
-      กำลังบันทึกคะแนน ${updates.length} รายการ...
-    </div>`;
-
-  fetch(
-    API_URL + "?action=batchUpdateScores",
-    {
-      method: "POST",
-      body: JSON.stringify({
-        updates: updates
-      })
-    }
-  )
-
-  .then(res => res.json())
-
-  .then(response => {
-
-    if(response.status !== "success"){
-
-      statusBox.innerHTML =
-        `<div class="status-box">
-          ❌ บันทึกไม่สำเร็จ:
-          ${escapeHtml(response.message || "เกิดข้อผิดพลาด")}
-        </div>`;
-
-      return;
-    }
-
-    statusBox.innerHTML =
-      `<div class="status-box">
-        ✅ บันทึกสำเร็จ
-        ${escapeHtml(response.data.successCount)} รายการ
-        ${
-          response.data.failCount
-          ? ` | ไม่สำเร็จ ${escapeHtml(response.data.failCount)} รายการ`
-          : ``
-        }
-      </div>`;
-
-    changedScoreMap = {};
-    selectedAssignmentIndexes.clear();
-
-    loadScoreTable();
-  })
-
-  .catch(error => {
-
-    console.error(error);
-
-    statusBox.innerHTML =
-      `<div class="status-box">
-        ❌ เชื่อมต่อ API ไม่สำเร็จ
-      </div>`;
-  });
-}
-// ======================================
-// แสดงค่าในช่องคะแนน
-// ======================================
-function renderScoreCell(cell){
-
-  if(cell.status === "scored"){
-    return `
-      <span class="score-value">
-        ${escapeHtml(cell.score)}
-      </span>
-    `;
-  }
-
-  if(cell.status === "pending"){
-    return `
-      <span class="score-pending">
-        รอตรวจ
-      </span>
-    `;
-  }
-
-  if(cell.status === "error"){
-    return `
-      <span class="score-error">
-        เปิดชีตไม่ได้
-      </span>
-    `;
-  }
-
-  return `
-    <span class="score-missing">
-      ยังไม่ส่ง
-    </span>
-  `;
-}
-function selectScoreCellsByAssignment(assignmentIndex){
-  toggleScoreCellsByAssignment(assignmentIndex);
-}
-
-function toggleScoreCellsByAssignment(assignmentIndex){
-
-  const statusBox =
-    document.getElementById("bulkScoreStatus");
-
-  if(
-    assignmentIndex === "" ||
-    assignmentIndex === null ||
-    assignmentIndex === undefined
-  ){
-    statusBox.innerHTML =
-      `<div class="status-box">❌ กรุณาคลิกชื่องานบนหัวตารางก่อน</div>`;
-    return;
-  }
-
-  assignmentIndex = String(assignmentIndex);
-
-  const willSelect =
-    !selectedAssignmentIndexes.has(assignmentIndex);
-
-  const checks =
-    document.querySelectorAll(
-      `.score-check[data-assignment-index="${CSS.escape(assignmentIndex)}"]`
-    );
-
-  checks.forEach(check => {
-
-    check.checked = willSelect;
-
-    const inputId =
-      check.getAttribute("data-input-id");
-
-    const input =
-      document.getElementById(inputId);
-
-    if(input){
-      input.classList.toggle("selected-score-cell", willSelect);
-    }
-  });
-
-  updateSelectedAssignmentsFromChecks();
-  updateBulkScoreStatus("");
-}
-
-function downloadScoreTableImage(){
-
-  if(!lastScoreTableData){
-    alert("กรุณาโหลดตารางคะแนนก่อน");
-    return;
-  }
-
-  const assignments =
-    Array.isArray(lastScoreTableData.assignments)
-    ? lastScoreTableData.assignments
-    : [];
-
-  const students =
-    Array.isArray(lastScoreTableData.students)
-    ? lastScoreTableData.students
-    : [];
-
-  if(assignments.length === 0 || students.length === 0){
-    alert("ไม่มีข้อมูลสำหรับสร้างรูปภาพ");
-    return;
-  }
-
-  const headers = [
-    "เลขที่",
-    "ห้อง",
-    "รหัส",
-    "ชื่อ",
-    ...assignments.map(a => a.topic || "")
-  ];
-
-  const rows = students.map(student => {
-
-    const row = [
-      student.no || "",
-      student.class || "",
-      student.id || "",
-      student.name || ""
-    ];
-
-    assignments.forEach((assignment, index) => {
-
-      const cell =
-        Array.isArray(student.scores)
-        ? student.scores[index]
-        : null;
-
-      row.push(getScoreTextForImage(cell));
-    });
-
-    return row;
-  });
-
-  drawTableImage(headers, rows);
-}
-
-
-function getScoreTextForImage(cell){
-
-  if(!cell){
-    return "ยังไม่ส่ง";
-  }
-
-  if(cell.status === "scored"){
-    return cell.isLate
-      ? "ให้คะแนนแล้ว(ส่งช้า)"
-      : "ให้คะแนนแล้ว";
-  }
-
-  if(cell.status === "checked"){
-    return cell.isLate
-      ? "ตรวจแล้ว(ส่งช้า)"
-      : "ตรวจแล้ว";
-  }
-
-  if(cell.status === "pending"){
-    return cell.isLate
-      ? "ส่งช้า"
-      : "";
-  }
-
-  if(cell.status === "error"){
-    return "เปิดชีตไม่ได้";
-  }
-
-  return "ยังไม่ส่ง";
-}
-
-
-
-function drawTableImage(headers, rows){
-
-  const padding = 18;
-  const rowHeight = 42;
-  const fontSize = 18;
-  const titleHeight = 60;
-
-  const colWidths = headers.map((header, colIndex) => {
-
-    let maxLength = String(header).length;
-
-    rows.forEach(row => {
-      maxLength = Math.max(
-        maxLength,
-        String(row[colIndex] || "").length
-      );
-    });
-
-    return Math.min(
-      Math.max(maxLength * 12 + 30, 90),
-      260
-    );
-  });
-
-  const tableWidth =
-    colWidths.reduce((sum, w) => sum + w, 0);
-
-  const canvas = document.createElement("canvas");
-
-  canvas.width = tableWidth + padding * 2;
-  canvas.height =
-    titleHeight +
-    rowHeight * (rows.length + 1) +
-    padding * 2;
-
-  const ctx = canvas.getContext("2d");
-
-  ctx.fillStyle = "#ffffff";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-  ctx.fillStyle = "#000000";
-  ctx.font = "bold 22px Arial";
-  ctx.fillText(
-    "ตารางคะแนนรายงาน",
-    padding,
-    38
-  );
-
-  ctx.font = `${fontSize}px Arial`;
-  ctx.strokeStyle = "#000000";
-  ctx.lineWidth = 1;
-
-  let y = titleHeight;
-
-  drawImageRow(ctx, headers, colWidths, padding, y, rowHeight, true);
-
-  y += rowHeight;
-
-  rows.forEach(row => {
-    drawImageRow(ctx, row, colWidths, padding, y, rowHeight, false);
-    y += rowHeight;
-  });
-
-  const link = document.createElement("a");
-
-  const level =
-    document.getElementById("scoreLevel").value || "score";
-
-  const className =
-    document.getElementById("scoreClass").value || "all";
-
-  link.download =
-    "ScoreTable_" +
-    level.replace(/[^\wก-๙]/g, "") +
-    "_" +
-    className.replace(/[^\wก-๙]/g, "") +
-    ".png";
-
-  link.href = canvas.toDataURL("image/png");
-  link.click();
-}
-
-
-function drawImageRow(ctx, row, colWidths, x, y, rowHeight, isHeader){
-
-  let currentX = x;
-
-  row.forEach((cell, index) => {
-
-    ctx.fillStyle = isHeader ? "#e6e6e6" : "#ffffff";
-    ctx.fillRect(currentX, y, colWidths[index], rowHeight);
-
-    ctx.strokeStyle = "#000000";
-    ctx.strokeRect(currentX, y, colWidths[index], rowHeight);
-
-    ctx.fillStyle = "#000000";
-    ctx.font = isHeader ? "bold 18px Arial" : "18px Arial";
-
-    const text = String(cell || "");
-
-    ctx.fillText(
-      text.length > 22 ? text.substring(0, 22) + "..." : text,
-      currentX + 8,
-      y + 27
-    );
-
-    currentX += colWidths[index];
-  });
-}
-function loadSubmitTopics(){
-
-  const select = document.getElementById("submitTopic");
-
-  select.innerHTML =
-    `<option value="">กำลังโหลดหัวข้องาน...</option>`;
-
-  fetch(API_URL + "?action=topics")
-    .then(res => res.json())
-    .then(response => {
-
-      if(response.status !== "success" || !Array.isArray(response.data)){
-        select.innerHTML =
-          `<option value="">โหลดหัวข้องานไม่สำเร็จ</option>`;
-        return;
-      }
-
-      const myLevel =
-        String(currentStudentLevel || "").trim();
-
-      const topics =
-        response.data.filter(t =>
-          String(t.level || "").trim() === myLevel
-        );
-
-      if(topics.length === 0){
-        select.innerHTML =
-          `<option value="">ยังไม่มีงานของระดับชั้นคุณ</option>`;
-        return;
-      }
-
-      let html =
-        `<option value="">-- เลือกงาน --</option>`;
-
-      topics.forEach(t => {
-        html += `
-          <option
-  value="${escapeAttribute(t.url)}"
-  data-work-type="${escapeAttribute(t.workType || "งานเดี่ยว")}"
-  data-worksheet-url="${escapeAttribute(t.worksheetUrl || "")}"
-  data-worksheet-visible="${t.worksheetVisible === false ? "false" : "true"}"
->
-            ${escapeHtml(t.level)} - ${escapeHtml(t.topic)}
-            ${t.workType === "งานกลุ่ม" ? " [งานกลุ่ม]" : ""}
-            ${t.workType === "เลือกส่ง" ? " [เลือกส่ง]" : ""}
-          </option>
-        `;
-      });
-
-      select.innerHTML = html;
-      handleSubmitTopicChange();
-    })
-
-    .catch(error => {
-      console.error(error);
-      select.innerHTML =
-        `<option value="">โหลดหัวข้องานไม่สำเร็จ</option>`;
-    });
-}
-function handleSubmitTopicChange(){
-
-  const topicSelect =
-    document.getElementById("submitTopic");
-
-  const submitModeBox =
-    document.getElementById("submitModeBox");
-
-  const submitMode =
-    document.getElementById("submitMode");
-
-  if(!topicSelect || !submitModeBox || !submitMode){
-    return;
-  }
-
-  const selectedOption =
-    topicSelect.options[topicSelect.selectedIndex];
-
-  const workType =
-    selectedOption
-      ? selectedOption.getAttribute("data-work-type") || "งานเดี่ยว"
-      : "งานเดี่ยว";
-
-  if(workType === "เลือกส่ง"){
-
-    submitModeBox.style.display = "block";
-    submitMode.disabled = false;
-
-  } else {
-
-    submitModeBox.style.display = "none";
-    submitMode.disabled = true;
-
-    if(workType === "งานกลุ่ม"){
-      submitMode.value = "งานกลุ่ม";
-    } else {
-      submitMode.value = "งานเดี่ยว";
-    }
-  }
-  updateWorksheetBox(selectedOption);
-}
-function updateWorksheetBox(selectedOption){
-
-  const worksheetBox =
-    document.getElementById("worksheetBox");
-
-  if(!worksheetBox){
-    return;
-  }
-
-  worksheetBox.style.display = "none";
-  worksheetBox.innerHTML = "";
-}
-
-
-function renderWorksheetContent(url){
-
-  const driveFileId =
-    extractDriveFileId(url);
-
-  if(driveFileId){
-
-    const previewUrl =
-      "https://drive.google.com/file/d/" +
-      driveFileId +
-      "/preview";
-
-    const downloadUrl =
-      "https://drive.google.com/uc?export=download&id=" +
-      driveFileId;
-
-    return `
-      <iframe
-        class="drive-preview"
-        src="${escapeAttribute(previewUrl)}"
-        allow="autoplay"
-      ></iframe>
-
-      <a
-        class="file-link"
-        href="${escapeAttribute(url)}"
-        target="_blank"
-        rel="noopener noreferrer"
-      >
-        เปิดใบงาน
-      </a>
-
-      <a
-        class="file-link"
-        href="${escapeAttribute(downloadUrl)}"
-        target="_blank"
-        rel="noopener noreferrer"
-      >
-        ดาวน์โหลดใบงาน
-      </a>
-    `;
-  }
-
-  return `
-    <a
-      class="file-link"
-      href="${escapeAttribute(url)}"
-      target="_blank"
-      rel="noopener noreferrer"
-    >
-      เปิดใบงาน / ดาวน์โหลด
-    </a>
-  `;
-}
-  function openImageCompressor(){
-  window.open("https://squoosh.app/", "_blank");
-}
-function submitStudentWork(){
-
-  const topicSelect = document.getElementById("submitTopic");
-  const url = topicSelect.value;
-  const selectedOption = topicSelect.options[topicSelect.selectedIndex];
-
-  const workType =
-    workTypeOverride ||
-    (selectedOption ? selectedOption.getAttribute("data-work-type") : "") ||
-    "งานเดี่ยว";
-
-  let submitMode = "งานเดี่ยว";
-
-if(workType === "เลือกส่ง"){
-  submitMode = document.getElementById("submitMode").value;
-}
-
-else if(workType === "งานกลุ่ม"){
-  submitMode = "งานกลุ่ม";
-}
-
-else{
-  submitMode = "งานเดี่ยว";
-}
-
-  const work =
-    document.getElementById("submitWorkText").value.trim();
-
-  const fileInput =
-    document.getElementById("submitFile");
-
-  const file =
-    fileInput && fileInput.files.length > 0
-      ? fileInput.files[0]
-      : null;
-
-  const statusBox =
-    document.getElementById("submitWorkStatus");
-
-  const maxFileSizeMB = 5;
-  const maxFileSizeBytes = maxFileSizeMB * 1024 * 1024;
-
-  if(file && file.size > maxFileSizeBytes){
-    statusBox.innerHTML =
-      `<div class="status-box">
-        ❌ ไฟล์ใหญ่เกินไป กรุณาเลือกไฟล์ไม่เกิน ${maxFileSizeMB} MB
-        <br>
-        <button type="button" onclick="openImageCompressor()">
-          เปิดเว็บบีบอัดรูป
-        </button>
-      </div>`;
-    return;
-  }
-
-  if(!url){
-    statusBox.innerHTML =
-      `<div class="status-box">❌ กรุณาเลือกงานก่อน</div>`;
-    return;
-  }
-
-  if(!work && !file){
-    statusBox.innerHTML =
-      `<div class="status-box">❌ กรุณาพิมพ์คำตอบหรือแนบไฟล์ก่อน</div>`;
-    return;
-  }
-
-  statusBox.innerHTML =
-    `<div class="status-box">กำลังส่งงาน...</div>`;
-
-  const sendPayload = (filePayload) => {
-
-    fetch(API_URL + "?action=submitWork", {
-      method: "POST",
-      body: JSON.stringify({
-        url: url,
-        studentId: currentStudentId,
-        name: currentStudentName,
-        className: currentStudentClass,
-        no: currentStudentNo,
-        submitMode: submitMode,
-        work: work,
-        ...filePayload
-      })
-    })
-
-    .then(res => res.json())
-
-    .then(response => {
-
-      if(response.status !== "success"){
-        statusBox.innerHTML =
-          `<div class="status-box">
-            ❌ ${escapeHtml(response.message || "ส่งงานไม่สำเร็จ")}
-          </div>`;
-        return;
-      }
-
-      document.getElementById("submitWorkText").value = "";
-
-      if(fileInput){
-        fileInput.value = "";
-      }
-
-      statusBox.innerHTML =
-        `<div class="status-box">
-          ✅ ${escapeHtml(response.message || "ส่งงานเรียบร้อยแล้ว")}
-        </div>`;
-
-      alert("✅ " + (response.message || "ส่งงานเรียบร้อยแล้ว"));
-      closeStudentSubmitModal();
-      loadMyWork();
-    })
-
-    .catch(error => {
-      console.error(error);
-      statusBox.innerHTML =
-        `<div class="status-box">❌ เชื่อมต่อ API ไม่สำเร็จ</div>`;
-    });
-  };
-
-  if(file){
-
-    const reader = new FileReader();
-
-    reader.onload = function(){
-      sendPayload({
-        fileName: file.name,
-        mimeType: file.type,
-        fileData: reader.result
-      });
-    };
-
-    reader.onerror = function(){
-      statusBox.innerHTML =
-        `<div class="status-box">❌ อ่านไฟล์ไม่สำเร็จ กรุณาเลือกไฟล์ใหม่</div>`;
-    };
-
-    reader.readAsDataURL(file);
-  }
-
-  else{
-    sendPayload({});
-  }
-}
-// ======================================
-// Matrix Background
-// ======================================
-const canvas =
-  document.getElementById("matrix");
-
-const ctx =
-  canvas.getContext("2d");
-
-canvas.width =
-  window.innerWidth;
-
-canvas.height =
-  window.innerHeight;
-
-const letters =
-  "アイウエオ0123456789";
-
-const fontSize = 16;
-
-let columns =
-  Math.floor(canvas.width / fontSize);
-
-let drops = [];
-
-function initMatrix(){
-
-  columns =
-    Math.floor(canvas.width / fontSize);
-
-  drops = [];
-
-  for(let i = 0; i < columns; i++){
-    drops[i] = 1;
-  }
-}
-
-initMatrix();
-
-function draw(){
-
-  ctx.fillStyle =
-    "rgba(0,0,0,0.05)";
-
-  ctx.fillRect(
-    0,
-    0,
-    canvas.width,
-    canvas.height
-  );
-
-  ctx.fillStyle =
-    "#00ff41";
-
-  ctx.font =
-    fontSize + "px monospace";
-
-  for(let i = 0; i < drops.length; i++){
-
-    const text =
-      letters[
-        Math.floor(
-          Math.random() * letters.length
-        )
-      ];
-
-    ctx.fillText(
-      text,
-      i * fontSize,
-      drops[i] * fontSize
-    );
-
-    if(
-      drops[i] * fontSize > canvas.height &&
-      Math.random() > 0.975
-    ){
-      drops[i] = 0;
-    }
-
-    drops[i]++;
-  }
-}
-
-setInterval(draw, 33);
-
-window.addEventListener("resize", () => {
-
-  canvas.width =
-    window.innerWidth;
-
-  canvas.height =
-    window.innerHeight;
-
-  initMatrix();
-});
-
-</script>
-
-</body>
-</html>
