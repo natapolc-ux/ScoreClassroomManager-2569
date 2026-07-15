@@ -602,6 +602,107 @@ h2,h3,h4{
   margin-top:12px;
 }
 
+
+.student-announcement{
+  border-color:#ffd43b;
+  box-shadow:0 0 10px #ffd43b;
+}
+
+.student-announcement ul{
+  margin:8px 0 0 18px;
+  padding:0;
+  line-height:1.8;
+}
+
+.overdue-label{
+  display:inline-block;
+  padding:2px 8px;
+  margin-right:6px;
+  border:1px solid #ff9800;
+  background:#3a2400;
+  color:#ffcc80;
+  font-weight:bold;
+}
+
+.student-work-actions{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+  margin-top:12px;
+}
+
+.student-work-actions button{
+  width:auto;
+  margin-top:0;
+}
+
+.student-submit-modal,
+.custom-confirm-modal{
+  display:none;
+  position:fixed;
+  inset:0;
+  z-index:5000;
+  align-items:center;
+  justify-content:center;
+  background:rgba(0,0,0,0.82);
+  padding:20px;
+}
+
+.student-submit-dialog,
+.custom-confirm-dialog{
+  position:relative;
+  width:min(680px, 96vw);
+  max-height:90vh;
+  overflow:auto;
+  border:1px solid #00ff41;
+  background:rgba(0,0,0,0.98);
+  box-shadow:0 0 22px #00ff41;
+  padding:20px;
+}
+
+.student-submit-dialog textarea{
+  width:100%;
+  min-height:120px;
+  margin-top:10px;
+  background:black;
+  color:#00ff41;
+  border:1px solid #00ff41;
+  font-family:monospace;
+  box-sizing:border-box;
+}
+
+.student-submit-actions,
+.custom-confirm-actions{
+  display:flex;
+  gap:10px;
+  margin-top:10px;
+}
+
+.student-submit-actions button,
+.custom-confirm-actions button{
+  width:50%;
+}
+
+.student-delete-button{
+  position:absolute;
+  top:10px;
+  right:10px;
+  width:auto !important;
+  min-width:42px;
+  margin-top:0;
+  padding:7px 10px;
+  color:#ffffff;
+  border-color:#ff3b3b;
+  background:#8b0000;
+  box-shadow:0 0 8px #ff3b3b;
+  z-index:10;
+}
+
+.student-delete-button:hover{
+  background:#ff3b3b;
+  color:#ffffff;
+}
+
 </style>
 
 </head>
@@ -685,6 +786,13 @@ h2,h3,h4{
         onclick="stopLoadedWork()"
       >
         ⏹ หยุดโหลดงาน
+      </button>
+
+      <button
+        type="button"
+        onclick="loadAllWork()"
+      >
+        📚 โหลดทุกงานทุกชั้น
       </button>
 
       <label>เรียงลำดับผลงาน</label>
@@ -849,37 +957,55 @@ h2,h3,h4{
   <h2>Student Dashboard</h2>
 
   <div id="studentData"></div>
-  <div class="status-box">
-  <h3>ส่งงานผ่านเว็บ</h3>
 
-  <select id="submitTopic" onchange="handleSubmitTopicChange()">
-    <option value="">กำลังโหลดหัวข้องาน...</option>
-  </select>
-  <div id="worksheetBox" class="status-box" style="display:none;"></div>
-  <div id="submitModeBox" style="display:none;">
-  <label>เลือกรูปแบบการส่ง</label>
+  <div id="studentSubmitModal" class="student-submit-modal">
+    <div class="student-submit-dialog">
 
-  <select id="submitMode">
-    <option value="งานเดี่ยว">ส่งเดี่ยว</option>
-    <option value="งานกลุ่ม">ส่งกลุ่ม</option>
-  </select>
-</div>
-  <textarea
-    id="submitWorkText"
-    placeholder="พิมพ์คำตอบ หรือวางลิงก์งาน/ลิงก์รูป"
-    style="width:100%;height:120px;margin-top:10px;background:black;color:#00ff41;border:1px solid #00ff41;"
-  ></textarea>
-<input
-  id="submitFile"
-  type="file"
-  accept="image/*,.pdf,.doc,.docx,.ppt,.pptx"
-/>
-  <button onclick="submitStudentWork()">
-    ส่งงาน
-  </button>
+      <button
+        type="button"
+        class="student-delete-button"
+        onclick="closeStudentSubmitModal()"
+        title="ปิด"
+      >
+        ✕
+      </button>
 
-  <div id="submitWorkStatus"></div>
-</div>
+      <h3 id="studentSubmitModalTitle">ส่งงาน</h3>
+
+      <select id="submitTopic" onchange="handleSubmitTopicChange()" style="display:none;">
+        <option value="">กำลังโหลดหัวข้องาน...</option>
+      </select>
+
+      <div id="worksheetBox" class="status-box" style="display:none;"></div>
+
+      <div id="submitModeBox" style="display:none;">
+        <label>เลือกรูปแบบการส่ง</label>
+        <select id="submitMode">
+          <option value="งานเดี่ยว">ส่งเดี่ยว</option>
+          <option value="งานกลุ่ม">ส่งกลุ่ม</option>
+        </select>
+      </div>
+
+      <textarea
+        id="submitWorkText"
+        placeholder="พิมพ์คำตอบ หรือวางลิงก์งาน/ลิงก์รูป"
+      ></textarea>
+
+      <input
+        id="submitFile"
+        type="file"
+        accept="image/*,.pdf,.doc,.docx,.ppt,.pptx"
+      />
+
+      <div class="student-submit-actions">
+        <button onclick="submitStudentWork()">ส่งงาน</button>
+        <button type="button" onclick="closeStudentSubmitModal()">ยกเลิก</button>
+      </div>
+
+      <div id="submitWorkStatus"></div>
+    </div>
+  </div>
+
   <div id="myWorkStatus"></div>
   <div id="myWork"></div>
 
@@ -1363,7 +1489,10 @@ function loadWork(){
       return;
     }
 
-    currentWorkData = data;
+    currentWorkData = data.map(item => ({
+      ...item,
+      sheetUrl: item.sheetUrl || url
+    }));
 
     applyDefaultCollapsedForCheckedWorks(currentWorkData);
 
@@ -1396,6 +1525,99 @@ function loadWork(){
   });
 }
 
+
+
+function loadAllWork(){
+
+  const workBox = document.getElementById("work");
+  const workStatus = document.getElementById("workStatus");
+  const refreshButton = document.getElementById("refreshWorkButton");
+
+  currentSheetUrl = "";
+  currentWorkData = [];
+
+  if(refreshButton){
+    refreshButton.style.display = "block";
+  }
+
+  workBox.innerHTML = "";
+  workStatus.innerHTML =
+    `<div class="status-box">กำลังโหลดทุกงานของทุกชั้น...</div>`;
+
+  fetch(API_URL + "?action=topics")
+    .then(res => res.json())
+    .then(response => {
+
+      const topics =
+        response && response.status === "success" && Array.isArray(response.data)
+          ? response.data
+          : (Array.isArray(response) ? response : []);
+
+      if(topics.length === 0){
+        workStatus.innerHTML =
+          `<div class="status-box">ยังไม่มีหัวข้องานให้โหลด</div>`;
+        return;
+      }
+
+      const requests = topics.map(topic => {
+        return fetch(
+          API_URL
+          + "?action=studentWork"
+          + "&url=" + encodeURIComponent(topic.url)
+          + "&hideChecked=" + encodeURIComponent(hideViewedWorksEnabled ? "true" : "false")
+        )
+        .then(res => res.json())
+        .then(result => {
+          const rows =
+            result && result.status === "success" && Array.isArray(result.data)
+              ? result.data
+              : [];
+
+          return rows.map(row => ({
+            ...row,
+            level: topic.level || row.level || "",
+            topic: topic.topic || row.topic || "",
+            sheetUrl: topic.url || row.sheetUrl || "",
+            workType: topic.workType || row.workType || "งานเดี่ยว"
+          }));
+        })
+        .catch(error => {
+          console.error(error);
+          return [];
+        });
+      });
+
+      return Promise.all(requests);
+    })
+    .then(groups => {
+
+      if(!groups){
+        return;
+      }
+
+      currentWorkData = groups.flat();
+      applyDefaultCollapsedForCheckedWorks(currentWorkData);
+
+      if(currentWorkData.length === 0){
+        workStatus.innerHTML =
+          `<div class="status-box">ไม่พบงานที่ต้องตรวจ</div>`;
+        workBox.innerHTML = "";
+        return;
+      }
+
+      populateClassFilter(currentWorkData);
+
+      workStatus.innerHTML =
+        `<div class="status-box">พบงานทั้งหมด ${currentWorkData.length} รายการ จากทุกชั้น</div>`;
+
+      applyWorkSortAndRender();
+    })
+    .catch(error => {
+      console.error(error);
+      workStatus.innerHTML =
+        `<div class="status-box">❌ โหลดทุกงานไม่สำเร็จ</div>`;
+    });
+}
 
 // ======================================
 // สร้างตัวเลือกห้องเรียน
@@ -1559,7 +1781,9 @@ function sortCurrentWorkSheet(){
     topicSelect.options[topicSelect.selectedIndex];
 
   const workType =
-    selectedOption.getAttribute("data-work-type") || "งานเดี่ยว";
+    workTypeOverride ||
+    (selectedOption ? selectedOption.getAttribute("data-work-type") : "") ||
+    "งานเดี่ยว";
 
   const sortMode =
     sortSelect ? sortSelect.value : "latest";
@@ -1663,13 +1887,13 @@ function saveViewedWorksMap(map){
 }
 
 
-function getWorkViewedKey(rowIndex){
+function getWorkViewedKey(rowIndex, sheetUrl){
 
-  return String(currentSheetUrl || "") + "::" + String(rowIndex || "");
+  return String(sheetUrl || currentSheetUrl || "") + "::" + String(rowIndex || "");
 }
 
 
-function markWorkAsViewed(rowIndex){
+function markWorkAsViewed(rowIndex, sheetUrl){
 
   if(!rowIndex){
     return;
@@ -1678,7 +1902,7 @@ function markWorkAsViewed(rowIndex){
   const map =
     getViewedWorksMap();
 
-  map[getWorkViewedKey(rowIndex)] = true;
+  map[getWorkViewedKey(rowIndex, sheetUrl)] = true;
 
   saveViewedWorksMap(map);
 }
@@ -1705,9 +1929,9 @@ function saveCollapsedWorksMap(map){
 }
 
 
-function getCollapsedWorkKey(rowIndex){
+function getCollapsedWorkKey(rowIndex, sheetUrl){
 
-  return String(currentSheetUrl || "") + "::" + String(rowIndex || "");
+  return String(sheetUrl || currentSheetUrl || "") + "::" + String(rowIndex || "");
 }
 
 
@@ -1726,7 +1950,7 @@ function applyDefaultCollapsedForCheckedWorks(data){
       hasScoreValue(item.score)
     ){
       const key =
-        getCollapsedWorkKey(item.rowIndex);
+        getCollapsedWorkKey(item.rowIndex, item.sheetUrl);
 
       if(map[key] !== true){
         map[key] = true;
@@ -1747,7 +1971,7 @@ function isWorkCollapsed(item){
     getCollapsedWorksMap();
 
   const key =
-    getCollapsedWorkKey(item.rowIndex);
+    getCollapsedWorkKey(item.rowIndex, item.sheetUrl);
 
   if(Object.prototype.hasOwnProperty.call(map, key)){
     return map[key] === true;
@@ -1757,7 +1981,7 @@ function isWorkCollapsed(item){
 }
 
 
-function setWorkCollapsed(rowIndex, collapsed){
+function setWorkCollapsed(rowIndex, collapsed, sheetUrl){
 
   if(!rowIndex){
     return;
@@ -1766,7 +1990,7 @@ function setWorkCollapsed(rowIndex, collapsed){
   const map =
     getCollapsedWorksMap();
 
-  map[getCollapsedWorkKey(rowIndex)] =
+  map[getCollapsedWorkKey(rowIndex, sheetUrl)] =
     collapsed === true;
 
   saveCollapsedWorksMap(map);
@@ -1869,6 +2093,12 @@ function renderWorkCards(){
       ? s.work
       : (s.image !== undefined ? s.image : "");
 
+    const itemSheetUrl =
+      String(s.sheetUrl || currentSheetUrl || "").trim();
+
+    const itemWorkType =
+      String(s.workType || (isGroup ? "งานกลุ่ม" : "งานเดี่ยว")).trim();
+
     html += `
       <div class="card">
 
@@ -1878,7 +2108,8 @@ function renderWorkCards(){
             type="button"
             onclick="setWorkCollapsed(
               '${escapeJsString(s.rowIndex || "")}',
-              ${isCollapsed ? "false" : "true"}
+              ${isCollapsed ? "false" : "true"},
+              '${escapeJsString(itemSheetUrl)}'
             )"
           >
             ${isCollapsed ? "👁 แสดงงาน" : "🙈 ซ่อนงาน"}
@@ -1887,8 +2118,9 @@ function renderWorkCards(){
           <button
             type="button"
             onclick="deleteSubmission(
-              '${escapeJsString(currentSheetUrl)}',
-              '${escapeJsString(s.rowIndex || "")}'
+              '${escapeJsString(itemSheetUrl)}',
+              '${escapeJsString(s.rowIndex || "")}',
+              '${escapeJsString(itemWorkType)}'
             )"
           >
             ลบงาน
@@ -1897,6 +2129,7 @@ function renderWorkCards(){
         </div>
 
         <h3>
+          ${s.topic ? escapeHtml((s.level ? s.level + " - " : "") + s.topic) + " | " : ""}
           ${escapeHtml(studentClass)}
           ${isGroup ? "งานกลุ่ม" : escapeHtml("เลขที่ " + studentNo)}
         </h3>
@@ -1950,7 +2183,7 @@ function renderWorkCards(){
 
               <button
                 onclick="saveScore(
-                  '${escapeJsString(currentSheetUrl)}',
+                  '${escapeJsString(itemSheetUrl)}',
                   '${escapeJsString(s.id || "")}',
                   '${escapeJsString(s.rowIndex || "")}'
                 )"
@@ -1961,7 +2194,7 @@ function renderWorkCards(){
               <button
                 type="button"
                 onclick="markCheckedNoScore(
-                  '${escapeJsString(currentSheetUrl)}',
+                  '${escapeJsString(itemSheetUrl)}',
                   '${escapeJsString(s.id || "")}',
                   '${escapeJsString(s.rowIndex || "")}'
                 )"
@@ -1972,7 +2205,7 @@ function renderWorkCards(){
               <button
                 type="button"
                 onclick="giveFullScore(
-                  '${escapeJsString(currentSheetUrl)}',
+                  '${escapeJsString(itemSheetUrl)}',
                   '${escapeJsString(s.id || "")}',
                   '${escapeJsString(s.rowIndex || "")}'
                 )"
@@ -2120,8 +2353,8 @@ function saveScoreValue(url, studentId, rowIndex, score, successMessage){
 
     if(data.status === "success"){
 
-      markWorkAsViewed(rowIndex);
-      setWorkCollapsed(rowIndex, true);
+      markWorkAsViewed(rowIndex, url);
+      setWorkCollapsed(rowIndex, true, url);
 
       alert(successMessage || "✅ บันทึกแล้ว");
 
@@ -2183,7 +2416,7 @@ function giveFullScore(url, studentId, rowIndex){
     "✅ ให้คะแนนเต็มแล้ว"
   );
 }
-function deleteSubmission(url, rowIndex){
+function deleteSubmission(url, rowIndex, workTypeOverride){
   if(!url || !rowIndex){
     alert("ไม่พบข้อมูลงานที่ต้องการลบ");
     return;
@@ -2206,7 +2439,9 @@ function deleteSubmission(url, rowIndex){
     topicSelect.options[topicSelect.selectedIndex];
 
   const workType =
-    selectedOption.getAttribute("data-work-type") || "งานเดี่ยว";
+    workTypeOverride ||
+    (selectedOption ? selectedOption.getAttribute("data-work-type") : "") ||
+    "งานเดี่ยว";
 
   fetch(API_URL + "?action=deleteSubmission", {
     method: "POST",
@@ -2300,7 +2535,7 @@ function escapeJsString(value){
   return String(value ?? "")
     .replace(/\\/g, "\\\\")
     .replace(/'/g, "\\'")
-    .replace(/"/g, '\\"')
+    .replace(/"/g, '\"')
     .replace(/\n/g, "\\n")
     .replace(/\r/g, "\\r");
 }
@@ -2381,10 +2616,7 @@ function loadMyWork(){
       return;
     }
 
-    statusBox.innerHTML =
-      `<div class="status-box">
-        พบรายการงานของคุณ ${data.length} งาน
-      </div>`;
+    statusBox.innerHTML = "";
 
     renderMyWorkCards(data);
   })
@@ -2409,6 +2641,28 @@ function renderMyWorkCards(data){
     document.getElementById("myWork");
 
   let html = "";
+
+  const missingItems =
+    (Array.isArray(data) ? data : [])
+      .filter(item => item.status !== "submitted");
+
+  if(missingItems.length > 0){
+    html += `
+      <div class="status-box student-announcement">
+        <h3>ป้ายประกาศงานที่ยังไม่ได้ส่ง</h3>
+        <ul>
+          ${missingItems.map(item => `
+            <li>
+              ${item.isOverdue ? `<span class="overdue-label">เลยกำหนด</span>` : ``}
+              ${escapeHtml(item.level || "")}
+              - ${escapeHtml(item.topic || "")}
+              ${item.dueDate ? ` | กำหนดส่ง: ${escapeHtml(formatTimestamp(item.dueDate))}` : ``}
+            </li>
+          `).join("")}
+        </ul>
+      </div>
+    `;
+  }
 
   data.forEach((item, index) => {
 
@@ -2452,7 +2706,27 @@ function renderMyWorkCards(data){
 
       <div class="card">
 
+        ${
+          canDelete
+          ? `
+            <button
+              type="button"
+              class="student-delete-button"
+              title="ลบงาน"
+              onclick="deleteMySubmission(
+                '${escapeJsString(item.sheetUrl || "")}',
+                '${escapeJsString(item.rowIndex || "")}',
+                '${escapeJsString(item.submitMode || "งานเดี่ยว")}'
+              )"
+            >
+              🗑
+            </button>
+          `
+          : ``
+        }
+
         <h3>
+          ${!isSubmitted && item.isOverdue ? `<span class="overdue-label">เลยกำหนด</span>` : ``}
           ${escapeHtml(item.level || "")}
           - ${escapeHtml(item.topic || "")}
         </h3>
@@ -2477,38 +2751,19 @@ function renderMyWorkCards(data){
                 : `<div>เลขที่: ${escapeHtml(item.no || "")}</div>`
               }
               <div>เวลาส่งงาน: ${escapeHtml(formatTimestamp(item.timestamp))}</div>
+              ${item.isLate ? `<div class="score-late">ส่งช้า</div>` : ``}
             </div>
 
             <div class="work-box">
               <h4>งานที่ส่ง</h4>
               ${renderWorkContent(item.work)}
             </div>
-
-            ${
-              canDelete
-              ? `
-                <button
-                  type="button"
-                  onclick="deleteMySubmission(
-                    '${escapeJsString(item.sheetUrl || "")}',
-                    '${escapeJsString(item.rowIndex || "")}',
-                    '${escapeJsString(item.submitMode || "งานเดี่ยว")}'
-                  )"
-                >
-                  ลบงานของฉัน
-                </button>
-              `
-              : `
-                <div class="status-box">
-                  ${scoreText ? "ครูตรวจแล้วหรือมีคะแนน จึงไม่สามารถลบงานเองได้" : ""}
-                </div>
-              `
-            }
           `
           : `
             <div class="meta">
               <div>ห้อง: ${escapeHtml(item.class || "")}</div>
               <div>เลขที่: ${escapeHtml(item.no || "")}</div>
+              ${item.dueDate ? `<div>กำหนดส่ง: ${escapeHtml(formatTimestamp(item.dueDate))}</div>` : ``}
             </div>
 
             <div class="work-box">
@@ -2537,38 +2792,60 @@ function renderMyWorkWorksheet(item, isSubmitted, index){
       ? false
       : true;
 
-  if(!worksheetUrl || !worksheetVisible){
-    return "";
-  }
-
   const worksheetId =
     "myWorksheet_" + index;
 
-  if(isSubmitted){
-    return `
+  const canShowWorksheet =
+    worksheetUrl && worksheetVisible;
+
+  const startVisible =
+    canShowWorksheet && !isSubmitted;
+
+  let buttons = `
+    <div class="student-work-actions">
+  `;
+
+  if(canShowWorksheet){
+    buttons += `
       <button
         type="button"
         class="my-worksheet-toggle"
         onclick="toggleMyWorksheet('${escapeJsString(worksheetId)}', this)"
       >
-        แสดงใบงาน
+        ${startVisible ? "ซ่อนใบงาน" : "แสดงใบงาน"}
       </button>
-
-      <div
-        id="${escapeAttribute(worksheetId)}"
-        class="work-box student-worksheet-box"
-        style="display:none;"
-      >
-        <h4>ใบงาน / เอกสารประกอบ</h4>
-        ${renderWorksheetContent(worksheetUrl)}
-      </div>
     `;
   }
 
+  if(!isSubmitted){
+    buttons += `
+      <button
+        type="button"
+        onclick="openStudentSubmitModal(
+          '${escapeJsString(item.sheetUrl || "")}',
+          '${escapeJsString(item.topic || "")}',
+          '${escapeJsString(item.submitMode || "งานเดี่ยว")}',
+          '${escapeJsString(item.worksheetUrl || "")}',
+          '${item.worksheetVisible === false ? "false" : "true"}'
+        )"
+      >
+        ส่งงาน
+      </button>
+    `;
+  }
+
+  buttons += `</div>`;
+
+  if(!canShowWorksheet){
+    return buttons;
+  }
+
   return `
+    ${buttons}
     <div
       id="${escapeAttribute(worksheetId)}"
       class="work-box student-worksheet-box"
+      style="display:${startVisible ? "block" : "none"};"
     >
       <h4>ใบงาน / เอกสารประกอบ</h4>
       ${renderWorksheetContent(worksheetUrl)}
@@ -2595,6 +2872,151 @@ function toggleMyWorksheet(id, button){
   }
 }
 
+function openStudentSubmitModal(sheetUrl, topicTitle, workType, worksheetUrl, worksheetVisible){
+
+  const modal =
+    document.getElementById("studentSubmitModal");
+
+  const title =
+    document.getElementById("studentSubmitModalTitle");
+
+  const topicSelect =
+    document.getElementById("submitTopic");
+
+  const textBox =
+    document.getElementById("submitWorkText");
+
+  const fileInput =
+    document.getElementById("submitFile");
+
+  const statusBox =
+    document.getElementById("submitWorkStatus");
+
+  if(!modal || !topicSelect){
+    return;
+  }
+
+  let option =
+    Array.from(topicSelect.options)
+      .find(item => item.value === sheetUrl);
+
+  if(!option){
+    option = new Option(topicTitle || "ส่งงาน", sheetUrl);
+    option.setAttribute("data-work-type", workType || "งานเดี่ยว");
+    option.setAttribute("data-worksheet-url", worksheetUrl || "");
+    option.setAttribute("data-worksheet-visible", worksheetVisible === "false" ? "false" : "true");
+    topicSelect.appendChild(option);
+  }
+
+  topicSelect.value = sheetUrl;
+
+  if(title){
+    title.textContent = "ส่งงาน: " + (topicTitle || "");
+  }
+
+  if(textBox){
+    textBox.value = "";
+  }
+
+  if(fileInput){
+    fileInput.value = "";
+  }
+
+  if(statusBox){
+    statusBox.innerHTML = "";
+  }
+
+  handleSubmitTopicChange();
+  modal.style.display = "flex";
+}
+
+function closeStudentSubmitModal(){
+
+  const modal =
+    document.getElementById("studentSubmitModal");
+
+  const topicSelect =
+    document.getElementById("submitTopic");
+
+  const textBox =
+    document.getElementById("submitWorkText");
+
+  const fileInput =
+    document.getElementById("submitFile");
+
+  const statusBox =
+    document.getElementById("submitWorkStatus");
+
+  if(modal){
+    modal.style.display = "none";
+  }
+
+  if(topicSelect){
+    topicSelect.value = "";
+    handleSubmitTopicChange();
+  }
+
+  if(textBox){
+    textBox.value = "";
+  }
+
+  if(fileInput){
+    fileInput.value = "";
+  }
+
+  if(statusBox){
+    statusBox.innerHTML = "";
+  }
+}
+
+function showCustomConfirm(message, onConfirm){
+
+  let modal =
+    document.getElementById("customConfirmModal");
+
+  if(!modal){
+    modal = document.createElement("div");
+    modal.id = "customConfirmModal";
+    modal.className = "custom-confirm-modal";
+    modal.innerHTML = `
+      <div class="custom-confirm-dialog">
+        <div id="customConfirmMessage" class="status-box"></div>
+        <div class="custom-confirm-actions">
+          <button type="button" id="customConfirmYes">ยืนยัน</button>
+          <button type="button" id="customConfirmNo">ยกเลิก</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+  }
+
+  const messageBox =
+    document.getElementById("customConfirmMessage");
+
+  const yesButton =
+    document.getElementById("customConfirmYes");
+
+  const noButton =
+    document.getElementById("customConfirmNo");
+
+  if(messageBox){
+    messageBox.textContent = message;
+  }
+
+  modal.style.display = "flex";
+
+  yesButton.onclick = function(){
+    modal.style.display = "none";
+    if(typeof onConfirm === "function"){
+      onConfirm();
+    }
+  };
+
+  noButton.onclick = function(){
+    modal.style.display = "none";
+  };
+}
+
 function deleteMySubmission(url, rowIndex, workType){
 
   if(!url || !rowIndex){
@@ -2602,41 +3024,38 @@ function deleteMySubmission(url, rowIndex, workType){
     return;
   }
 
-  const confirmed =
-    confirm("ต้องการลบงานที่ส่งนี้หรือไม่?\n\nลบได้เฉพาะงานที่ครูยังไม่ได้ตรวจหรือให้คะแนนเท่านั้น");
+  showCustomConfirm("ยืนยันที่จะลบหรือไม่", function(){
 
-  if(!confirmed){
-    return;
-  }
-
-  fetch(API_URL + "?action=studentDeleteSubmission", {
-    method: "POST",
-    body: JSON.stringify({
-      url: url,
-      rowIndex: rowIndex,
-      studentId: currentStudentId,
-      workType: workType || "งานเดี่ยว"
+    fetch(API_URL + "?action=studentDeleteSubmission", {
+      method: "POST",
+      body: JSON.stringify({
+        url: url,
+        rowIndex: rowIndex,
+        studentId: currentStudentId,
+        workType: workType || "งานเดี่ยว"
+      })
     })
-  })
 
-  .then(res => res.json())
+    .then(res => res.json())
 
-  .then(response => {
+    .then(response => {
 
-    if(response.status !== "success"){
-      alert("❌ " + (response.message || "ลบงานไม่สำเร็จ"));
-      return;
-    }
+      if(response.status !== "success"){
+        alert("❌ " + (response.message || "ลบงานไม่สำเร็จ"));
+        return;
+      }
 
-    alert("✅ " + response.message);
-    loadMyWork();
-  })
+      alert("✅ " + response.message);
+      loadMyWork();
+    })
 
-  .catch(error => {
-    console.error(error);
-    alert("❌ เชื่อมต่อ API ไม่สำเร็จ");
+    .catch(error => {
+      console.error(error);
+      alert("❌ เชื่อมต่อ API ไม่สำเร็จ");
+    });
   });
 }
+
 // ======================================
 // โหลดตัวเลือกระดับชั้น / ห้อง
 // สำหรับตารางคะแนนรายงาน
@@ -4260,7 +4679,9 @@ function submitStudentWork(){
   const selectedOption = topicSelect.options[topicSelect.selectedIndex];
 
   const workType =
-    selectedOption.getAttribute("data-work-type") || "งานเดี่ยว";
+    workTypeOverride ||
+    (selectedOption ? selectedOption.getAttribute("data-work-type") : "") ||
+    "งานเดี่ยว";
 
   let submitMode = "งานเดี่ยว";
 
@@ -4359,6 +4780,8 @@ else{
           ✅ ${escapeHtml(response.message || "ส่งงานเรียบร้อยแล้ว")}
         </div>`;
 
+      alert("✅ " + (response.message || "ส่งงานเรียบร้อยแล้ว"));
+      closeStudentSubmitModal();
       loadMyWork();
     })
 
