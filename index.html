@@ -740,6 +740,95 @@ h2,h3,h4{
   color:#ffffff;
 }
 
+
+.group-assessment-box{
+  display:none;
+  margin-top:12px;
+  padding:12px;
+  border:1px dashed #00ff41;
+  background:rgba(0,0,0,0.72);
+}
+
+.group-assessment-row{
+  margin-top:10px;
+  padding:10px;
+  border:1px solid rgba(0,255,65,0.45);
+}
+
+.group-assessment-options{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+  margin-top:8px;
+}
+
+.group-assessment-options label{
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  margin-top:0;
+}
+
+.group-assessment-options input{
+  width:auto;
+  margin-top:0;
+}
+
+.teacher-note-textarea{
+  width:100%;
+  min-height:80px;
+  margin-top:10px;
+  background:black;
+  color:#00ff41;
+  border:1px solid #00ff41;
+  font-family:monospace;
+  box-sizing:border-box;
+}
+
+.teacher-only-box{
+  margin-top:10px;
+  padding:10px;
+  border:1px dashed #ffd43b;
+  color:#ffd43b;
+  background:rgba(0,0,0,0.68);
+}
+
+.teacher-only-box ul{
+  margin:8px 0 0 18px;
+  padding:0;
+  line-height:1.7;
+}
+
+.group-score-stack{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:6px;
+}
+
+.individual-adjust-input{
+  width:120px;
+  min-height:35px;
+  text-align:center;
+  margin-top:0;
+  color:#ffd43b;
+  border-color:#ffd43b;
+}
+
+.group-final-score{
+  font-size:12px;
+  color:#ffd43b;
+  line-height:1.4;
+}
+
+.group-contribution-note{
+  font-size:12px;
+  line-height:1.4;
+  color:#ffcc80;
+  max-width:170px;
+  white-space:normal;
+}
+
 </style>
 
 </head>
@@ -1010,11 +1099,13 @@ h2,h3,h4{
 
       <div id="submitModeBox" style="display:none;">
         <label>เลือกรูปแบบการส่ง</label>
-        <select id="submitMode">
+        <select id="submitMode" onchange="renderGroupAssessmentBox(this.value)">
           <option value="งานเดี่ยว">ส่งเดี่ยว</option>
           <option value="งานกลุ่ม">ส่งกลุ่ม</option>
         </select>
       </div>
+
+      <div id="groupAssessmentBox" class="group-assessment-box"></div>
 
       <textarea
         id="submitWorkText"
@@ -1066,6 +1157,7 @@ let selectedAssignmentIndexes = new Set();
 let hideViewedWorksEnabled = false;
 let currentMyWorkData = [];
 let selectedMyWorkIndex = null;
+let currentSubmitWorkItem = null;
 
 const VIEWED_WORKS_STORAGE_KEY = "matrixViewedWorks";
 const HIDE_VIEWED_STORAGE_KEY = "matrixHideViewedWorks";
@@ -1826,7 +1918,6 @@ function sortCurrentWorkSheet(){
     topicSelect.options[topicSelect.selectedIndex];
 
   const workType =
-    workTypeOverride ||
     (selectedOption ? selectedOption.getAttribute("data-work-type") : "") ||
     "งานเดี่ยว";
 
@@ -2071,6 +2162,56 @@ function isWorkViewedOrChecked(item){
 
   return map[getWorkViewedKey(item.rowIndex)] === true;
 }
+function renderTeacherOnlyGroupInfo(item){
+
+  const isGroup =
+    isGroupWorkItem(item);
+
+  if(!isGroup){
+    return "";
+  }
+
+  const assessments =
+    Array.isArray(item.groupMemberAssessments)
+    ? item.groupMemberAssessments
+    : [];
+
+  const teacherNote =
+    String(item.teacherNote || "").trim();
+
+  if(assessments.length === 0 && !teacherNote){
+    return "";
+  }
+
+  return `
+    <div class="teacher-only-box">
+      <strong>ข้อมูลการทำงานกลุ่ม / หมายเหตุถึงครู</strong>
+
+      ${
+        assessments.length > 0
+        ? `
+          <ul>
+            ${assessments.map(member => `
+              <li>
+                ${escapeHtml(member.no ? "เลขที่ " + member.no + " " : "")}
+                ${escapeHtml(member.name || member.id || "-")}
+                : ${escapeHtml(member.status || "ช่วยงานเต็มที่")}
+              </li>
+            `).join("")}
+          </ul>
+        `
+        : ``
+      }
+
+      ${
+        teacherNote
+        ? `<div style="margin-top:8px;">หมายเหตุ: ${escapeHtml(teacherNote)}</div>`
+        : ``
+      }
+    </div>
+  `;
+}
+
 function renderWorkCards(){
 
   const workBox = document.getElementById("work");
@@ -2200,6 +2341,7 @@ function renderWorkCards(){
             `
             : ``
           }
+          ${renderTeacherOnlyGroupInfo(s)}
         </div>
 
         ${
@@ -2484,7 +2626,6 @@ function deleteSubmission(url, rowIndex, workTypeOverride){
     topicSelect.options[topicSelect.selectedIndex];
 
   const workType =
-    workTypeOverride ||
     (selectedOption ? selectedOption.getAttribute("data-work-type") : "") ||
     "งานเดี่ยว";
 
@@ -2959,13 +3100,7 @@ function renderMyWorkWorksheet(item, isSubmitted, index){
     buttons += `
       <button
         type="button"
-        onclick="openStudentSubmitModal(
-          '${escapeJsString(item.sheetUrl || "")}',
-          '${escapeJsString(item.topic || "")}',
-          '${escapeJsString(item.submitMode || "งานเดี่ยว")}',
-          '${escapeJsString(item.worksheetUrl || "")}',
-          '${item.worksheetVisible === false ? "false" : "true"}'
-        )"
+        onclick="openStudentSubmitModalByIndex(${index})"
       >
         ส่งงาน
       </button>
@@ -3010,7 +3145,166 @@ function toggleMyWorksheet(id, button){
   }
 }
 
-function openStudentSubmitModal(sheetUrl, topicTitle, workType, worksheetUrl, worksheetVisible){
+function openStudentSubmitModalByIndex(index){
+
+  const item =
+    Array.isArray(currentMyWorkData)
+    ? currentMyWorkData[Number(index)]
+    : null;
+
+  if(!item){
+    alert("ไม่พบข้อมูลงาน");
+    return;
+  }
+
+  openStudentSubmitModal(
+    item.sheetUrl || "",
+    item.topic || "",
+    item.submitMode || "งานเดี่ยว",
+    item.worksheetUrl || "",
+    item.worksheetVisible === false ? "false" : "true",
+    item
+  );
+}
+
+function getGroupMembersFromSubmitItem(){
+
+  if(
+    currentSubmitWorkItem &&
+    Array.isArray(currentSubmitWorkItem.groupMembers) &&
+    currentSubmitWorkItem.groupMembers.length > 0
+  ){
+    return currentSubmitWorkItem.groupMembers;
+  }
+
+  return [{
+    id: currentStudentId,
+    name: currentStudentName,
+    no: currentStudentNo,
+    className: currentStudentClass
+  }];
+}
+
+function renderGroupAssessmentBox(workType){
+
+  const box =
+    document.getElementById("groupAssessmentBox");
+
+  if(!box){
+    return;
+  }
+
+  const normalizedWorkType =
+    String(workType || "").trim();
+
+  if(normalizedWorkType !== "งานกลุ่ม"){
+    box.style.display = "none";
+    box.innerHTML = "";
+    return;
+  }
+
+  const members =
+    getGroupMembersFromSubmitItem();
+
+  box.style.display = "block";
+  box.innerHTML = `
+    <h4>ประเมินการทำงานกลุ่ม</h4>
+    <div class="empty-text">
+      ข้อมูลส่วนนี้ครูเท่านั้นที่เห็น นักเรียนคนอื่นจะไม่เห็น
+    </div>
+
+    ${members.map((member, index) => `
+      <div class="group-assessment-row">
+        <div>
+          สมาชิก:
+          ${escapeHtml(member.no ? "เลขที่ " + member.no + " " : "")}
+          ${escapeHtml(member.name || member.id || ("คนที่ " + (index + 1)))}
+        </div>
+
+        <div class="group-assessment-options">
+          <label>
+            <input type="radio" name="groupMemberStatus_${index}" value="ช่วยงานเต็มที่">
+            ช่วยงานเต็มที่
+          </label>
+          <label>
+            <input type="radio" name="groupMemberStatus_${index}" value="ช่วยบางส่วน">
+            ช่วยบางส่วน
+          </label>
+          <label>
+            <input type="radio" name="groupMemberStatus_${index}" value="ไม่ช่วยงาน">
+            ไม่ช่วยงาน
+          </label>
+        </div>
+
+        <input type="hidden" id="groupMemberId_${index}" value="${escapeAttribute(member.id || "")}">
+        <input type="hidden" id="groupMemberName_${index}" value="${escapeAttribute(member.name || "")}">
+      </div>
+    `).join("")}
+
+    <label>หมายเหตุถึงครู</label>
+    <textarea
+      id="groupTeacherNote"
+      class="teacher-note-textarea"
+      placeholder="พิมพ์หมายเหตุถึงครู เช่น ใครช่วยงานส่วนไหน หรือปัญหาในการทำงานกลุ่ม"
+    ></textarea>
+  `;
+}
+
+function collectGroupAssessmentBeforeSubmit(submitMode){
+
+  if(String(submitMode || "").trim() !== "งานกลุ่ม"){
+    return {
+      assessments: [],
+      teacherNote: ""
+    };
+  }
+
+  const members =
+    getGroupMembersFromSubmitItem();
+
+  let hasUnselected = false;
+
+  const assessments =
+    members.map((member, index) => {
+
+      const selected =
+        document.querySelector(`input[name="groupMemberStatus_${index}"]:checked`);
+
+      if(!selected){
+        hasUnselected = true;
+      }
+
+      return {
+        id: String(member.id || "").trim(),
+        name: String(member.name || "").trim(),
+        no: String(member.no || "").trim(),
+        className: String(member.className || member.class || "").trim(),
+        status: selected ? selected.value : "ช่วยงานเต็มที่"
+      };
+    });
+
+  if(hasUnselected){
+    const confirmed =
+      confirm(
+        "ยังไม่ได้เลือกการทำงานกลุ่มของสมาชิกบางคน\\n\\n" +
+        "หากกดยืนยัน ระบบจะตั้งค่าเป็น “ช่วยงานเต็มที่” ให้อัตโนมัติ"
+      );
+
+    if(!confirmed){
+      return null;
+    }
+  }
+
+  const noteBox =
+    document.getElementById("groupTeacherNote");
+
+  return {
+    assessments: assessments,
+    teacherNote: noteBox ? noteBox.value.trim() : ""
+  };
+}
+
+function openStudentSubmitModal(sheetUrl, topicTitle, workType, worksheetUrl, worksheetVisible, submitItem){
 
   const modal =
     document.getElementById("studentSubmitModal");
@@ -3033,6 +3327,8 @@ function openStudentSubmitModal(sheetUrl, topicTitle, workType, worksheetUrl, wo
   if(!modal || !topicSelect){
     return;
   }
+
+  currentSubmitWorkItem = submitItem || null;
 
   let option =
     Array.from(topicSelect.options)
@@ -3065,6 +3361,7 @@ function openStudentSubmitModal(sheetUrl, topicTitle, workType, worksheetUrl, wo
   }
 
   handleSubmitTopicChange();
+  renderGroupAssessmentBox(workType || "งานเดี่ยว");
   modal.style.display = "flex";
 }
 
@@ -3087,6 +3384,14 @@ function closeStudentSubmitModal(){
 
   if(modal){
     modal.style.display = "none";
+  }
+
+  currentSubmitWorkItem = null;
+
+  const groupAssessmentBox = document.getElementById("groupAssessmentBox");
+  if(groupAssessmentBox){
+    groupAssessmentBox.style.display = "none";
+    groupAssessmentBox.innerHTML = "";
   }
 
   if(topicSelect){
@@ -3646,6 +3951,52 @@ function renderScoreTable(data){
 // ======================================
 // แสดงช่องคะแนนแบบแก้ไขได้
 // ======================================
+function calculateGroupFinalScore(groupScore, adjustment){
+
+  const base =
+    Number(String(groupScore ?? "").trim());
+
+  const adjust =
+    Number(String(adjustment ?? "").trim() || 0);
+
+  if(isNaN(base)){
+    return "";
+  }
+
+  return base + (isNaN(adjust) ? 0 : adjust);
+}
+
+function handleIndividualAdjustmentChange(adjustInput){
+
+  const inputId =
+    adjustInput.getAttribute("data-score-input-id");
+
+  const scoreInput =
+    document.getElementById(inputId);
+
+  if(!scoreInput){
+    return;
+  }
+
+  const finalBoxId =
+    adjustInput.getAttribute("data-final-box-id");
+
+  const finalBox =
+    document.getElementById(finalBoxId);
+
+  if(finalBox){
+    const finalScore =
+      calculateGroupFinalScore(scoreInput.value, adjustInput.value);
+
+    finalBox.textContent =
+      finalScore === ""
+      ? "คะแนนรวม: -"
+      : "คะแนนรวม: " + finalScore;
+  }
+
+  markScoreChanged(scoreInput);
+}
+
 function renderEditableScoreCell(cell, assignmentIndex){
 
   const status = cell.status || "missing";
@@ -3654,6 +4005,15 @@ function renderEditableScoreCell(cell, assignmentIndex){
   const studentId = cell.studentId || "";
   const sheetUrl = cell.sheetUrl || "";
   const isLate = cell.isLate === true;
+  const isGroupCell =
+    cell.isGroup === true ||
+    String(cell.groupName || "").trim() !== "";
+  const groupScore =
+    cell.groupScore ?? score;
+  const individualAdjustment =
+    cell.individualAdjustment ?? "";
+  const finalScore =
+    cell.finalScore ?? "";
 
   const assignment =
     lastScoreTableData &&
@@ -3700,7 +4060,7 @@ function renderEditableScoreCell(cell, assignmentIndex){
     const displayScore =
       shouldHideScore || status === "checked"
       ? ""
-      : score;
+      : (isGroupCell ? groupScore : score);
 
     const isLockedScored =
       lockScoredScores &&
@@ -3721,7 +4081,7 @@ function renderEditableScoreCell(cell, assignmentIndex){
       `;
 
     return `
-      <div class="select-score-box">
+      <div class="select-score-box${isGroupCell ? " group-score-stack" : ""}">
 
         ${checkboxHtml}
 
@@ -3739,8 +4099,48 @@ function renderEditableScoreCell(cell, assignmentIndex){
           data-assignment-index="${escapeAttribute(assignmentIndex)}"
           data-full-score="${escapeAttribute(fullScore)}"
           data-is-late="${isLate ? "true" : "false"}"
+          data-is-group="${isGroupCell ? "true" : "false"}"
+          data-individual-adjustment="${escapeAttribute(individualAdjustment)}"
+          data-group-score-original="${escapeAttribute(groupScore)}"
           ${isLockedScored ? "readonly" : `onchange="handleScoreInputChange(this)"`}
         >
+
+        ${
+          isGroupCell
+          ? `
+            <input
+              id="adjust_input_${escapeAttribute(key)}"
+              class="individual-adjust-input"
+              type="number"
+              value="${escapeAttribute(individualAdjustment)}"
+              placeholder="+/- รายคน"
+              title="คะแนนรายบุคคล เพิ่ม/ลดจากคะแนนกลุ่ม"
+              data-score-input-id="score_input_${escapeAttribute(key)}"
+              data-final-box-id="final_score_${escapeAttribute(key)}"
+              ${isLockedScored ? "readonly" : `onchange="handleIndividualAdjustmentChange(this)"`}
+            >
+            <div id="final_score_${escapeAttribute(key)}" class="group-final-score">
+              ${
+                finalScore !== ""
+                ? "คะแนนรวม: " + escapeHtml(finalScore)
+                : (
+                    calculateGroupFinalScore(displayScore, individualAdjustment) !== ""
+                    ? "คะแนนรวม: " + escapeHtml(calculateGroupFinalScore(displayScore, individualAdjustment))
+                    : "คะแนนรวม: -"
+                  )
+              }
+            </div>
+            ${
+              cell.memberContributionStatus || cell.teacherNote
+              ? `<div class="group-contribution-note">
+                  ${cell.memberContributionStatus ? `การทำงาน: ${escapeHtml(cell.memberContributionStatus)}` : ``}
+                  ${cell.teacherNote ? `<br>หมายเหตุ: ${escapeHtml(cell.teacherNote)}` : ``}
+                 </div>`
+              : ``
+            }
+          `
+          : ``
+        }
 
       </div>
     `;
@@ -3945,6 +4345,24 @@ function handleScoreInputChange(input){
 
   input.removeAttribute("data-score-override");
   clampInputScoreToFullScore(input);
+
+  if(input.getAttribute("data-is-group") === "true"){
+    const key = input.getAttribute("data-key");
+    const adjustInput =
+      document.getElementById("adjust_input_" + key);
+    const finalBox =
+      document.getElementById("final_score_" + key);
+
+    if(finalBox){
+      const finalScore =
+        calculateGroupFinalScore(input.value, adjustInput ? adjustInput.value : "");
+      finalBox.textContent =
+        finalScore === ""
+        ? "คะแนนรวม: -"
+        : "คะแนนรวม: " + finalScore;
+    }
+  }
+
   markScoreChanged(input);
 }
 
@@ -4237,11 +4655,29 @@ function markScoreChanged(input){
     clampInputScoreToFullScore(input);
   }
 
+  const adjustInput =
+    document.getElementById("adjust_input_" + key);
+
+  const isGroupInput =
+    input.getAttribute("data-is-group") === "true";
+
+  const scoreValue =
+    overrideScore ||
+    (
+      isGroupInput &&
+      input.value === "" &&
+      input.getAttribute("data-group-score-original")
+        ? input.getAttribute("data-group-score-original")
+        : input.value
+    );
+
   changedScoreMap[key] = {
     url: input.getAttribute("data-url"),
     rowIndex: input.getAttribute("data-row-index"),
     studentId: input.getAttribute("data-student-id"),
-    score: overrideScore || input.value
+    score: scoreValue,
+    isGroup: isGroupInput,
+    individualAdjustment: adjustInput ? adjustInput.value : input.getAttribute("data-individual-adjustment")
   };
 
   input.classList.add("changed-score");
@@ -4738,6 +5174,7 @@ function handleSubmitTopicChange(){
     }
   }
   updateWorksheetBox(selectedOption);
+  renderGroupAssessmentBox(submitMode.value || workType);
 }
 function updateWorksheetBox(selectedOption){
 
@@ -4817,7 +5254,6 @@ function submitStudentWork(){
   const selectedOption = topicSelect.options[topicSelect.selectedIndex];
 
   const workType =
-    workTypeOverride ||
     (selectedOption ? selectedOption.getAttribute("data-work-type") : "") ||
     "งานเดี่ยว";
 
@@ -4876,6 +5312,15 @@ else{
     return;
   }
 
+  const groupAssessmentData =
+    collectGroupAssessmentBeforeSubmit(submitMode);
+
+  if(groupAssessmentData === null){
+    statusBox.innerHTML =
+      `<div class="status-box">ยกเลิกการส่งงาน เพื่อกลับไปเลือกการทำงานกลุ่ม</div>`;
+    return;
+  }
+
   statusBox.innerHTML =
     `<div class="status-box">กำลังส่งงาน...</div>`;
 
@@ -4891,6 +5336,8 @@ else{
         no: currentStudentNo,
         submitMode: submitMode,
         work: work,
+        groupMemberAssessments: groupAssessmentData.assessments,
+        teacherNote: groupAssessmentData.teacherNote,
         ...filePayload
       })
     })
