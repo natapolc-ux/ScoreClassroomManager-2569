@@ -66,7 +66,7 @@ h2,h3,h4{
 
 .toolbar{
   display:grid;
-  grid-template-columns:140px 2fr 1fr 1fr 48px;
+  grid-template-columns:140px 1fr 2fr 1fr 1fr 48px;
   gap:10px;
   margin-bottom:10px;
   align-items:stretch;
@@ -868,6 +868,10 @@ h2,h3,h4{
     โหลดงาน
   </button>
 
+  <select id="workLevelFilter" onchange="handleWorkLevelFilterChange()">
+    <option value="">ทุกระดับชั้น</option>
+  </select>
+
   <select id="topic" onchange="updateWorkClassFilterByTopic()">
     <option value="">กำลังโหลดหัวข้องาน...</option>
   </select>
@@ -1149,6 +1153,7 @@ let currentStudentLevel = "";
 let currentStudentClass = "";
 let currentStudentNo = "";
 let scoreOptionsData = [];
+let teacherTopicsData = [];
 let lastScoreTableData = null;
 let hideScoreValues = true;
 let lockScoredScores = true;
@@ -1262,6 +1267,12 @@ currentStudentNo = data.no || "";
 function loadTopics(){
 
   const topicSelect = document.getElementById("topic");
+  const levelSelect = document.getElementById("workLevelFilter");
+
+  if(levelSelect){
+    levelSelect.innerHTML =
+      `<option value="">กำลังโหลดระดับชั้น...</option>`;
+  }
 
   topicSelect.innerHTML =
     `<option value="">กำลังโหลดหัวข้องาน...</option>`;
@@ -1283,12 +1294,17 @@ function loadTopics(){
       topics = response.data;
     }
 
-    // รองรับ API เก่าที่ส่ง array ตรง ๆ
+    // รองรับ API เก่าที่ยังส่ง array ตรง ๆ
     else if(Array.isArray(response)){
       topics = response;
     }
 
     else{
+      if(levelSelect){
+        levelSelect.innerHTML =
+          `<option value="">ทุกระดับชั้น</option>`;
+      }
+
       topicSelect.innerHTML =
         `<option value="">โหลดหัวข้องานไม่สำเร็จ</option>`;
 
@@ -1296,19 +1312,130 @@ function loadTopics(){
       return;
     }
 
+    teacherTopicsData = topics;
+
     if(topics.length === 0){
+      if(levelSelect){
+        levelSelect.innerHTML =
+          `<option value="">ทุกระดับชั้น</option>`;
+      }
+
       topicSelect.innerHTML =
         `<option value="">ยังไม่มีหัวข้องาน</option>`;
       return;
     }
 
-    let html =
-      `<option value="">-- เลือกหัวข้องาน --</option>
-       <option value="__ALL_WORK__" data-level="" data-work-type="all">
-         📚 โหลดทุกงานทุกชั้น
-       </option>`;
+    populateWorkLevelFilter(topics);
+    renderWorkTopicOptions();
+    updateWorkClassFilterByTopic();
+  })
 
-    topics.forEach(t => {
+  .catch(error => {
+    console.error(error);
+
+    if(levelSelect){
+      levelSelect.innerHTML =
+        `<option value="">ทุกระดับชั้น</option>`;
+    }
+
+    topicSelect.innerHTML =
+      `<option value="">โหลดหัวข้องานไม่สำเร็จ</option>`;
+  });
+}
+
+
+function populateWorkLevelFilter(topics){
+
+  const levelSelect =
+    document.getElementById("workLevelFilter");
+
+  if(!levelSelect){
+    return;
+  }
+
+  const oldValue =
+    String(levelSelect.value || "").trim();
+
+  const levels = [
+    ...new Set(
+      (Array.isArray(topics) ? topics : [])
+        .map(item => String(item.level || "").trim())
+        .filter(Boolean)
+    )
+  ].sort((a, b) =>
+    String(a).localeCompare(String(b), "th", { numeric: true })
+  );
+
+  let html =
+    `<option value="">ทุกระดับชั้น</option>`;
+
+  levels.forEach(level => {
+    html += `
+      <option value="${escapeAttribute(level)}">
+        ${escapeHtml(level)}
+      </option>
+    `;
+  });
+
+  levelSelect.innerHTML = html;
+
+  if(oldValue && levels.includes(oldValue)){
+    levelSelect.value = oldValue;
+  }
+}
+
+
+function getSelectedWorkLevel(){
+
+  const levelSelect =
+    document.getElementById("workLevelFilter");
+
+  return levelSelect
+    ? String(levelSelect.value || "").trim()
+    : "";
+}
+
+
+function renderWorkTopicOptions(keepTopicValue){
+
+  const topicSelect =
+    document.getElementById("topic");
+
+  if(!topicSelect){
+    return;
+  }
+
+  const selectedLevel =
+    getSelectedWorkLevel();
+
+  const currentTopic =
+    keepTopicValue !== undefined
+      ? String(keepTopicValue || "")
+      : String(topicSelect.value || "");
+
+  const topics =
+    (Array.isArray(teacherTopicsData) ? teacherTopicsData : [])
+      .filter(item =>
+        !selectedLevel ||
+        String(item.level || "").trim() === selectedLevel
+      );
+
+  const allWorkLabel =
+    selectedLevel
+      ? "📚 โหลดทุกงานของ " + selectedLevel
+      : "📚 โหลดทุกงานทุกชั้น";
+
+  let html =
+    `<option value="">-- เลือกหัวข้องาน --</option>
+     <option
+       value="__ALL_WORK__"
+       data-level="${escapeAttribute(selectedLevel)}"
+       data-work-type="all"
+     >
+       ${escapeHtml(allWorkLabel)}
+     </option>`;
+
+  topics.forEach(t => {
 
 html += `
   <option
@@ -1316,23 +1443,41 @@ html += `
     data-level="${escapeAttribute(t.level || "")}"
     data-work-type="${escapeAttribute(t.workType || "งานเดี่ยว")}"
   >
-    ${escapeHtml(t.level)} - ${escapeHtml(t.topic)}
+    ${escapeHtml(t.topic || "")}
     ${t.workType === "งานกลุ่ม" ? " [งานกลุ่ม]" : ""}
     ${t.workType === "เลือกส่ง" ? " [เลือกส่ง]" : ""}
   </option>
 `;
-    });
-
-    topicSelect.innerHTML = html;
-updateWorkClassFilterByTopic();
-  })
-
-  .catch(error => {
-    console.error(error);
-    topicSelect.innerHTML =
-      `<option value="">โหลดหัวข้องานไม่สำเร็จ</option>`;
   });
+
+  topicSelect.innerHTML = html;
+
+  if(currentTopic){
+    const hasCurrentTopic =
+      Array.from(topicSelect.options)
+        .some(option => option.value === currentTopic);
+
+    if(hasCurrentTopic){
+      topicSelect.value = currentTopic;
+    }
+  }
 }
+
+
+function handleWorkLevelFilterChange(){
+
+  renderWorkTopicOptions("");
+
+  const classSelect =
+    document.getElementById("classFilter");
+
+  if(classSelect){
+    classSelect.value = "";
+  }
+
+  updateWorkClassFilterByTopic();
+}
+
 function normalizeOptionKey(value){
   return String(value || "")
     .trim()
@@ -1358,10 +1503,13 @@ function updateWorkClassFilterByTopic(keepClassValue){
   const selectedOption =
     topicSelect.options[topicSelect.selectedIndex];
 
-  const selectedLevel =
+  const selectedLevelFromTopic =
     selectedOption
       ? String(selectedOption.getAttribute("data-level") || "").trim()
       : "";
+
+  const selectedLevel =
+    selectedLevelFromTopic || getSelectedWorkLevel();
 
   const oldClassValue =
     keepClassValue !== undefined
@@ -1690,13 +1838,23 @@ function loadAllWork(){
           ? response.data
           : (Array.isArray(response) ? response : []);
 
-      if(topics.length === 0){
+      const selectedLevel =
+        getSelectedWorkLevel();
+
+      const filteredTopics =
+        selectedLevel
+          ? topics.filter(topic =>
+              String(topic.level || "").trim() === selectedLevel
+            )
+          : topics;
+
+      if(filteredTopics.length === 0){
         workStatus.innerHTML =
-          `<div class="status-box">ยังไม่มีหัวข้องานให้โหลด</div>`;
+          `<div class="status-box">ยังไม่มีหัวข้องานให้โหลดในระดับชั้นนี้</div>`;
         return;
       }
 
-      const requests = topics.map(topic => {
+      const requests = filteredTopics.map(topic => {
         return fetch(
           API_URL
           + "?action=studentWork"
@@ -1744,8 +1902,14 @@ function loadAllWork(){
 
       populateClassFilter(currentWorkData);
 
+      const selectedLevel =
+        getSelectedWorkLevel();
+
       workStatus.innerHTML =
-        `<div class="status-box">พบงานทั้งหมด ${currentWorkData.length} รายการ จากทุกชั้น</div>`;
+        `<div class="status-box">
+          พบงานทั้งหมด ${currentWorkData.length} รายการ
+          ${selectedLevel ? "ของ " + escapeHtml(selectedLevel) : "จากทุกชั้น"}
+        </div>`;
 
       applyWorkSortAndRender();
     })
