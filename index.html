@@ -829,6 +829,43 @@ h2,h3,h4{
   white-space:normal;
 }
 
+.group-score-readonly,
+.final-score-input{
+  width:120px;
+  min-height:35px;
+  text-align:center;
+  margin-top:0;
+}
+
+.group-score-readonly{
+  border-style:dashed;
+  opacity:0.92;
+  cursor:not-allowed;
+}
+
+.final-score-input{
+  color:#00ff41;
+  border-color:#00ff41;
+}
+
+.individual-adjust-wrapper{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:4px;
+}
+
+.group-contribution-status-badge{
+  max-width:170px;
+  padding:3px 7px;
+  border:1px solid #ffcc80;
+  color:#ffcc80;
+  background:rgba(58,36,0,0.65);
+  font-size:12px;
+  line-height:1.35;
+  white-space:normal;
+}
+
 
 .student-shell{
   display:grid;
@@ -1141,6 +1178,15 @@ h2,h3,h4{
           ล็อกช่องที่มีคะแนนแล้ว
         </label>
 
+        <label class="hide-score-box">
+          <input
+            type="checkbox"
+            id="hideIndividualAdjustmentsToggle"
+            onchange="toggleHideIndividualAdjustments()"
+          >
+          ซ่อนช่อง +/- คะแนนรายบุคคล
+        </label>
+
         <button
           type="button"
           onclick="stopLoadedScoreTable()"
@@ -1258,6 +1304,7 @@ let teacherTopicsData = [];
 let lastScoreTableData = null;
 let hideScoreValues = true;
 let lockScoredScores = true;
+let hideIndividualAdjustments = false;
 let changedScoreMap = {};
 let selectedAssignmentIndexes = new Set();
 let hideViewedWorksEnabled = false;
@@ -1271,6 +1318,7 @@ const COLLAPSED_WORKS_STORAGE_KEY = "matrixCollapsedWorks";
 const FULL_SCORE_STORAGE_KEY_PREFIX = "matrixFullScore::";
 const LOCK_SCORED_STORAGE_KEY = "matrixLockScoredScores";
 const HIDE_SCORES_STORAGE_KEY = "matrixHideScores";
+const HIDE_INDIVIDUAL_ADJUSTMENTS_STORAGE_KEY = "matrixHideIndividualAdjustments";
 
 // ======================================
 // LOGIN
@@ -4327,23 +4375,76 @@ function handleIndividualAdjustmentChange(adjustInput){
     return;
   }
 
-  const finalBoxId =
-    adjustInput.getAttribute("data-final-box-id");
+  const finalInputId =
+    adjustInput.getAttribute("data-final-input-id");
 
-  const finalBox =
-    document.getElementById(finalBoxId);
+  const finalInput =
+    document.getElementById(finalInputId);
 
-  if(finalBox){
+  if(finalInput){
     const finalScore =
       calculateGroupFinalScore(scoreInput.value, adjustInput.value);
 
-    finalBox.textContent =
-      finalScore === ""
-      ? "คะแนนรวม: -"
-      : "คะแนนรวม: " + finalScore;
+    finalInput.value =
+      finalScore === "" ? "" : String(finalScore);
   }
 
   markScoreChanged(scoreInput);
+}
+
+function handleFinalGroupScoreChange(finalInput){
+
+  const inputId =
+    finalInput.getAttribute("data-score-input-id");
+
+  const scoreInput =
+    document.getElementById(inputId);
+
+  if(!scoreInput){
+    return;
+  }
+
+  const adjustInputId =
+    finalInput.getAttribute("data-adjust-input-id");
+
+  const adjustInput =
+    document.getElementById(adjustInputId);
+
+  const groupScore =
+    Number(String(scoreInput.value || "").trim());
+
+  const finalScore =
+    Number(String(finalInput.value || "").trim());
+
+  if(adjustInput){
+    if(
+      finalInput.value === "" ||
+      isNaN(groupScore) ||
+      isNaN(finalScore)
+    ){
+      adjustInput.value = "";
+    } else {
+      adjustInput.value = String(finalScore - groupScore);
+    }
+  }
+
+  markScoreChanged(scoreInput);
+}
+
+function getGroupFinalScoreValue(groupScore, individualAdjustment, fallbackFinalScore){
+
+  if(
+    fallbackFinalScore !== undefined &&
+    fallbackFinalScore !== null &&
+    String(fallbackFinalScore).trim() !== ""
+  ){
+    return String(fallbackFinalScore);
+  }
+
+  const calculated =
+    calculateGroupFinalScore(groupScore, individualAdjustment);
+
+  return calculated === "" ? "" : String(calculated);
 }
 
 function renderEditableScoreCell(cell, assignmentIndex){
@@ -4364,10 +4465,10 @@ function renderEditableScoreCell(cell, assignmentIndex){
   const finalScore =
     cell.finalScore ?? "";
 
-  const contributionPlaceholder =
+  const contributionText =
     cell.memberContributionStatus
       ? String(cell.memberContributionStatus)
-      : "ปรับคะแนนรายคน";
+      : "ยังไม่มีข้อมูลความมีส่วนร่วม";
 
   const assignment =
     lastScoreTableData &&
@@ -4434,6 +4535,45 @@ function renderEditableScoreCell(cell, assignmentIndex){
         </label>
       `;
 
+    const groupFinalScoreValue =
+      isGroupCell
+      ? getGroupFinalScoreValue(displayScore, individualAdjustment, finalScore)
+      : "";
+
+    const individualAdjustHtml =
+      isGroupCell
+      ? (
+          hideIndividualAdjustments
+          ? `
+            <input
+              id="adjust_input_${escapeAttribute(key)}"
+              type="hidden"
+              value="${escapeAttribute(individualAdjustment)}"
+              data-score-input-id="score_input_${escapeAttribute(key)}"
+              data-final-input-id="final_score_input_${escapeAttribute(key)}"
+            >
+          `
+          : `
+            <div class="individual-adjust-wrapper">
+              <div class="group-contribution-status-badge">
+                ${escapeHtml(contributionText)}
+              </div>
+              <input
+                id="adjust_input_${escapeAttribute(key)}"
+                class="individual-adjust-input"
+                type="number"
+                value="${escapeAttribute(individualAdjustment)}"
+                placeholder="${escapeAttribute(contributionText)}"
+                title="${escapeAttribute(contributionText)}"
+                data-score-input-id="score_input_${escapeAttribute(key)}"
+                data-final-input-id="final_score_input_${escapeAttribute(key)}"
+                ${isLockedScored ? "readonly" : `onchange="handleIndividualAdjustmentChange(this)"`}
+              >
+            </div>
+          `
+        )
+      : ``;
+
     return `
       <div class="select-score-box${isGroupCell ? " group-score-stack" : ""}">
 
@@ -4444,8 +4584,8 @@ function renderEditableScoreCell(cell, assignmentIndex){
           class="score-input${extraInputClass}${isLockedScored ? " locked-score-input" : ""}"
           type="number"
           value="${escapeAttribute(displayScore)}"
-          placeholder="${escapeAttribute(placeholderText)}"
-          title="${escapeAttribute(placeholderText)}"
+          placeholder="${escapeAttribute(isGroupCell ? "กรอกคะแนนกลุ่ม" : placeholderText)}"
+          title="${escapeAttribute(isGroupCell ? "กรอกคะแนนกลุ่ม" : placeholderText)}"
           data-key="${escapeAttribute(key)}"
           data-url="${escapeAttribute(sheetUrl)}"
           data-row-index="${escapeAttribute(rowIndex)}"
@@ -4463,31 +4603,32 @@ function renderEditableScoreCell(cell, assignmentIndex){
           isGroupCell
           ? `
             <input
-              id="adjust_input_${escapeAttribute(key)}"
-              class="individual-adjust-input"
-              type="number"
-              value="${escapeAttribute(individualAdjustment)}"
-              placeholder="${escapeAttribute(contributionPlaceholder)}"
-              title="${escapeAttribute(contributionPlaceholder)} | ช่องนี้ใช้ปรับคะแนนตามดุลยพินิจของครู"
-              data-score-input-id="score_input_${escapeAttribute(key)}"
-              data-final-box-id="final_score_${escapeAttribute(key)}"
-              ${isLockedScored ? "readonly" : `onchange="handleIndividualAdjustmentChange(this)"`}
+              id="group_score_display_${escapeAttribute(key)}"
+              class="group-score-readonly"
+              type="text"
+              value="${escapeAttribute(displayScore || groupScore)}"
+              placeholder="คะแนนกลุ่ม"
+              title="คะแนนกลุ่ม"
+              readonly
             >
-            <div id="final_score_${escapeAttribute(key)}" class="group-final-score">
-              ${
-                finalScore !== ""
-                ? "คะแนนรวม: " + escapeHtml(finalScore)
-                : (
-                    calculateGroupFinalScore(displayScore, individualAdjustment) !== ""
-                    ? "คะแนนรวม: " + escapeHtml(calculateGroupFinalScore(displayScore, individualAdjustment))
-                    : "คะแนนรวม: -"
-                  )
-              }
-            </div>
+
+            ${individualAdjustHtml}
+
+            <input
+              id="final_score_input_${escapeAttribute(key)}"
+              class="final-score-input"
+              type="number"
+              value="${escapeAttribute(groupFinalScoreValue)}"
+              placeholder="คะแนนรวมรายคน"
+              title="คะแนนรวมรายคน"
+              data-score-input-id="score_input_${escapeAttribute(key)}"
+              data-adjust-input-id="adjust_input_${escapeAttribute(key)}"
+              ${isLockedScored ? "readonly" : `onchange="handleFinalGroupScoreChange(this)"`}
+            >
+
             <div class="group-contribution-note">
               ${cell.memberContributionStatus ? `นักเรียนแจ้ง: ${escapeHtml(cell.memberContributionStatus)}` : ``}
               ${cell.teacherNote ? `<br>หมายเหตุ: ${escapeHtml(cell.teacherNote)}` : ``}
-              <br>ไม่มีผลต่อคะแนนโดยตรง ขึ้นอยู่กับดุลยพินิจของครู
             </div>
           `
           : ``
@@ -4681,7 +4822,7 @@ function applyScoreToSelectedCells(){
       input.removeAttribute("data-score-override");
       input.value = score;
       cappedCount += clampInputScoreToFullScore(input) ? 1 : 0;
-      markScoreChanged(input);
+      handleScoreInputChange(input);
     }
   });
 
@@ -4701,16 +4842,20 @@ function handleScoreInputChange(input){
     const key = input.getAttribute("data-key");
     const adjustInput =
       document.getElementById("adjust_input_" + key);
-    const finalBox =
-      document.getElementById("final_score_" + key);
+    const finalInput =
+      document.getElementById("final_score_input_" + key);
+    const groupScoreDisplay =
+      document.getElementById("group_score_display_" + key);
 
-    if(finalBox){
+    if(groupScoreDisplay){
+      groupScoreDisplay.value = input.value || input.getAttribute("data-group-score-original") || "";
+    }
+
+    if(finalInput){
       const finalScore =
         calculateGroupFinalScore(input.value, adjustInput ? adjustInput.value : "");
-      finalBox.textContent =
-        finalScore === ""
-        ? "คะแนนรวม: -"
-        : "คะแนนรวม: " + finalScore;
+      finalInput.value =
+        finalScore === "" ? "" : String(finalScore);
     }
   }
 
@@ -4803,7 +4948,7 @@ function applyFullScoreToSelectedCells(){
 
     input.removeAttribute("data-score-override");
     input.value = fullScore;
-    markScoreChanged(input);
+    handleScoreInputChange(input);
     successCount++;
   });
 
@@ -4882,6 +5027,38 @@ function loadScoreTableSettings(){
 
   if(lockCheckbox){
     lockCheckbox.checked = lockScoredScores;
+  }
+
+  const hideIndividualSaved =
+    localStorage.getItem(HIDE_INDIVIDUAL_ADJUSTMENTS_STORAGE_KEY);
+
+  hideIndividualAdjustments =
+    hideIndividualSaved === "true";
+
+  const hideIndividualCheckbox =
+    document.getElementById("hideIndividualAdjustmentsToggle");
+
+  if(hideIndividualCheckbox){
+    hideIndividualCheckbox.checked = hideIndividualAdjustments;
+  }
+}
+
+function toggleHideIndividualAdjustments(){
+
+  const checkbox =
+    document.getElementById("hideIndividualAdjustmentsToggle");
+
+  hideIndividualAdjustments =
+    checkbox ? checkbox.checked : false;
+
+  localStorage.setItem(
+    HIDE_INDIVIDUAL_ADJUSTMENTS_STORAGE_KEY,
+    hideIndividualAdjustments ? "true" : "false"
+  );
+
+  if(lastScoreTableData){
+    renderScoreTable(lastScoreTableData);
+    updateBulkScoreStatus("ช่อง +/- คะแนนรายบุคคล: " + (hideIndividualAdjustments ? "ซ่อน" : "แสดง"));
   }
 }
 
