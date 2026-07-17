@@ -829,6 +829,101 @@ h2,h3,h4{
   white-space:normal;
 }
 
+
+.student-shell{
+  display:grid;
+  grid-template-columns:260px minmax(0, 1fr);
+  gap:16px;
+  align-items:start;
+}
+
+.student-sidebar{
+  position:sticky;
+  top:12px;
+  max-height:calc(100vh - 24px);
+  overflow:auto;
+}
+
+.student-sidebar .student-toc{
+  margin-top:0;
+}
+
+.student-main{
+  min-width:0;
+}
+
+.student-profile-card{
+  display:flex;
+  align-items:center;
+  gap:14px;
+}
+
+.student-photo{
+  width:86px;
+  height:86px;
+  object-fit:cover;
+  border:1px solid #00ff41;
+  box-shadow:0 0 10px #00ff41;
+  background:#000;
+  flex:0 0 auto;
+}
+
+.student-photo-small{
+  width:62px;
+  height:62px;
+  object-fit:cover;
+  border:1px solid #00ff41;
+  box-shadow:0 0 8px #00ff41;
+  background:#000;
+  flex:0 0 auto;
+}
+
+.teacher-work-heading{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding-right:190px;
+}
+
+.teacher-work-heading h3{
+  margin:0;
+}
+
+.student-order-badge{
+  display:inline-block;
+  margin-top:6px;
+  padding:3px 8px;
+  border:1px solid #00ff41;
+  background:rgba(0,255,65,0.08);
+}
+
+.contribution-disclaimer{
+  margin-top:8px;
+  font-size:12px;
+  color:#ffcc80;
+  line-height:1.4;
+}
+
+.individual-adjust-input::placeholder{
+  color:#ffcc80;
+  opacity:1;
+}
+
+@media(max-width:900px){
+  .student-shell{
+    grid-template-columns:1fr;
+  }
+
+  .student-sidebar{
+    position:static;
+    max-height:none;
+  }
+
+  .teacher-work-heading{
+    padding-right:0;
+  }
+}
+
 </style>
 
 </head>
@@ -925,7 +1020,7 @@ h2,h3,h4{
         <option value="oldest">ส่งก่อน</option>
         <option value="noAsc">เลขที่น้อยไปมาก</option>
         <option value="noDesc">เลขที่มากไปน้อย</option>
-        <option value="nameAsc">ชื่อนักเรียน ก-ฮ</option>
+        <option value="studentSeqAsc">ลำดับนักเรียน</option>
         <option value="groupAsc">ชื่อกลุ่ม ก-ฮ</option>
       </select>
 
@@ -1132,7 +1227,11 @@ h2,h3,h4{
   </div>
 
   <div id="myWorkStatus"></div>
-  <div id="myWork"></div>
+
+  <div id="studentWorkLayout" class="student-shell">
+    <aside id="studentWorkSidebar" class="student-sidebar"></aside>
+    <main id="myWork" class="student-main"></main>
+  </div>
 
 </div>
 
@@ -1152,6 +1251,8 @@ let currentStudentName = "";
 let currentStudentLevel = "";
 let currentStudentClass = "";
 let currentStudentNo = "";
+let currentStudentPhotoUrl = "";
+let currentStudentOrder = "";
 let scoreOptionsData = [];
 let teacherTopicsData = [];
 let lastScoreTableData = null;
@@ -1231,6 +1332,8 @@ currentStudentName = data.name;
 currentStudentLevel = data.level || "";
 currentStudentClass = data.className || "";
 currentStudentNo = data.no || "";
+currentStudentPhotoUrl = data.photoUrl || "";
+currentStudentOrder = data.studentOrder || calculateStudentOrder(currentStudentClass, currentStudentNo);
 
   document
     .getElementById("studentPanel")
@@ -1239,8 +1342,12 @@ currentStudentNo = data.no || "";
   document
     .getElementById("studentData")
     .innerHTML =
-    `<div class="status-box">
-      ยินดีต้อนรับ ${escapeHtml(data.name)}
+    `<div class="status-box student-profile-card">
+      ${renderStudentPhoto(currentStudentPhotoUrl, data.name, false)}
+      <div>
+        <div>ยินดีต้อนรับ ${escapeHtml(data.name)}</div>
+        ${currentStudentOrder ? `<div class="student-order-badge">ลำดับนักเรียน: ${escapeHtml(currentStudentOrder)}</div>` : ``}
+      </div>
     </div>`;
 
   loadMyWork();
@@ -1260,6 +1367,66 @@ currentStudentNo = data.no || "";
   });
 }
 
+
+
+function calculateStudentOrder(className, no){
+
+  const classText = String(className || "").trim();
+  const noText = String(no || "").trim();
+
+  const numbers = classText.match(/\d+/g) || [];
+  const grade = numbers.length > 0 ? numbers[0] : "";
+  const room = numbers.length > 1 ? numbers[1] : "";
+
+  if(!grade || !room || !noText){
+    return "";
+  }
+
+  const roomPadded = String(parseInt(room, 10)).padStart(2, "0");
+  const noPadded = String(parseInt(noText, 10)).padStart(2, "0");
+
+  if(roomPadded === "NaN" || noPadded === "NaN"){
+    return "";
+  }
+
+  return String(parseInt(grade, 10)) + roomPadded + noPadded;
+}
+
+function getWorkStudentOrder(item){
+
+  return String(
+    item.studentOrder ||
+    item.studentSeq ||
+    calculateStudentOrder(item.class, item.no) ||
+    "99999"
+  );
+}
+
+function renderStudentPhoto(photoUrl, name, small){
+
+  const url = String(photoUrl || "").trim();
+
+  if(!url){
+    return "";
+  }
+
+  const driveId =
+    extractDriveFileId(url);
+
+  const src =
+    driveId
+      ? "https://drive.google.com/thumbnail?id=" + driveId + "&sz=w240"
+      : url;
+
+  return `
+    <img
+      class="${small ? "student-photo-small" : "student-photo"}"
+      src="${escapeAttribute(src)}"
+      alt="รูปนักเรียน ${escapeAttribute(name || "")}" 
+      onerror="this.style.display='none';"
+    >
+  `;
+}
 
 // ======================================
 // โหลดหัวข้องาน
@@ -1994,10 +2161,10 @@ function getSortedWorkData(data){
         : getNoValue(b.no) - getNoValue(a.no);
     }
 
-    if(sortMode === "nameAsc"){
-      return getStudentDisplayName(a)
+    if(sortMode === "studentSeqAsc"){
+      return getWorkStudentOrder(a)
         .localeCompare(
-          getStudentDisplayName(b),
+          getWorkStudentOrder(b),
           "th",
           { numeric: true }
         );
@@ -2416,6 +2583,12 @@ function renderWorkCards(){
         ? "ผู้ส่ง: " + String(s.name || "-").trim()
         : "เลขที่: " + String(studentNo || "-").trim();
 
+    const studentOrder =
+      getWorkStudentOrder(s);
+
+    const photoHtml =
+      renderStudentPhoto(s.photoUrl || s.studentPhotoUrl || "", displayTitle, true);
+
     const scoreText =
       String(s.score ?? "").trim();
 
@@ -2478,11 +2651,15 @@ function renderWorkCards(){
 
         </div>
 
-        <h3>
-          ${s.topic ? escapeHtml((s.level ? s.level + " - " : "") + s.topic) + " | " : ""}
-          ${escapeHtml(studentClass)}
-          ${isGroup ? "งานกลุ่ม" : escapeHtml("เลขที่ " + studentNo)}
-        </h3>
+        <div class="teacher-work-heading">
+          ${photoHtml}
+          <h3>
+            ${s.topic ? escapeHtml((s.level ? s.level + " - " : "") + s.topic) + " | " : ""}
+            ${escapeHtml(studentClass)}
+            ${isGroup ? "งานกลุ่ม" : escapeHtml("เลขที่ " + studentNo)}
+            ${studentOrder && studentOrder !== "99999" ? `<span class="student-order-badge">ลำดับ ${escapeHtml(studentOrder)}</span>` : ``}
+          </h3>
+        </div>
 
         <div class="meta">
           <div>${isGroup ? "ชื่อกลุ่ม" : "ชื่อ"}: ${escapeHtml(displayTitle)}</div>
@@ -3030,32 +3207,37 @@ function renderMyWorkCards(data){
     `;
   }
 
-  if(allData.length > 0){
-    html += `
-      <div class="status-box student-toc">
-        <h3>สารบัญงาน</h3>
-        <div class="student-toc-list">
-          <button
-            type="button"
-            class="${selectedMyWorkIndex === null ? "active" : ""}"
-            onclick="showAllMyWork()"
-          >
-            หน้าหลักรวมทุกงาน
-          </button>
+  const sidebar =
+    document.getElementById("studentWorkSidebar");
 
-          ${allData.map((item, index) => `
+  if(sidebar){
+    sidebar.innerHTML = allData.length > 0
+      ? `
+        <div class="status-box student-toc">
+          <h3>สารบัญงาน</h3>
+          <div class="student-toc-list">
             <button
               type="button"
-              class="${selectedMyWorkIndex === index ? "active" : ""}"
-              onclick="showSingleMyWork(${index})"
+              class="${selectedMyWorkIndex === null ? "active" : ""}"
+              onclick="showAllMyWork()"
             >
-              ${item.status !== "submitted" && item.isOverdue ? "เลยกำหนด " : ""}
-              ${escapeHtml(item.topic || "")}
+              หน้าหลักรวมทุกงาน
             </button>
-          `).join("")}
+
+            ${allData.map((item, index) => `
+              <button
+                type="button"
+                class="${selectedMyWorkIndex === index ? "active" : ""}"
+                onclick="showSingleMyWork(${index})"
+              >
+                ${item.status !== "submitted" && item.isOverdue ? "เลยกำหนด " : ""}
+                ${escapeHtml(item.topic || "")}
+              </button>
+            `).join("")}
+          </div>
         </div>
-      </div>
-    `;
+      `
+      : "";
   }
 
   const displayData =
@@ -3324,7 +3506,7 @@ function openStudentSubmitModalByIndex(index){
   openStudentSubmitModal(
     item.sheetUrl || "",
     item.topic || "",
-    item.submitMode || "งานเดี่ยว",
+    item.workType || item.submitMode || "งานเดี่ยว",
     item.worksheetUrl || "",
     item.worksheetVisible === false ? "false" : "true",
     item
@@ -3375,6 +3557,9 @@ function renderGroupAssessmentBox(workType){
     <h4>ประเมินการทำงานกลุ่ม</h4>
     <div class="empty-text">
       ข้อมูลส่วนนี้ครูเท่านั้นที่เห็น นักเรียนคนอื่นจะไม่เห็น
+    </div>
+    <div class="contribution-disclaimer">
+      หมายเหตุ: ความมีส่วนร่วมที่นักเรียนแจ้งไม่มีผลต่อคะแนนโดยตรง คะแนนสุดท้ายขึ้นอยู่กับดุลยพินิจของครู
     </div>
 
     ${members.map((member, index) => `
@@ -4179,6 +4364,11 @@ function renderEditableScoreCell(cell, assignmentIndex){
   const finalScore =
     cell.finalScore ?? "";
 
+  const contributionPlaceholder =
+    cell.memberContributionStatus
+      ? String(cell.memberContributionStatus)
+      : "ปรับคะแนนรายคน";
+
   const assignment =
     lastScoreTableData &&
     Array.isArray(lastScoreTableData.assignments)
@@ -4277,8 +4467,8 @@ function renderEditableScoreCell(cell, assignmentIndex){
               class="individual-adjust-input"
               type="number"
               value="${escapeAttribute(individualAdjustment)}"
-              placeholder="+/- รายคน"
-              title="คะแนนรายบุคคล เพิ่ม/ลดจากคะแนนกลุ่ม"
+              placeholder="${escapeAttribute(contributionPlaceholder)}"
+              title="${escapeAttribute(contributionPlaceholder)} | ช่องนี้ใช้ปรับคะแนนตามดุลยพินิจของครู"
               data-score-input-id="score_input_${escapeAttribute(key)}"
               data-final-box-id="final_score_${escapeAttribute(key)}"
               ${isLockedScored ? "readonly" : `onchange="handleIndividualAdjustmentChange(this)"`}
@@ -4294,14 +4484,11 @@ function renderEditableScoreCell(cell, assignmentIndex){
                   )
               }
             </div>
-            ${
-              cell.memberContributionStatus || cell.teacherNote
-              ? `<div class="group-contribution-note">
-                  ${cell.memberContributionStatus ? `การทำงาน: ${escapeHtml(cell.memberContributionStatus)}` : ``}
-                  ${cell.teacherNote ? `<br>หมายเหตุ: ${escapeHtml(cell.teacherNote)}` : ``}
-                 </div>`
-              : ``
-            }
+            <div class="group-contribution-note">
+              ${cell.memberContributionStatus ? `นักเรียนแจ้ง: ${escapeHtml(cell.memberContributionStatus)}` : ``}
+              ${cell.teacherNote ? `<br>หมายเหตุ: ${escapeHtml(cell.teacherNote)}` : ``}
+              <br>ไม่มีผลต่อคะแนนโดยตรง ขึ้นอยู่กับดุลยพินิจของครู
+            </div>
           `
           : ``
         }
