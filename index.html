@@ -1394,7 +1394,6 @@ currentStudentOrder = data.studentOrder || calculateStudentOrder(currentStudentC
       ${renderStudentPhoto(currentStudentPhotoUrl, data.name, false)}
       <div>
         <div>ยินดีต้อนรับ ${escapeHtml(data.name)}</div>
-        ${currentStudentOrder ? `<div class="student-order-badge">ลำดับนักเรียน: ${escapeHtml(currentStudentOrder)}</div>` : ``}
       </div>
     </div>`;
 
@@ -2964,8 +2963,15 @@ function giveFullScore(url, studentId, rowIndex){
   const storageKey =
     FULL_SCORE_STORAGE_KEY_PREFIX + String(url || "");
 
+  const topicInfo =
+    Array.isArray(teacherTopicsData)
+      ? teacherTopicsData.find(item => String(item.url || "") === String(url || ""))
+      : null;
+
   const oldFullScore =
-    localStorage.getItem(storageKey) || "10";
+    localStorage.getItem(storageKey) ||
+    (topicInfo && topicInfo.fullScore ? String(topicInfo.fullScore) : "") ||
+    "10";
 
   const fullScore =
     prompt("กรอกคะแนนเต็มของงานนี้", oldFullScore);
@@ -2983,6 +2989,18 @@ function giveFullScore(url, studentId, rowIndex){
   }
 
   localStorage.setItem(storageKey, cleanedScore);
+
+  if(topicInfo){
+    topicInfo.fullScore = cleanedScore;
+  }
+
+  fetch(API_URL + "?action=updateAssignmentFullScore", {
+    method: "POST",
+    body: JSON.stringify({
+      url: url,
+      fullScore: cleanedScore
+    })
+  }).catch(error => console.error(error));
 
   saveScoreValue(
     url,
@@ -3561,22 +3579,269 @@ function openStudentSubmitModalByIndex(index){
   );
 }
 
+function getGroupCandidateMembersFromSubmitItem(){
+
+  const candidates =
+    currentSubmitWorkItem &&
+    Array.isArray(currentSubmitWorkItem.groupCandidateMembers)
+      ? currentSubmitWorkItem.groupCandidateMembers
+      : [];
+
+  const normalized = [];
+
+  candidates.forEach(member => {
+    if(!member || !member.id){
+      return;
+    }
+
+    const exists =
+      normalized.some(item =>
+        String(item.id || "").trim() === String(member.id || "").trim()
+      );
+
+    if(!exists){
+      normalized.push({
+        id: String(member.id || "").trim(),
+        name: String(member.name || "").trim(),
+        no: String(member.no || "").trim(),
+        className: String(member.className || member.class || currentStudentClass || "").trim(),
+        photoUrl: String(member.photoUrl || "").trim(),
+        studentOrder: String(member.studentOrder || "").trim()
+      });
+    }
+  });
+
+  const hasCurrentStudent =
+    normalized.some(member =>
+      String(member.id || "").trim() === String(currentStudentId || "").trim()
+    );
+
+  if(!hasCurrentStudent){
+    normalized.unshift({
+      id: currentStudentId,
+      name: currentStudentName,
+      no: currentStudentNo,
+      className: currentStudentClass
+    });
+  }
+
+  return normalized.sort((a, b) =>
+    String(a.studentOrder || calculateStudentOrder(a.className, a.no) || a.no || a.name || a.id)
+      .localeCompare(
+        String(b.studentOrder || calculateStudentOrder(b.className, b.no) || b.no || b.name || b.id),
+        "th",
+        { numeric: true }
+      )
+  );
+}
+
 function getGroupMembersFromSubmitItem(){
 
-  if(
+  const fixedMembers =
     currentSubmitWorkItem &&
     Array.isArray(currentSubmitWorkItem.groupMembers) &&
     currentSubmitWorkItem.groupMembers.length > 0
-  ){
-    return currentSubmitWorkItem.groupMembers;
+      ? currentSubmitWorkItem.groupMembers
+      : [];
+
+  if(fixedMembers.length > 0){
+    return fixedMembers;
   }
 
-  return [{
-    id: currentStudentId,
-    name: currentStudentName,
-    no: currentStudentNo,
-    className: currentStudentClass
-  }];
+  return getGroupCandidateMembersFromSubmitItem()
+    .filter(member =>
+      String(member.id || "").trim() === String(currentStudentId || "").trim()
+    );
+}
+
+function getCandidateMemberById(memberId){
+
+  const id =
+    String(memberId || "").trim();
+
+  return getGroupCandidateMembersFromSubmitItem()
+    .find(member => String(member.id || "").trim() === id) || null;
+}
+
+function getCurrentGroupMemberRows(){
+
+  const rows =
+    Array.from(document.querySelectorAll(".group-member-select-row"));
+
+  return rows.map((row, index) => {
+
+    const select =
+      row.querySelector(".group-member-select");
+
+    const selectedId =
+      select ? String(select.value || "").trim() : "";
+
+    const selectedStatus =
+      row.querySelector(`input[name="groupMemberStatus_${index}"]:checked`);
+
+    return {
+      id: selectedId,
+      status: selectedStatus ? selectedStatus.value : ""
+    };
+  });
+}
+
+function buildGroupMemberSelectOptions(selectedId, locked){
+
+  const candidates =
+    getGroupCandidateMembersFromSubmitItem();
+
+  let html =
+    locked ? "" : `<option value="">-- เลือกสมาชิก --</option>`;
+
+  candidates.forEach(member => {
+
+    const label =
+      `${member.no ? "เลขที่ " + member.no + " " : ""}${member.name || member.id}`;
+
+    html += `
+      <option
+        value="${escapeAttribute(member.id || "")}"
+        ${String(member.id || "").trim() === String(selectedId || "").trim() ? "selected" : ""}
+      >
+        ${escapeHtml(label)}
+      </option>
+    `;
+  });
+
+  return html;
+}
+
+function buildGroupMemberRowHtml(rowData, index, locked){
+
+  const selectedId =
+    String(rowData && rowData.id ? rowData.id : "").trim();
+
+  const selectedStatus =
+    String(rowData && rowData.status ? rowData.status : "").trim();
+
+  return `
+    <div class="group-assessment-row group-member-select-row" data-row-index="${escapeAttribute(index)}">
+      <label>${locked ? "ผู้ส่งงาน" : "สมาชิกกลุ่ม"}</label>
+
+      <select
+        class="group-member-select"
+        onchange="refreshGroupMemberDuplicateRules()"
+        ${locked ? "disabled" : ""}
+      >
+        ${buildGroupMemberSelectOptions(selectedId, locked)}
+      </select>
+
+      ${locked ? `<input type="hidden" class="group-member-fixed-id" value="${escapeAttribute(selectedId)}">` : ``}
+
+      <div class="group-assessment-options">
+        <label>
+          <input type="radio" name="groupMemberStatus_${index}" value="ช่วยงานเต็มที่" ${selectedStatus === "ช่วยงานเต็มที่" ? "checked" : ""}>
+          ช่วยงานเต็มที่
+        </label>
+        <label>
+          <input type="radio" name="groupMemberStatus_${index}" value="ช่วยบางส่วน" ${selectedStatus === "ช่วยบางส่วน" ? "checked" : ""}>
+          ช่วยบางส่วน
+        </label>
+        <label>
+          <input type="radio" name="groupMemberStatus_${index}" value="ไม่ช่วยงาน" ${selectedStatus === "ไม่ช่วยงาน" ? "checked" : ""}>
+          ไม่ช่วยงาน
+        </label>
+      </div>
+
+      ${
+        locked
+          ? ``
+          : `<button type="button" onclick="removeGroupMemberRow(${index})">ลบสมาชิกนี้</button>`
+      }
+    </div>
+  `;
+}
+
+function renderGroupMemberRows(rows){
+
+  const rowsBox =
+    document.getElementById("groupMemberRows");
+
+  if(!rowsBox){
+    return;
+  }
+
+  const initialRows =
+    Array.isArray(rows) && rows.length > 0
+      ? rows
+      : [{ id: currentStudentId, status: "" }];
+
+  const hasCurrentStudent =
+    initialRows.some(row =>
+      String(row.id || "").trim() === String(currentStudentId || "").trim()
+    );
+
+  const normalizedRows =
+    hasCurrentStudent
+      ? initialRows
+      : [{ id: currentStudentId, status: "" }, ...initialRows];
+
+  rowsBox.innerHTML =
+    normalizedRows.map((row, index) =>
+      buildGroupMemberRowHtml(row, index, index === 0)
+    ).join("");
+
+  refreshGroupMemberDuplicateRules();
+}
+
+function addGroupMemberRow(){
+
+  const rows =
+    getCurrentGroupMemberRows();
+
+  rows.push({
+    id: "",
+    status: ""
+  });
+
+  renderGroupMemberRows(rows);
+}
+
+function removeGroupMemberRow(index){
+
+  const rows =
+    getCurrentGroupMemberRows();
+
+  const filtered =
+    rows.filter((row, rowIndex) => rowIndex !== Number(index));
+
+  renderGroupMemberRows(filtered);
+}
+
+function refreshGroupMemberDuplicateRules(){
+
+  const selects =
+    Array.from(document.querySelectorAll(".group-member-select"));
+
+  const selectedIds =
+    selects
+      .map(select => String(select.value || "").trim())
+      .filter(Boolean);
+
+  selects.forEach(select => {
+
+    const ownValue =
+      String(select.value || "").trim();
+
+    Array.from(select.options).forEach(option => {
+
+      const optionValue =
+        String(option.value || "").trim();
+
+      if(!optionValue || optionValue === ownValue){
+        option.disabled = false;
+        return;
+      }
+
+      option.disabled = selectedIds.includes(optionValue);
+    });
+  });
 }
 
 function renderGroupAssessmentBox(workType){
@@ -3597,46 +3862,21 @@ function renderGroupAssessmentBox(workType){
     return;
   }
 
-  const members =
-    getGroupMembersFromSubmitItem();
+  const candidates =
+    getGroupCandidateMembersFromSubmitItem();
 
   box.style.display = "block";
   box.innerHTML = `
-    <h4>ประเมินการทำงานกลุ่ม</h4>
+    <h4>เลือกสมาชิกกลุ่มและประเมินการทำงานกลุ่ม</h4>
     <div class="empty-text">
-      ข้อมูลส่วนนี้ครูเท่านั้นที่เห็น นักเรียนคนอื่นจะไม่เห็น
-    </div>
-    <div class="contribution-disclaimer">
-      หมายเหตุ: ความมีส่วนร่วมที่นักเรียนแจ้งไม่มีผลต่อคะแนนโดยตรง คะแนนสุดท้ายขึ้นอยู่กับดุลยพินิจของครู
+      เลือกได้เฉพาะนักเรียนห้องเดียวกัน และระบบจะไม่ให้เลือกชื่อซ้ำ
     </div>
 
-    ${members.map((member, index) => `
-      <div class="group-assessment-row">
-        <div>
-          สมาชิก:
-          ${escapeHtml(member.no ? "เลขที่ " + member.no + " " : "")}
-          ${escapeHtml(member.name || member.id || ("คนที่ " + (index + 1)))}
-        </div>
+    <div id="groupMemberRows"></div>
 
-        <div class="group-assessment-options">
-          <label>
-            <input type="radio" name="groupMemberStatus_${index}" value="ช่วยงานเต็มที่">
-            ช่วยงานเต็มที่
-          </label>
-          <label>
-            <input type="radio" name="groupMemberStatus_${index}" value="ช่วยบางส่วน">
-            ช่วยบางส่วน
-          </label>
-          <label>
-            <input type="radio" name="groupMemberStatus_${index}" value="ไม่ช่วยงาน">
-            ไม่ช่วยงาน
-          </label>
-        </div>
-
-        <input type="hidden" id="groupMemberId_${index}" value="${escapeAttribute(member.id || "")}">
-        <input type="hidden" id="groupMemberName_${index}" value="${escapeAttribute(member.name || "")}">
-      </div>
-    `).join("")}
+    <button type="button" onclick="addGroupMemberRow()">
+      เพิ่มสมาชิกกลุ่ม
+    </button>
 
     <label>หมายเหตุถึงครู</label>
     <textarea
@@ -3645,42 +3885,97 @@ function renderGroupAssessmentBox(workType){
       placeholder="พิมพ์หมายเหตุถึงครู เช่น ใครช่วยงานส่วนไหน หรือปัญหาในการทำงานกลุ่ม"
     ></textarea>
   `;
+
+  const startingRows =
+    candidates.some(member => String(member.id || "").trim() === String(currentStudentId || "").trim())
+      ? [{ id: currentStudentId, status: "" }]
+      : [{ id: currentStudentId, status: "" }];
+
+  renderGroupMemberRows(startingRows);
 }
 
 function collectGroupAssessmentBeforeSubmit(submitMode){
 
   if(String(submitMode || "").trim() !== "งานกลุ่ม"){
     return {
+      groupMemberIds: [],
       assessments: [],
       teacherNote: ""
     };
   }
 
-  const members =
-    getGroupMembersFromSubmitItem();
+  const rows =
+    Array.from(document.querySelectorAll(".group-member-select-row"));
 
-  let hasUnselected = false;
+  const ids = [];
+  let hasUnselectedStatus = false;
 
-  const assessments =
-    members.map((member, index) => {
+  for(let index = 0; index < rows.length; index++){
 
-      const selected =
-        document.querySelector(`input[name="groupMemberStatus_${index}"]:checked`);
+    const row =
+      rows[index];
 
-      if(!selected){
-        hasUnselected = true;
-      }
+    const select =
+      row.querySelector(".group-member-select");
 
-      return {
-        id: String(member.id || "").trim(),
-        name: String(member.name || "").trim(),
-        no: String(member.no || "").trim(),
-        className: String(member.className || member.class || "").trim(),
-        status: selected ? selected.value : "ช่วยงานเต็มที่"
-      };
+    const fixed =
+      row.querySelector(".group-member-fixed-id");
+
+    const selectedId =
+      String(
+        (fixed && fixed.value) ||
+        (select && select.value) ||
+        ""
+      ).trim();
+
+    if(!selectedId){
+      alert("กรุณาเลือกสมาชิกกลุ่มให้ครบทุกแถว หรือกดลบแถวที่ไม่ใช้");
+      return null;
+    }
+
+    ids.push(selectedId);
+  }
+
+  const uniqueIds =
+    [...new Set(ids)];
+
+  if(uniqueIds.length !== ids.length){
+    alert("มีชื่อสมาชิกซ้ำกัน กรุณาเลือกสมาชิกกลุ่มใหม่");
+    return null;
+  }
+
+  const assessments = [];
+
+  for(let index = 0; index < uniqueIds.length; index++){
+
+    const id =
+      uniqueIds[index];
+
+    const member =
+      getCandidateMemberById(id);
+
+    if(!member){
+      alert("เลือกสมาชิกได้เฉพาะนักเรียนห้องเดียวกันเท่านั้น");
+      return null;
+    }
+
+    const selected =
+      document.querySelector(`input[name="groupMemberStatus_${index}"]:checked`);
+
+    if(!selected){
+      hasUnselectedStatus = true;
+    }
+
+    assessments.push({
+      id: String(member.id || "").trim(),
+      name: String(member.name || "").trim(),
+      no: String(member.no || "").trim(),
+      className: String(member.className || member.class || currentStudentClass || "").trim(),
+      status: selected ? selected.value : "ช่วยงานเต็มที่"
     });
+  }
 
-  if(hasUnselected){
+  if(hasUnselectedStatus){
     const confirmed =
       confirm(
         "ยังไม่ได้เลือกการทำงานกลุ่มของสมาชิกบางคน\\n\\n" +
@@ -3696,6 +3991,7 @@ function collectGroupAssessmentBeforeSubmit(submitMode){
     document.getElementById("groupTeacherNote");
 
   return {
+    groupMemberIds: uniqueIds,
     assessments: assessments,
     teacherNote: noteBox ? noteBox.value.trim() : ""
   };
@@ -5121,6 +5417,13 @@ function getFullScoreForAssignment(assignment){
     return "";
   }
 
+  const fromMain =
+    String(assignment.fullScore || "").trim();
+
+  if(fromMain !== ""){
+    return fromMain;
+  }
+
   return localStorage.getItem(
     getAssignmentStorageKey(assignment)
   ) || "";
@@ -5142,6 +5445,8 @@ function setFullScoreForAssignment(assignmentIndex, value){
   const cleaned =
     String(value || "").trim();
 
+  assignment.fullScore = cleaned;
+
   const storageKey =
     getAssignmentStorageKey(assignment);
 
@@ -5150,6 +5455,24 @@ function setFullScoreForAssignment(assignmentIndex, value){
   } else {
     localStorage.setItem(storageKey, cleaned);
   }
+
+  fetch(API_URL + "?action=updateAssignmentFullScore", {
+    method: "POST",
+    body: JSON.stringify({
+      url: assignment.url || "",
+      fullScore: cleaned
+    })
+  })
+  .then(res => res.json())
+  .then(response => {
+    if(response.status !== "success"){
+      updateBulkScoreStatus("⚠️ คะแนนเต็มแสดงในเครื่องนี้แล้ว แต่บันทึกลงชีท Main ไม่สำเร็จ: " + (response.message || ""));
+    }
+  })
+  .catch(error => {
+    console.error(error);
+    updateBulkScoreStatus("⚠️ คะแนนเต็มแสดงในเครื่องนี้แล้ว แต่ยังบันทึกลงชีท Main ไม่สำเร็จ");
+  });
 
   const inputs =
     document.querySelectorAll(
@@ -5864,6 +6187,7 @@ else{
         no: currentStudentNo,
         submitMode: submitMode,
         work: work,
+        groupMemberIds: groupAssessmentData.groupMemberIds || [],
         groupMemberAssessments: groupAssessmentData.assessments,
         teacherNote: groupAssessmentData.teacherNote,
         ...filePayload
