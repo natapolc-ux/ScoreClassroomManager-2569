@@ -963,8 +963,14 @@ h2,h3,h4{
 
 
 .topic-multi-select{
-  height:92px !important;
-  min-height:92px !important;
+  height:46px !important;
+  min-height:46px !important;
+  overflow:hidden;
+}
+
+.topic-multi-select:focus{
+  height:160px !important;
+  min-height:160px !important;
 }
 
 .assignment-class-select{
@@ -1018,6 +1024,104 @@ h2,h3,h4{
   min-width:86px;
 }
 
+.teacher-shell{
+  display:grid;
+  grid-template-columns:260px minmax(0, 1fr);
+  gap:16px;
+  align-items:start;
+}
+
+.teacher-sidebar{
+  position:sticky;
+  top:12px;
+  max-height:calc(100vh - 24px);
+  overflow:auto;
+}
+
+.teacher-sidebar button{
+  text-align:left;
+}
+
+.teacher-sidebar button.active{
+  background:#00ff41;
+  color:#000;
+  box-shadow:0 0 10px #00ff41;
+}
+
+.teacher-main{
+  min-width:0;
+}
+
+.teacher-page{
+  display:none;
+}
+
+.teacher-page.active{
+  display:block;
+}
+
+.assignment-settings-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit, minmax(290px, 1fr));
+  gap:14px;
+  margin-top:14px;
+}
+
+.assignment-setting-card h4{
+  margin-top:0;
+  line-height:1.45;
+}
+
+.assignment-setting-card label{
+  display:block;
+  margin-top:10px;
+}
+
+.assignment-setting-card select{
+  min-height:105px;
+}
+
+.assignment-command-toolbar{
+  display:grid;
+  grid-template-columns:1fr auto;
+  gap:10px;
+  align-items:end;
+}
+
+.assignment-command-toolbar button{
+  width:auto;
+  min-width:120px;
+}
+
+.assignment-worksheet-box{
+  display:none;
+  margin-top:10px;
+  border-color:#ffd43b;
+}
+
+.teacher-check-controls{
+  margin-top:10px;
+}
+
+@media(max-width:900px){
+  .teacher-shell{
+    grid-template-columns:1fr;
+  }
+
+  .teacher-sidebar{
+    position:static;
+    max-height:none;
+  }
+
+  .assignment-command-toolbar{
+    grid-template-columns:1fr;
+  }
+
+  .assignment-command-toolbar button{
+    width:100%;
+  }
+}
+
 </style>
 
 </head>
@@ -1047,240 +1151,301 @@ h2,h3,h4{
 </div>
 
 
+
 <div id="teacherPanel" class="panel">
 
   <h2>Teacher Dashboard</h2>
 
-  <div class="toolbar">
+  <div class="teacher-shell">
 
-  <button class="toolbar-button" onclick="loadWork()">
-    โหลดงาน
-  </button>
-
-  <select id="workLevelFilter" onchange="handleWorkLevelFilterChange()">
-    <option value="">ทุกระดับชั้น</option>
-  </select>
-
-  <select id="topic" class="topic-multi-select" multiple size="4" onchange="updateWorkClassFilterByTopic()">
-    <option value="">กำลังโหลดหัวข้องาน...</option>
-  </select>
-
-  <select id="classFilter">
-    <option value="">ทุกห้อง</option>
-  </select>
-
-  <input
-    id="noFilter"
-    type="number"
-    placeholder="กรองเลขที่"
-  >
-
-  <div class="settings-wrap">
-
-    <button
-      type="button"
-      class="gear-button"
-      onclick="toggleWorkSettingsPopup()"
-      title="ตั้งค่าการแสดงผล"
-    >
-      ⚙
-    </button>
-
-    <div id="workSettingsPopup" class="settings-popup">
-
-      <div class="settings-title">
-        ตั้งค่าการตรวจงาน
-      </div>
+    <aside class="teacher-sidebar status-box">
+      <h3>สารบัญครู</h3>
 
       <button
         type="button"
-        id="autoRefreshToggleBtn"
-        onclick="toggleAutoRefreshWork()"
+        id="teacherNavAssignment"
+        class="active"
+        onclick="switchTeacherPage('assignment')"
       >
-        ⏸ อัปเดตอัตโนมัติ: ปิด
+        1. หน้าใบคำสั่งงาน
       </button>
 
       <button
         type="button"
-        onclick="stopLoadedWork()"
+        id="teacherNavCheck"
+        onclick="switchTeacherPage('check')"
       >
-        ⏹ หยุดโหลดงาน
+        2. หน้าตรวจงาน
       </button>
 
-      <label>สั่งงานเฉพาะห้อง</label>
-      <select
-        id="assignedClassSelect"
-        class="assignment-class-select"
-        multiple
-        size="4"
-      ></select>
-      <button type="button" onclick="saveAssignmentClassSettings()">
-        บันทึกห้องที่สั่งงานนี้
-      </button>
-
-      <label>เรียงลำดับผลงาน</label>
-
-      <select id="workSortMode" onchange="applyWorkSortAndRender()">
-        <option value="latest">ส่งล่าสุด</option>
-        <option value="oldest">ส่งก่อน</option>
-        <option value="noAsc">เลขที่น้อยไปมาก</option>
-        <option value="noDesc">เลขที่มากไปน้อย</option>
-        <option value="studentSeqAsc">ลำดับนักเรียน</option>
-        <option value="groupAsc">ชื่อกลุ่ม ก-ฮ</option>
-      </select>
-
-      <button type="button" onclick="sortCurrentWorkSheet()">
-        🔃 เรียงในชีต
-      </button>
-
-    </div>
-
-  </div>
-
-</div>
-
-<button
-  type="button"
-  id="refreshWorkButton"
-  class="refresh-work-button"
-  onclick="refreshWorkList()"
->
-  🔄 รีเฟรชผลงาน
-</button>
-
-<label class="hide-score-box">
-  <input
-    type="checkbox"
-    id="hideViewedWorksToggle"
-    onchange="toggleHideViewedWorks()"
-  >
-  ซ่อนงานที่ตรวจแล้ว
-</label>
-
-  <div id="workStatus"></div>
-  <div id="work"></div>
-<hr class="panel-divider">
-
-<h2>ตารางคะแนนรายงาน</h2>
-
-<div class="score-toolbar">
-
-  <select id="scoreLevel">
-    <option value="">กำลังโหลดระดับชั้น...</option>
-  </select>
-
-  <select id="scoreClass">
-    <option value="">ทุกห้อง</option>
-  </select>
-
-  <button onclick="loadScoreTable()">
-    โหลดตารางคะแนน
-  </button>
-
-</div>
-
-<div id="scoreTableStatus"></div>
-
-<div id="scoreToolsPanel" class="score-tools">
-
-  <div class="score-tools-row">
-
-    <button onclick="saveAllScoreChanges()">
-      บันทึกคะแนนทั้งหมดลงชีตงาน
-    </button>
-
-    <input
-      id="bulkScore"
-      type="number"
-      placeholder="คะแนนที่จะใส่ให้ช่องที่เลือก"
-    >
-
-    <button onclick="applyScoreToSelectedCells()">
-      ใส่คะแนนช่องที่เลือก
-    </button>
-
-    <button onclick="applyFullScoreToSelectedCells()">
-      คะแนนเต็ม
-    </button>
-
-    <button onclick="markSelectedCellsChecked()">
-      ตรวจแล้ว
-    </button>
-
-    <button onclick="clearSelectedScoreCells()">
-      ยกเลิกทั้งหมด
-    </button>
-
-    <div class="score-settings-wrap">
       <button
         type="button"
-        class="score-gear-button"
-        onclick="toggleScoreSettingsPopup()"
-        title="ตั้งค่าตารางคะแนน"
+        id="teacherNavScore"
+        onclick="switchTeacherPage('score')"
       >
-        ⚙
+        3. ตารางคะแนน
       </button>
+    </aside>
 
-      <div id="scoreSettingsPopup" class="score-settings-popup">
-        <div class="settings-title">
-          ตั้งค่าตารางคะแนน
+    <main class="teacher-main">
+
+      <section id="teacherPageAssignment" class="teacher-page active">
+        <h3>หน้าใบคำสั่งงาน</h3>
+
+        <div class="status-box">
+          จัดการใบคำสั่งงาน ห้องที่สั่งงาน และคะแนนเต็มของแต่ละงาน
         </div>
 
-        <label class="hide-score-box">
-          <input
-            type="checkbox"
-            id="hideScoresToggle"
-            checked
-            onchange="toggleHideScores()"
-          >
-          ซ่อนคะแนนในตาราง
-        </label>
+        <div class="assignment-command-toolbar">
+          <select id="assignmentLevelFilter" onchange="renderAssignmentSettingsList()">
+            <option value="">ทุกระดับชั้น</option>
+          </select>
 
-        <label class="hide-score-box">
-          <input
-            type="checkbox"
-            id="lockScoredToggle"
-            checked
-            onchange="toggleLockScoredScores()"
-          >
-          ล็อกช่องที่มีคะแนนแล้ว
-        </label>
+          <button type="button" onclick="renderAssignmentSettingsList()">
+            รีเฟรช
+          </button>
+        </div>
 
-        <label class="hide-score-box">
-          <input
-            type="checkbox"
-            id="hideIndividualAdjustmentsToggle"
-            onchange="toggleHideIndividualAdjustments()"
+        <div id="assignmentSettingsStatus"></div>
+        <div id="assignmentSettingsList"></div>
+      </section>
+
+      <section id="teacherPageCheck" class="teacher-page">
+        <h3>หน้าตรวจงาน</h3>
+
+        <div class="toolbar">
+
+          <button class="toolbar-button" onclick="loadWork()">
+            โหลดงาน
+          </button>
+
+          <select id="workLevelFilter" onchange="handleWorkLevelFilterChange()">
+            <option value="">ทุกระดับชั้น</option>
+          </select>
+
+          <select
+            id="topic"
+            class="topic-multi-select"
+            multiple
+            size="1"
+            onchange="updateWorkClassFilterByTopic()"
           >
-          ซ่อนช่อง +/- คะแนนรายบุคคล
-        </label>
+            <option value="">กำลังโหลดหัวข้องาน...</option>
+          </select>
+
+          <select id="classFilter">
+            <option value="">ทุกห้อง</option>
+          </select>
+
+          <input
+            id="noFilter"
+            type="number"
+            placeholder="กรองเลขที่"
+          >
+
+          <div class="settings-wrap">
+
+            <button
+              type="button"
+              class="gear-button"
+              onclick="toggleWorkSettingsPopup()"
+              title="ตั้งค่าการแสดงผล"
+            >
+              ⚙
+            </button>
+
+            <div id="workSettingsPopup" class="settings-popup">
+
+              <div class="settings-title">
+                ตั้งค่าการตรวจงาน
+              </div>
+
+              <button
+                type="button"
+                id="autoRefreshToggleBtn"
+                onclick="toggleAutoRefreshWork()"
+              >
+                ⏸ อัปเดตอัตโนมัติ: ปิด
+              </button>
+
+              <button
+                type="button"
+                onclick="stopLoadedWork()"
+              >
+                ⏹ หยุดโหลดงาน
+              </button>
+
+              <label>เรียงลำดับผลงาน</label>
+
+              <select id="workSortMode" onchange="applyWorkSortAndRender()">
+                <option value="latest">ส่งล่าสุด</option>
+                <option value="oldest">ส่งก่อน</option>
+                <option value="noAsc">เลขที่น้อยไปมาก</option>
+                <option value="noDesc">เลขที่มากไปน้อย</option>
+                <option value="studentSeqAsc">ลำดับนักเรียน</option>
+                <option value="groupAsc">ชื่อกลุ่ม ก-ฮ</option>
+              </select>
+
+              <button type="button" onclick="sortCurrentWorkSheet()">
+                🔃 เรียงในชีต
+              </button>
+
+            </div>
+
+          </div>
+
+        </div>
 
         <button
           type="button"
-          onclick="stopLoadedScoreTable()"
+          id="refreshWorkButton"
+          class="refresh-work-button"
+          onclick="refreshWorkList()"
         >
-          ⏹ หยุดโหลดตาราง
+          🔄 รีเฟรชผลงาน
         </button>
-      </div>
-    </div>
+
+        <label class="hide-score-box teacher-check-controls">
+          <input
+            type="checkbox"
+            id="hideViewedWorksToggle"
+            onchange="toggleHideViewedWorks()"
+          >
+          ซ่อนงานที่ตรวจแล้ว
+        </label>
+
+        <div id="workStatus"></div>
+        <div id="work"></div>
+      </section>
+
+      <section id="teacherPageScore" class="teacher-page">
+        <h3>ตารางคะแนน</h3>
+
+        <div class="score-toolbar">
+
+          <select id="scoreLevel">
+            <option value="">กำลังโหลดระดับชั้น...</option>
+          </select>
+
+          <select id="scoreClass">
+            <option value="">ทุกห้อง</option>
+          </select>
+
+          <button onclick="loadScoreTable()">
+            โหลดตารางคะแนน
+          </button>
+
+        </div>
+
+        <div id="scoreTableStatus"></div>
+
+        <div id="scoreToolsPanel" class="score-tools">
+
+          <div class="score-tools-row">
+
+            <button onclick="saveAllScoreChanges()">
+              บันทึกคะแนนทั้งหมดลงชีตงาน
+            </button>
+
+            <input
+              id="bulkScore"
+              type="number"
+              placeholder="คะแนนที่จะใส่ให้ช่องที่เลือก"
+            >
+
+            <button onclick="applyScoreToSelectedCells()">
+              ใส่คะแนนช่องที่เลือก
+            </button>
+
+            <button onclick="applyFullScoreToSelectedCells()">
+              คะแนนเต็ม
+            </button>
+
+            <button onclick="markSelectedCellsChecked()">
+              ตรวจแล้ว
+            </button>
+
+            <button onclick="clearSelectedScoreCells()">
+              ยกเลิกทั้งหมด
+            </button>
+
+            <div class="score-settings-wrap">
+              <button
+                type="button"
+                class="score-gear-button"
+                onclick="toggleScoreSettingsPopup()"
+                title="ตั้งค่าตารางคะแนน"
+              >
+                ⚙
+              </button>
+
+              <div id="scoreSettingsPopup" class="score-settings-popup">
+                <div class="settings-title">
+                  ตั้งค่าตารางคะแนน
+                </div>
+
+                <label class="hide-score-box">
+                  <input
+                    type="checkbox"
+                    id="hideScoresToggle"
+                    checked
+                    onchange="toggleHideScores()"
+                  >
+                  ซ่อนคะแนนในตาราง
+                </label>
+
+                <label class="hide-score-box">
+                  <input
+                    type="checkbox"
+                    id="lockScoredToggle"
+                    checked
+                    onchange="toggleLockScoredScores()"
+                  >
+                  ล็อกช่องที่มีคะแนนแล้ว
+                </label>
+
+                <label class="hide-score-box">
+                  <input
+                    type="checkbox"
+                    id="hideIndividualAdjustmentsToggle"
+                    onchange="toggleHideIndividualAdjustments()"
+                  >
+                  ซ่อนช่อง +/- คะแนนรายบุคคล
+                </label>
+
+                <button
+                  type="button"
+                  onclick="stopLoadedScoreTable()"
+                >
+                  ⏹ หยุดโหลดตาราง
+                </button>
+              </div>
+            </div>
+
+          </div>
+
+          <div id="bulkScoreStatus"></div>
+
+        </div>
+
+        <div id="scoreTableWrap" class="score-table-wrap"></div>
+
+        <div id="scoreExportRow" class="score-export-row">
+          <button id="exportScoreSummaryButton" class="toolbar-button score-export-button" onclick="exportScoreSummary()">
+            บันทึกตารางคะแนนลง Sheet
+          </button>
+          <button id="downloadScoreTableImageButton" class="toolbar-button score-export-button" onclick="downloadScoreTableImage()">
+            บันทึกตารางเป็นรูปภาพ
+          </button>
+        </div>
+
+        <div id="exportSummaryStatus"></div>
+      </section>
+
+    </main>
 
   </div>
 
-  <div id="bulkScoreStatus"></div>
-
-</div>
-
-<div id="scoreTableWrap" class="score-table-wrap"></div>
-<div id="scoreExportRow" class="score-export-row">
-  <button id="exportScoreSummaryButton" class="toolbar-button score-export-button" onclick="exportScoreSummary()">
-    บันทึกตารางคะแนนลง Sheet
-  </button>
-  <button id="downloadScoreTableImageButton" class="toolbar-button score-export-button" onclick="downloadScoreTableImage()">
-    บันทึกตารางเป็นรูปภาพ
-  </button>
-</div>
-
-<div id="exportSummaryStatus"></div>
 </div>
 
 
@@ -1562,6 +1727,337 @@ function renderStudentPhoto(photoUrl, name, small){
   `;
 }
 
+
+function switchTeacherPage(page){
+
+  const pages = {
+    assignment: "teacherPageAssignment",
+    check: "teacherPageCheck",
+    score: "teacherPageScore"
+  };
+
+  const navs = {
+    assignment: "teacherNavAssignment",
+    check: "teacherNavCheck",
+    score: "teacherNavScore"
+  };
+
+  Object.keys(pages).forEach(key => {
+    const section = document.getElementById(pages[key]);
+    const button = document.getElementById(navs[key]);
+
+    if(section){
+      section.classList.toggle("active", key === page);
+    }
+
+    if(button){
+      button.classList.toggle("active", key === page);
+    }
+  });
+
+  if(page === "assignment"){
+    renderAssignmentSettingsList();
+  }
+}
+
+
+function populateAssignmentLevelFilter(topics){
+
+  const select =
+    document.getElementById("assignmentLevelFilter");
+
+  if(!select){
+    return;
+  }
+
+  const oldValue =
+    String(select.value || "").trim();
+
+  const levels = [
+    ...new Set(
+      (Array.isArray(topics) ? topics : [])
+        .map(item => String(item.level || "").trim())
+        .filter(Boolean)
+    )
+  ].sort((a, b) =>
+    String(a).localeCompare(String(b), "th", { numeric: true })
+  );
+
+  let html =
+    `<option value="">ทุกระดับชั้น</option>`;
+
+  levels.forEach(level => {
+    html += `
+      <option value="${escapeAttribute(level)}">
+        ${escapeHtml(level)}
+      </option>
+    `;
+  });
+
+  select.innerHTML = html;
+
+  if(oldValue && levels.includes(oldValue)){
+    select.value = oldValue;
+  }
+}
+
+
+function getClassesForAssignmentLevel(level){
+
+  const found =
+    (Array.isArray(scoreOptionsData) ? scoreOptionsData : [])
+      .find(item =>
+        normalizeOptionKey(item.level) === normalizeOptionKey(level)
+      );
+
+  return found && Array.isArray(found.classes)
+    ? found.classes
+    : [];
+}
+
+
+function renderAssignmentClassOptionsForCard(topic, index){
+
+  const classes =
+    getClassesForAssignmentLevel(topic.level);
+
+  const assigned =
+    parseClassList(topic.assignedClasses || "");
+
+  if(classes.length === 0){
+    return `
+      <div class="empty-text">
+        ยังไม่พบข้อมูลห้องของระดับชั้นนี้
+      </div>
+    `;
+  }
+
+  return `
+    <select
+      id="assignmentClasses_${index}"
+      class="assignment-class-select"
+      multiple
+      size="4"
+    >
+      ${classes.map(className => `
+        <option
+          value="${escapeAttribute(className)}"
+          ${assigned.includes(className) ? "selected" : ""}
+        >
+          ${escapeHtml(className)}
+        </option>
+      `).join("")}
+    </select>
+    <div class="empty-text">
+      ไม่เลือกห้อง = สั่งงานทุกห้องในระดับชั้นนี้
+    </div>
+  `;
+}
+
+
+function renderAssignmentSettingsList(){
+
+  const box =
+    document.getElementById("assignmentSettingsList");
+
+  const status =
+    document.getElementById("assignmentSettingsStatus");
+
+  if(!box){
+    return;
+  }
+
+  const topics =
+    Array.isArray(teacherTopicsData)
+      ? teacherTopicsData
+      : [];
+
+  const levelFilter =
+    document.getElementById("assignmentLevelFilter");
+
+  const selectedLevel =
+    levelFilter ? String(levelFilter.value || "").trim() : "";
+
+  const filteredTopics =
+    topics
+      .map((topic, index) => ({ topic, index }))
+      .filter(item =>
+        !selectedLevel ||
+        String(item.topic.level || "").trim() === selectedLevel
+      );
+
+  if(status){
+    status.innerHTML = "";
+  }
+
+  if(topics.length === 0){
+    box.innerHTML =
+      `<div class="status-box">ยังไม่มีหัวข้องาน</div>`;
+    return;
+  }
+
+  if(filteredTopics.length === 0){
+    box.innerHTML =
+      `<div class="status-box">ไม่พบงานของระดับชั้นที่เลือก</div>`;
+    return;
+  }
+
+  box.innerHTML = `
+    <div class="assignment-settings-grid">
+      ${filteredTopics.map(({ topic, index }) => {
+        const worksheetUrl =
+          String(topic.worksheetUrl || "").trim();
+
+        const worksheetId =
+          "assignmentWorksheet_" + index;
+
+        return `
+          <div class="card assignment-setting-card">
+            <h4>
+              ${escapeHtml(topic.level || "-")}
+              -
+              ${escapeHtml(topic.topic || "-")}
+              ${topic.workType ? `<span class="student-order-badge">${escapeHtml(topic.workType)}</span>` : ``}
+            </h4>
+
+            <label>คะแนนเต็มของงาน</label>
+            <input
+              id="assignmentFullScore_${index}"
+              type="number"
+              value="${escapeAttribute(topic.fullScore || "")}"
+              placeholder="เช่น 10"
+            >
+
+            <label>สั่งงานเฉพาะห้อง</label>
+            ${renderAssignmentClassOptionsForCard(topic, index)}
+
+            <div class="student-work-actions">
+              <button
+                type="button"
+                onclick="saveAssignmentSettingsFromCard(${index})"
+              >
+                บันทึกการตั้งค่า
+              </button>
+
+              ${
+                worksheetUrl
+                ? `
+                  <button
+                    type="button"
+                    onclick="toggleAssignmentWorksheet('${escapeJsString(worksheetId)}', this)"
+                  >
+                    เปิดใบคำสั่งงาน
+                  </button>
+                `
+                : ``
+              }
+            </div>
+
+            ${
+              worksheetUrl
+              ? `
+                <div
+                  id="${escapeAttribute(worksheetId)}"
+                  class="work-box assignment-worksheet-box"
+                >
+                  <h4>ใบคำสั่งงาน</h4>
+                  ${renderWorksheetContent(worksheetUrl)}
+                </div>
+              `
+              : `<div class="empty-text">ยังไม่ได้ใส่ลิงก์ใบคำสั่งงาน</div>`
+            }
+          </div>
+        `;
+      }).join("")}
+    </div>
+  `;
+}
+
+
+function getSelectedAssignmentClassesFromCard(index){
+
+  const select =
+    document.getElementById("assignmentClasses_" + index);
+
+  if(!select){
+    return [];
+  }
+
+  return Array.from(select.selectedOptions || [])
+    .map(option => String(option.value || "").trim())
+    .filter(Boolean);
+}
+
+
+function saveAssignmentSettingsFromCard(index){
+
+  const topic =
+    (Array.isArray(teacherTopicsData) ? teacherTopicsData : [])[index];
+
+  if(!topic || !topic.url){
+    alert("ไม่พบข้อมูลงานที่ต้องการบันทึก");
+    return;
+  }
+
+  const fullScoreInput =
+    document.getElementById("assignmentFullScore_" + index);
+
+  const fullScore =
+    fullScoreInput ? String(fullScoreInput.value || "").trim() : "";
+
+  const assignedClasses =
+    getSelectedAssignmentClassesFromCard(index);
+
+  fetch(API_URL + "?action=updateAssignmentSettings", {
+    method: "POST",
+    body: JSON.stringify({
+      url: topic.url,
+      fullScore: fullScore,
+      assignedClasses: assignedClasses
+    })
+  })
+  .then(res => res.json())
+  .then(response => {
+
+    if(response.status !== "success"){
+      alert("❌ " + (response.message || "บันทึกการตั้งค่างานไม่สำเร็จ"));
+      return;
+    }
+
+    topic.fullScore = fullScore;
+    topic.assignedClasses = assignedClasses.join(",");
+
+    alert("✅ บันทึกการตั้งค่างานแล้ว");
+    renderAssignmentSettingsList();
+    renderWorkTopicOptions();
+  })
+  .catch(error => {
+    console.error(error);
+    alert("❌ เชื่อมต่อ API ไม่สำเร็จ");
+  });
+}
+
+
+function toggleAssignmentWorksheet(id, button){
+
+  const box =
+    document.getElementById(id);
+
+  if(!box){
+    return;
+  }
+
+  const willShow =
+    box.style.display === "none" || box.style.display === "";
+
+  box.style.display = willShow ? "block" : "none";
+
+  if(button){
+    button.textContent = willShow ? "ซ่อนใบคำสั่งงาน" : "เปิดใบคำสั่งงาน";
+  }
+}
+
+
 // ======================================
 // โหลดหัวข้องาน
 // ======================================
@@ -1627,7 +2123,9 @@ function loadTopics(){
     }
 
     populateWorkLevelFilter(topics);
+    populateAssignmentLevelFilter(topics);
     renderWorkTopicOptions();
+    renderAssignmentSettingsList();
     updateWorkClassFilterByTopic();
   })
 
@@ -2182,25 +2680,50 @@ function toggleAutoRefreshWork(){
 // ======================================
 function loadWork(){
 
-  const url = document
-    .getElementById("topic")
-    .value;
-  const selectedClassBeforeLoad =
-  document.getElementById("classFilter").value;
-  const workBox = document.getElementById("work");
-  const workStatus = document.getElementById("workStatus");
+  const selectedOptions =
+    getSelectedTopicOptions();
 
-  if(!url){
+  const selectedClassBeforeLoad =
+    document.getElementById("classFilter").value;
+
+  const workBox =
+    document.getElementById("work");
+
+  const workStatus =
+    document.getElementById("workStatus");
+
+  if(selectedOptions.length === 0){
     workStatus.innerHTML =
       `<div class="status-box">❌ กรุณาเลือกหัวข้องานก่อน</div>`;
     workBox.innerHTML = "";
     return;
   }
 
-  if(url === "__ALL_WORK__"){
+  if(selectedOptions.some(option => option.value === "__ALL_WORK__")){
     loadAllWork();
     return;
   }
+
+  const topics =
+    getSelectedAssignmentTopics();
+
+  if(topics.length === 0){
+    workStatus.innerHTML =
+      `<div class="status-box">❌ กรุณาเลือกหัวข้องานก่อน</div>`;
+    workBox.innerHTML = "";
+    return;
+  }
+
+  if(topics.length > 1){
+    loadSelectedWorkTopics(topics);
+    return;
+  }
+
+  const topic =
+    topics[0];
+
+  const url =
+    String(topic.url || "").trim();
 
   currentSheetUrl = url;
 
@@ -2231,7 +2754,6 @@ function loadWork(){
 
     let data = [];
 
-    // API ใหม่
     if(
       response &&
       response.status === "success" &&
@@ -2240,7 +2762,6 @@ function loadWork(){
       data = response.data;
     }
 
-    // เผื่อ API เก่าที่ยังส่ง array ตรง ๆ
     else if(Array.isArray(response)){
       data = response;
     }
@@ -2256,10 +2777,12 @@ function loadWork(){
       return;
     }
 
-    currentWorkData = data.map(item => ({
-      ...item,
-      sheetUrl: item.sheetUrl || url
-    }));
+    currentWorkData = data.map(item =>
+      applyAssignmentMetaToRow({
+        ...item,
+        sheetUrl: item.sheetUrl || url
+      }, topic)
+    );
 
     applyDefaultCollapsedForCheckedWorks(currentWorkData);
 
@@ -2290,6 +2813,88 @@ function loadWork(){
         ❌ เกิดข้อผิดพลาดในการเชื่อมต่อ API
       </div>`;
   });
+}
+
+
+function loadSelectedWorkTopics(topics){
+
+  const workBox =
+    document.getElementById("work");
+
+  const workStatus =
+    document.getElementById("workStatus");
+
+  const refreshButton =
+    document.getElementById("refreshWorkButton");
+
+  currentSheetUrl = "";
+  currentWorkData = [];
+
+  if(refreshButton){
+    refreshButton.style.display = "block";
+  }
+
+  workBox.innerHTML = "";
+  workStatus.innerHTML =
+    `<div class="status-box">กำลังโหลดงานที่เลือก ${topics.length} งาน...</div>`;
+
+  const requests =
+    topics.map(topic => {
+      return fetch(
+        API_URL
+        + "?action=studentWork"
+        + "&url=" + encodeURIComponent(topic.url)
+        + "&hideChecked=" + encodeURIComponent(hideViewedWorksEnabled ? "true" : "false")
+      )
+      .then(res => res.json())
+      .then(result => {
+        const rows =
+          result && result.status === "success" && Array.isArray(result.data)
+            ? result.data
+            : [];
+
+        return rows.map(row =>
+          applyAssignmentMetaToRow({
+            ...row,
+            sheetUrl: topic.url || row.sheetUrl || ""
+          }, topic)
+        );
+      })
+      .catch(error => {
+        console.error(error);
+        return [];
+      });
+    });
+
+  Promise.all(requests)
+    .then(groups => {
+
+      currentWorkData =
+        groups.flat();
+
+      applyDefaultCollapsedForCheckedWorks(currentWorkData);
+
+      if(currentWorkData.length === 0){
+        workStatus.innerHTML =
+          `<div class="status-box">ไม่พบงานที่ต้องตรวจในงานที่เลือก</div>`;
+        workBox.innerHTML = "";
+        return;
+      }
+
+      populateClassFilter(currentWorkData);
+
+      workStatus.innerHTML =
+        `<div class="status-box">
+          พบงานทั้งหมด ${currentWorkData.length} รายการ จากงานที่เลือก ${topics.length} งาน
+        </div>`;
+
+      applyWorkSortAndRender();
+    })
+    .catch(error => {
+      console.error(error);
+      workStatus.innerHTML =
+        `<div class="status-box">❌ โหลดงานที่เลือกไม่สำเร็จ</div>`;
+    });
 }
 
 
@@ -3071,7 +3676,7 @@ function renderWorkCards(){
             ${s.topic ? escapeHtml((s.level ? s.level + " - " : "") + s.topic) + " | " : ""}
             ${escapeHtml(studentClass)}
             ${isGroup ? "งานกลุ่ม" : escapeHtml("เลขที่ " + studentNo)}
-            ${studentOrder && studentOrder !== "99999" ? `<span class="student-order-badge">ลำดับ ${escapeHtml(studentOrder)}</span>` : ``}
+            
           </h3>
         </div>
 
@@ -4682,6 +5287,7 @@ function loadScoreOptions(){
 
     scoreOptionsData = response.data;
     updateWorkClassFilterByTopic();
+    renderAssignmentSettingsList();
 
     if(scoreOptionsData.length === 0){
       levelSelect.innerHTML =
