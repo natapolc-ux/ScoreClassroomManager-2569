@@ -961,6 +961,63 @@ h2,h3,h4{
   }
 }
 
+
+.topic-multi-select{
+  height:92px !important;
+  min-height:92px !important;
+}
+
+.assignment-class-select{
+  height:110px !important;
+  min-height:110px !important;
+}
+
+.revision-box{
+  display:none;
+  margin-top:12px;
+  padding:12px;
+  border:1px dashed #ffd43b;
+  background:rgba(58,36,0,0.55);
+  color:#ffcc80;
+}
+
+.revision-note-textarea{
+  width:100%;
+  min-height:80px;
+  margin-top:10px;
+  background:black;
+  color:#00ff41;
+  border:1px solid #ffd43b;
+  font-family:monospace;
+  box-sizing:border-box;
+}
+
+.teacher-worksheet-box{
+  margin-top:12px;
+  border-color:#ffd43b;
+}
+
+.returned-badge,
+.revised-badge{
+  display:inline-block;
+  margin-top:6px;
+  padding:4px 9px;
+  border:1px solid #ff9800;
+  background:#3a2400;
+  color:#ffcc80;
+  font-weight:bold;
+}
+
+.work-card-actions{
+  flex-wrap:wrap;
+  justify-content:flex-end;
+  max-width:360px;
+}
+
+.work-card-actions button{
+  min-width:86px;
+}
+
 </style>
 
 </head>
@@ -1004,7 +1061,7 @@ h2,h3,h4{
     <option value="">ทุกระดับชั้น</option>
   </select>
 
-  <select id="topic" onchange="updateWorkClassFilterByTopic()">
+  <select id="topic" class="topic-multi-select" multiple size="4" onchange="updateWorkClassFilterByTopic()">
     <option value="">กำลังโหลดหัวข้องาน...</option>
   </select>
 
@@ -1048,6 +1105,17 @@ h2,h3,h4{
         onclick="stopLoadedWork()"
       >
         ⏹ หยุดโหลดงาน
+      </button>
+
+      <label>สั่งงานเฉพาะห้อง</label>
+      <select
+        id="assignedClassSelect"
+        class="assignment-class-select"
+        multiple
+        size="4"
+      ></select>
+      <button type="button" onclick="saveAssignmentClassSettings()">
+        บันทึกห้องที่สั่งงานนี้
       </button>
 
       <label>เรียงลำดับผลงาน</label>
@@ -1252,6 +1320,24 @@ h2,h3,h4{
 
       <div id="groupAssessmentBox" class="group-assessment-box"></div>
 
+      <div id="revisionBox" class="revision-box">
+        <h4>ส่งงานแก้ไข</h4>
+        <div id="revisionReasonText" class="empty-text"></div>
+        <div id="revisionModeBox" style="display:none;">
+          <label>รูปแบบการแก้ไขงานกลุ่ม</label>
+          <select id="revisionMode" onchange="handleRevisionModeChange()">
+            <option value="group">แก้เป็นกลุ่ม</option>
+            <option value="individual">แก้เดี่ยว</option>
+          </select>
+        </div>
+        <label>หมายเหตุการแก้ไข</label>
+        <textarea
+          id="revisionNote"
+          class="revision-note-textarea"
+          placeholder="พิมพ์ว่าแก้ไขอะไรไปบ้าง"
+        ></textarea>
+      </div>
+
       <textarea
         id="submitWorkText"
         placeholder="พิมพ์คำตอบ หรือวางลิงก์งาน/ลิงก์รูป"
@@ -1311,6 +1397,7 @@ let hideViewedWorksEnabled = false;
 let currentMyWorkData = [];
 let selectedMyWorkIndex = null;
 let currentSubmitWorkItem = null;
+let lastSelectedWorkUrls = [];
 
 const VIEWED_WORKS_STORAGE_KEY = "matrixViewedWorks";
 const HIDE_VIEWED_STORAGE_KEY = "matrixHideViewedWorks";
@@ -1610,6 +1697,191 @@ function getSelectedWorkLevel(){
 }
 
 
+function getTopicMetaByUrl(url){
+
+  const target =
+    String(url || "").trim();
+
+  return (Array.isArray(teacherTopicsData) ? teacherTopicsData : [])
+    .find(item => String(item.url || "").trim() === target) || null;
+}
+
+function parseClassList(value){
+
+  if(Array.isArray(value)){
+    return value.map(item => String(item || "").trim()).filter(Boolean);
+  }
+
+  return String(value || "")
+    .split(/[,\n|\/]+/)
+    .map(item => item.trim())
+    .filter(Boolean);
+}
+
+function getSelectedTopicOptions(){
+
+  const topicSelect =
+    document.getElementById("topic");
+
+  if(!topicSelect){
+    return [];
+  }
+
+  return Array.from(topicSelect.selectedOptions || [])
+    .filter(option => String(option.value || "").trim() !== "");
+}
+
+function getSelectedAssignmentTopics(){
+
+  return getSelectedTopicOptions()
+    .filter(option => option.value !== "__ALL_WORK__")
+    .map(option => getTopicMetaByUrl(option.value) || {
+      url: option.value,
+      level: option.getAttribute("data-level") || getSelectedWorkLevel(),
+      topic: option.textContent || "",
+      workType: option.getAttribute("data-work-type") || "งานเดี่ยว"
+    })
+    .filter(topic => topic && topic.url);
+}
+
+function applyAssignmentMetaToRow(row, topic){
+
+  topic = topic || getTopicMetaByUrl(row && row.sheetUrl);
+
+  return {
+    ...row,
+    level: topic && topic.level ? topic.level : (row.level || ""),
+    topic: topic && topic.topic ? topic.topic : (row.topic || ""),
+    sheetUrl: topic && topic.url ? topic.url : (row.sheetUrl || ""),
+    workType: topic && topic.workType ? topic.workType : (row.workType || "งานเดี่ยว"),
+    worksheetUrl: topic && topic.worksheetUrl !== undefined ? topic.worksheetUrl : (row.worksheetUrl || ""),
+    worksheetVisible: topic && topic.worksheetVisible !== undefined ? topic.worksheetVisible : row.worksheetVisible,
+    fullScore: topic && topic.fullScore !== undefined ? topic.fullScore : (row.fullScore || ""),
+    assignedClasses: topic && topic.assignedClasses !== undefined ? topic.assignedClasses : (row.assignedClasses || "")
+  };
+}
+
+function getSelectedTopicUrl(){
+
+  const options =
+    getSelectedTopicOptions();
+
+  const normalOptions =
+    options.filter(option => option.value !== "__ALL_WORK__");
+
+  return normalOptions.length === 1
+    ? normalOptions[0].value
+    : "";
+}
+
+function renderAssignedClassOptions(){
+
+  const select =
+    document.getElementById("assignedClassSelect");
+
+  if(!select){
+    return;
+  }
+
+  const selectedUrl =
+    getSelectedTopicUrl();
+
+  const selectedTopic =
+    selectedUrl ? getTopicMetaByUrl(selectedUrl) : null;
+
+  const selectedLevel =
+    selectedTopic && selectedTopic.level
+      ? selectedTopic.level
+      : getSelectedWorkLevel();
+
+  let classes = [];
+
+  if(selectedLevel && Array.isArray(scoreOptionsData)){
+    const levelData = scoreOptionsData.find(item =>
+      normalizeOptionKey(item.level) === normalizeOptionKey(selectedLevel)
+    );
+
+    if(levelData && Array.isArray(levelData.classes)){
+      classes = levelData.classes;
+    }
+  }
+
+  const assigned =
+    parseClassList(selectedTopic ? selectedTopic.assignedClasses : "");
+
+  if(!selectedTopic){
+    select.innerHTML = `<option value="">เลือกงานเดี่ยว 1 งานก่อน</option>`;
+    return;
+  }
+
+  select.innerHTML = classes.map(className => `
+    <option
+      value="${escapeAttribute(className)}"
+      ${assigned.includes(className) ? "selected" : ""}
+    >
+      ${escapeHtml(className)}
+    </option>
+  `).join("");
+}
+
+function getSelectedAssignedClasses(){
+
+  const select =
+    document.getElementById("assignedClassSelect");
+
+  if(!select){
+    return [];
+  }
+
+  return Array.from(select.selectedOptions || [])
+    .map(option => String(option.value || "").trim())
+    .filter(Boolean);
+}
+
+function saveAssignmentClassSettings(){
+
+  const selectedUrl =
+    getSelectedTopicUrl();
+
+  if(!selectedUrl){
+    alert("กรุณาเลือกงานเพียง 1 งานก่อนบันทึกห้องที่สั่งงาน");
+    return;
+  }
+
+  const topic =
+    getTopicMetaByUrl(selectedUrl);
+
+  const classes =
+    getSelectedAssignedClasses();
+
+  fetch(API_URL + "?action=updateAssignmentSettings", {
+    method: "POST",
+    body: JSON.stringify({
+      url: selectedUrl,
+      fullScore: topic ? (topic.fullScore || "") : "",
+      assignedClasses: classes
+    })
+  })
+  .then(res => res.json())
+  .then(response => {
+    if(response.status !== "success"){
+      alert("❌ " + (response.message || "บันทึกห้องที่สั่งงานไม่สำเร็จ"));
+      return;
+    }
+
+    if(topic){
+      topic.assignedClasses = classes.join(",");
+    }
+
+    alert("✅ บันทึกห้องที่สั่งงานแล้ว");
+  })
+  .catch(error => {
+    console.error(error);
+    alert("❌ เชื่อมต่อ API ไม่สำเร็จ");
+  });
+}
+
+
 function renderWorkTopicOptions(keepTopicValue){
 
   const topicSelect =
@@ -1667,14 +1939,13 @@ html += `
   topicSelect.innerHTML = html;
 
   if(currentTopic){
-    const hasCurrentTopic =
-      Array.from(topicSelect.options)
-        .some(option => option.value === currentTopic);
-
-    if(hasCurrentTopic){
-      topicSelect.value = currentTopic;
-    }
+    const currentValues = Array.isArray(currentTopic) ? currentTopic : [currentTopic];
+    Array.from(topicSelect.options).forEach(option => {
+      option.selected = currentValues.includes(option.value);
+    });
   }
+
+  renderAssignedClassOptions();
 }
 
 
@@ -1772,6 +2043,8 @@ function updateWorkClassFilterByTopic(keepClassValue){
   if(noFilter){
     noFilter.oninput = renderWorkCards;
   }
+
+  renderAssignedClassOptions();
 }
 function toggleWorkSettingsPopup(){
 
@@ -2087,7 +2360,11 @@ function loadAllWork(){
             level: topic.level || row.level || "",
             topic: topic.topic || row.topic || "",
             sheetUrl: topic.url || row.sheetUrl || "",
-            workType: topic.workType || row.workType || "งานเดี่ยว"
+            workType: topic.workType || row.workType || "งานเดี่ยว",
+            worksheetUrl: topic.worksheetUrl !== undefined ? topic.worksheetUrl : (row.worksheetUrl || ""),
+            worksheetVisible: topic.worksheetVisible !== undefined ? topic.worksheetVisible : row.worksheetVisible,
+            fullScore: topic.fullScore !== undefined ? topic.fullScore : (row.fullScore || ""),
+            assignedClasses: topic.assignedClasses !== undefined ? topic.assignedClasses : (row.assignedClasses || "")
           }));
         })
         .catch(error => {
@@ -2287,13 +2564,15 @@ function sortCurrentWorkSheet(){
   const sortSelect =
     document.getElementById("workSortMode");
 
-  if(!topicSelect || !topicSelect.value){
-    alert("กรุณาเลือกหัวข้องานก่อน");
+  const selectedUrl = getSelectedTopicUrl();
+
+  if(!topicSelect || !selectedUrl){
+    alert("กรุณาเลือกหัวข้องานเดี่ยว 1 งานก่อน");
     return;
   }
 
   const selectedOption =
-    topicSelect.options[topicSelect.selectedIndex];
+    Array.from(topicSelect.selectedOptions || []).find(option => option.value === selectedUrl);
 
   const workType =
     (selectedOption ? selectedOption.getAttribute("data-work-type") : "") ||
@@ -2315,7 +2594,7 @@ function sortCurrentWorkSheet(){
   fetch(API_URL + "?action=sortWorkSheet", {
     method: "POST",
     body: JSON.stringify({
-      url: topicSelect.value,
+      url: selectedUrl,
       sortMode: sortMode,
       workType: workType
     })
@@ -2590,6 +2869,74 @@ function renderTeacherOnlyGroupInfo(item){
   `;
 }
 
+
+function getTeacherWorksheetUrl(item){
+
+  return String(
+    item.worksheetUrl ||
+    (
+      getTopicMetaByUrl(item.sheetUrl || currentSheetUrl) || {}
+    ).worksheetUrl ||
+    ""
+  ).trim();
+}
+
+function toggleTeacherWorksheet(id, button){
+
+  const box = document.getElementById(id);
+  if(!box){
+    return;
+  }
+
+  const willShow =
+    box.style.display === "none" || box.style.display === "";
+
+  box.style.display = willShow ? "block" : "none";
+
+  if(button){
+    button.textContent = willShow ? "ซ่อนใบงาน" : "ใบงาน/คำสั่ง";
+  }
+}
+
+function returnSubmissionForRevision(url, rowIndex, workType){
+
+  if(!url || !rowIndex){
+    alert("ไม่พบข้อมูลงานที่จะส่งคืน");
+    return;
+  }
+
+  const note =
+    prompt("หมายเหตุส่งงานคืนให้นักเรียนแก้ไข", "");
+
+  if(note === null){
+    return;
+  }
+
+  fetch(API_URL + "?action=returnSubmission", {
+    method: "POST",
+    body: JSON.stringify({
+      url: url,
+      rowIndex: rowIndex,
+      workType: workType || "งานเดี่ยว",
+      returnNote: note
+    })
+  })
+  .then(res => res.json())
+  .then(response => {
+    if(response.status !== "success"){
+      alert("❌ " + (response.message || "ส่งงานคืนไม่สำเร็จ"));
+      return;
+    }
+
+    alert("✅ ส่งงานคืนแล้ว");
+    refreshWorkList();
+  })
+  .catch(error => {
+    console.error(error);
+    alert("❌ เชื่อมต่อ API ไม่สำเร็จ");
+  });
+}
+
 function renderWorkCards(){
 
   const workBox = document.getElementById("work");
@@ -2687,6 +3034,26 @@ function renderWorkCards(){
 
           <button
             type="button"
+            onclick="returnSubmissionForRevision(
+              '${escapeJsString(itemSheetUrl)}',
+              '${escapeJsString(s.rowIndex || "")}',
+              '${escapeJsString(itemWorkType)}'
+            )"
+          >
+            ส่งงานคืน
+          </button>
+
+          ${getTeacherWorksheetUrl(s) ? `
+            <button
+              type="button"
+              onclick="toggleTeacherWorksheet('teacherWorksheet_${escapeJsString(itemSheetUrl + '_' + (s.rowIndex || ''))}', this)"
+            >
+              ใบงาน/คำสั่ง
+            </button>
+          ` : ``}
+
+          <button
+            type="button"
             onclick="deleteSubmission(
               '${escapeJsString(itemSheetUrl)}',
               '${escapeJsString(s.rowIndex || "")}',
@@ -2713,6 +3080,8 @@ function renderWorkCards(){
           <div>${escapeHtml(displayDetail)}</div>
           <div>รหัสผู้ส่ง: ${escapeHtml(s.id || "")}</div>
           <div>สถานะตรวจ: ${escapeHtml(checkedLabel)}</div>
+          ${s.returnStatus ? `<div class="returned-badge">${escapeHtml(s.returnStatus)}${s.returnNote ? ": " + escapeHtml(s.returnNote) : ""}</div>` : ``}
+          ${s.revisionStatus ? `<div class="revised-badge">${escapeHtml(s.revisionStatus)}${s.revisionNote ? ": " + escapeHtml(s.revisionNote) : ""}</div>` : ``}
 
           <div class="submit-time ${s.isLate ? "late-time" : "normal-time"}">
             เวลาส่งงาน: ${escapeHtml(formatTimestamp(s.timestamp))}
@@ -2731,6 +3100,17 @@ function renderWorkCards(){
           }
           ${renderTeacherOnlyGroupInfo(s)}
         </div>
+
+        ${getTeacherWorksheetUrl(s) ? `
+          <div
+            id="teacherWorksheet_${escapeAttribute(itemSheetUrl + '_' + (s.rowIndex || ''))}"
+            class="work-box teacher-worksheet-box"
+            style="display:none;"
+          >
+            <h4>ใบงาน / คำสั่ง</h4>
+            ${renderWorksheetContent(getTeacherWorksheetUrl(s))}
+          </div>
+        ` : ``}
 
         ${
           isCollapsed
@@ -3517,6 +3897,15 @@ function renderMyWorkWorksheet(item, isSubmitted, index){
         ส่งงาน
       </button>
     `;
+  } else if(item.canRevise){
+    buttons += `
+      <button
+        type="button"
+        onclick="openStudentSubmitModalByIndex(${index})"
+      >
+        ส่งงานแก้ไข
+      </button>
+    `;
   }
 
   buttons += `</div>`;
@@ -4037,8 +4426,11 @@ function openStudentSubmitModal(sheetUrl, topicTitle, workType, worksheetUrl, wo
 
   topicSelect.value = sheetUrl;
 
+  const isRevision =
+    submitItem && submitItem.status === "submitted" && submitItem.canRevise;
+
   if(title){
-    title.textContent = "ส่งงาน: " + (topicTitle || "");
+    title.textContent = (isRevision ? "ส่งงานแก้ไข: " : "ส่งงาน: ") + (topicTitle || "");
   }
 
   if(textBox){
@@ -4054,8 +4446,61 @@ function openStudentSubmitModal(sheetUrl, topicTitle, workType, worksheetUrl, wo
   }
 
   handleSubmitTopicChange();
-  renderGroupAssessmentBox(workType || "งานเดี่ยว");
+
+  const revisionBox = document.getElementById("revisionBox");
+  const revisionModeBox = document.getElementById("revisionModeBox");
+  const revisionReasonText = document.getElementById("revisionReasonText");
+  const revisionNote = document.getElementById("revisionNote");
+  const revisionMode = document.getElementById("revisionMode");
+
+  if(revisionBox){
+    revisionBox.style.display = isRevision ? "block" : "none";
+  }
+
+  if(revisionReasonText){
+    revisionReasonText.innerHTML = isRevision
+      ? `${submitItem.returnStatus ? "ครูส่งงานคืนให้แก้ไข" : "คะแนนต่ำกว่าครึ่งหนึ่ง จึงสามารถส่งแก้ไขได้"}`
+      : "";
+  }
+
+  if(revisionNote){
+    revisionNote.value = "";
+  }
+
+  if(revisionMode){
+    revisionMode.value = "group";
+  }
+
+  if(revisionModeBox){
+    revisionModeBox.style.display =
+      isRevision && String(workType || "").trim() === "งานกลุ่ม"
+        ? "block"
+        : "none";
+  }
+
+  if(isRevision){
+    renderGroupAssessmentBox("งานเดี่ยว");
+  } else {
+    renderGroupAssessmentBox(workType || "งานเดี่ยว");
+  }
+
+  handleRevisionModeChange();
   modal.style.display = "flex";
+}
+
+function handleRevisionModeChange(){
+
+  const revisionMode = document.getElementById("revisionMode");
+  const mode = revisionMode ? revisionMode.value : "group";
+
+  if(
+    currentSubmitWorkItem &&
+    currentSubmitWorkItem.status === "submitted" &&
+    currentSubmitWorkItem.canRevise &&
+    String(currentSubmitWorkItem.workType || currentSubmitWorkItem.submitMode || "").trim() === "งานกลุ่ม"
+  ){
+    renderGroupAssessmentBox(mode === "group" ? "งานกลุ่ม" : "งานเดี่ยว");
+  }
 }
 
 function closeStudentSubmitModal(){
@@ -4085,6 +4530,16 @@ function closeStudentSubmitModal(){
   if(groupAssessmentBox){
     groupAssessmentBox.style.display = "none";
     groupAssessmentBox.innerHTML = "";
+  }
+
+  const revisionBox = document.getElementById("revisionBox");
+  if(revisionBox){
+    revisionBox.style.display = "none";
+  }
+
+  const revisionNote = document.getElementById("revisionNote");
+  if(revisionNote){
+    revisionNote.value = "";
   }
 
   if(topicSelect){
@@ -5456,11 +5911,12 @@ function setFullScoreForAssignment(assignmentIndex, value){
     localStorage.setItem(storageKey, cleaned);
   }
 
-  fetch(API_URL + "?action=updateAssignmentFullScore", {
+  fetch(API_URL + "?action=updateAssignmentSettings", {
     method: "POST",
     body: JSON.stringify({
       url: assignment.url || "",
-      fullScore: cleaned
+      fullScore: cleaned,
+      assignedClasses: assignment.assignedClasses || ""
     })
   })
   .then(res => res.json())
@@ -6122,6 +6578,21 @@ else{
   submitMode = "งานเดี่ยว";
 }
 
+const isRevision =
+  currentSubmitWorkItem &&
+  currentSubmitWorkItem.status === "submitted" &&
+  currentSubmitWorkItem.canRevise;
+
+const revisionModeBox = document.getElementById("revisionMode");
+const revisionMode =
+  isRevision && revisionModeBox
+    ? revisionModeBox.value
+    : "";
+
+if(isRevision && submitMode === "งานกลุ่ม" && revisionMode === "individual"){
+  submitMode = "งานเดี่ยวแก้ไข";
+}
+
   const work =
     document.getElementById("submitWorkText").value.trim();
 
@@ -6190,6 +6661,11 @@ else{
         groupMemberIds: groupAssessmentData.groupMemberIds || [],
         groupMemberAssessments: groupAssessmentData.assessments,
         teacherNote: groupAssessmentData.teacherNote,
+        isRevision: isRevision,
+        revisionMode: revisionMode,
+        revisionNote: document.getElementById("revisionNote") ? document.getElementById("revisionNote").value.trim() : "",
+        originalRowIndex: currentSubmitWorkItem ? (currentSubmitWorkItem.rowIndex || "") : "",
+        originalSubmitMode: currentSubmitWorkItem ? (currentSubmitWorkItem.submitMode || currentSubmitWorkItem.workType || "") : "",
         ...filePayload
       })
     })
