@@ -965,17 +965,28 @@ h2,h3,h4{
 .topic-multi-select{
   height:46px !important;
   min-height:46px !important;
-  overflow:hidden;
 }
 
-.topic-multi-select:focus{
-  height:160px !important;
-  min-height:160px !important;
+.assignment-class-checkbox-list{
+  display:grid;
+  grid-template-columns:repeat(auto-fit, minmax(120px, 1fr));
+  gap:8px;
+  margin-top:8px;
 }
 
-.assignment-class-select{
-  height:110px !important;
-  min-height:110px !important;
+.assignment-class-checkbox-list label{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  margin-top:0;
+  padding:7px 9px;
+  border:1px solid rgba(0,255,65,0.55);
+  background:rgba(0,0,0,0.45);
+}
+
+.assignment-class-checkbox-list input{
+  width:auto;
+  margin-top:0;
 }
 
 .revision-box{
@@ -1094,9 +1105,104 @@ h2,h3,h4{
 }
 
 .assignment-worksheet-box{
-  display:none;
+  display:block;
   margin-top:10px;
   border-color:#ffd43b;
+}
+
+.teacher-work-bulk-tools{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+  align-items:center;
+  margin-top:12px;
+}
+
+.teacher-work-bulk-tools button{
+  width:auto;
+  margin-top:0;
+}
+
+.teacher-work-selection-status{
+  margin-left:auto;
+  opacity:0.95;
+}
+
+.teacher-work-select-box{
+  position:absolute;
+  top:12px;
+  left:12px;
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:5px 8px;
+  border:1px solid #ffd43b;
+  color:#ffcc80;
+  background:rgba(58,36,0,0.72);
+  z-index:6;
+}
+
+.teacher-work-select-box input{
+  width:auto;
+  margin-top:0;
+}
+
+.teacher-work-selected{
+  outline:2px solid #ffd43b;
+  box-shadow:0 0 18px #ffd43b;
+}
+
+.score-table-wrap{
+  max-height:72vh;
+  overflow:auto;
+}
+
+.score-table th{
+  position:sticky;
+  top:0;
+  z-index:5;
+  background:#003b18;
+}
+
+.score-table th:nth-child(1),
+.score-table td:nth-child(1){
+  position:sticky;
+  left:0;
+  z-index:3;
+  min-width:62px;
+  background:#050505;
+}
+
+.score-table th:nth-child(2),
+.score-table td:nth-child(2){
+  position:sticky;
+  left:62px;
+  z-index:3;
+  min-width:90px;
+  background:#050505;
+}
+
+.score-table th:nth-child(3),
+.score-table td:nth-child(3){
+  position:sticky;
+  left:152px;
+  z-index:3;
+  min-width:110px;
+  background:#050505;
+}
+
+.score-table th:nth-child(4),
+.score-table td:nth-child(4){
+  position:sticky;
+  left:262px;
+  z-index:4;
+  min-width:190px;
+  background:#050505;
+}
+
+.score-table thead th:nth-child(-n+4){
+  z-index:8;
+  background:#003b18;
 }
 
 .teacher-check-controls{
@@ -1226,8 +1332,6 @@ h2,h3,h4{
           <select
             id="topic"
             class="topic-multi-select"
-            multiple
-            size="1"
             onchange="updateWorkClassFilterByTopic()"
           >
             <option value="">กำลังโหลดหัวข้องาน...</option>
@@ -1273,6 +1377,14 @@ h2,h3,h4{
                 onclick="stopLoadedWork()"
               >
                 ⏹ หยุดโหลดงาน
+              </button>
+
+              <button
+                type="button"
+                id="toggleAllTeacherWorksheetsBtn"
+                onclick="toggleAllTeacherWorksheets()"
+              >
+                📄 เปิดใบงานนักเรียนทั้งหมด
               </button>
 
               <label>เรียงลำดับผลงาน</label>
@@ -1563,6 +1675,7 @@ let currentMyWorkData = [];
 let selectedMyWorkIndex = null;
 let currentSubmitWorkItem = null;
 let lastSelectedWorkUrls = [];
+let selectedTeacherWorkKeys = new Set();
 
 const VIEWED_WORKS_STORAGE_KEY = "matrixViewedWorks";
 const HIDE_VIEWED_STORAGE_KEY = "matrixHideViewedWorks";
@@ -1833,23 +1946,24 @@ function renderAssignmentClassOptionsForCard(topic, index){
   }
 
   return `
-    <select
+    <div
       id="assignmentClasses_${index}"
-      class="assignment-class-select"
-      multiple
-      size="4"
+      class="assignment-class-checkbox-list"
     >
       ${classes.map(className => `
-        <option
-          value="${escapeAttribute(className)}"
-          ${assigned.includes(className) ? "selected" : ""}
-        >
+        <label>
+          <input
+            type="checkbox"
+            value="${escapeAttribute(className)}"
+            data-assignment-class-index="${escapeAttribute(index)}"
+            ${assigned.includes(className) ? "checked" : ""}
+          >
           ${escapeHtml(className)}
-        </option>
+        </label>
       `).join("")}
-    </select>
+    </div>
     <div class="empty-text">
-      ไม่เลือกห้อง = สั่งงานทุกห้องในระดับชั้นนี้
+      ไม่ติ๊กห้อง = สั่งงานทุกห้องในระดับชั้นนี้
     </div>
   `;
 }
@@ -1946,7 +2060,7 @@ function renderAssignmentSettingsList(){
                     type="button"
                     onclick="toggleAssignmentWorksheet('${escapeJsString(worksheetId)}', this)"
                   >
-                    เปิดใบคำสั่งงาน
+                    ซ่อนใบคำสั่งงาน
                   </button>
                 `
                 : ``
@@ -1976,15 +2090,12 @@ function renderAssignmentSettingsList(){
 
 function getSelectedAssignmentClassesFromCard(index){
 
-  const select =
-    document.getElementById("assignmentClasses_" + index);
-
-  if(!select){
-    return [];
-  }
-
-  return Array.from(select.selectedOptions || [])
-    .map(option => String(option.value || "").trim())
+  return Array.from(
+    document.querySelectorAll(
+      `[data-assignment-class-index="${String(index)}"]:checked`
+    )
+  )
+    .map(input => String(input.value || "").trim())
     .filter(Boolean);
 }
 
@@ -2047,13 +2158,13 @@ function toggleAssignmentWorksheet(id, button){
     return;
   }
 
-  const willShow =
-    box.style.display === "none" || box.style.display === "";
+  const isHidden =
+    window.getComputedStyle(box).display === "none";
 
-  box.style.display = willShow ? "block" : "none";
+  box.style.display = isHidden ? "block" : "none";
 
   if(button){
-    button.textContent = willShow ? "ซ่อนใบคำสั่งงาน" : "เปิดใบคำสั่งงาน";
+    button.textContent = isHidden ? "ซ่อนใบคำสั่งงาน" : "เปิดใบคำสั่งงาน";
   }
 }
 
@@ -2437,10 +2548,13 @@ html += `
   topicSelect.innerHTML = html;
 
   if(currentTopic){
-    const currentValues = Array.isArray(currentTopic) ? currentTopic : [currentTopic];
-    Array.from(topicSelect.options).forEach(option => {
-      option.selected = currentValues.includes(option.value);
-    });
+    const hasCurrentTopic =
+      Array.from(topicSelect.options)
+        .some(option => option.value === currentTopic);
+
+    if(hasCurrentTopic){
+      topicSelect.value = currentTopic;
+    }
   }
 
   renderAssignedClassOptions();
@@ -2699,33 +2813,26 @@ function loadWork(){
     return;
   }
 
-  if(selectedOptions.some(option => option.value === "__ALL_WORK__")){
+  if(selectedOptions[0].value === "__ALL_WORK__"){
     loadAllWork();
     return;
   }
 
-  const topics =
-    getSelectedAssignmentTopics();
+  const topic =
+    getTopicMetaByUrl(selectedOptions[0].value) || getSelectedAssignmentTopics()[0];
 
-  if(topics.length === 0){
+  if(!topic || !topic.url){
     workStatus.innerHTML =
       `<div class="status-box">❌ กรุณาเลือกหัวข้องานก่อน</div>`;
     workBox.innerHTML = "";
     return;
   }
 
-  if(topics.length > 1){
-    loadSelectedWorkTopics(topics);
-    return;
-  }
-
-  const topic =
-    topics[0];
-
   const url =
     String(topic.url || "").trim();
 
   currentSheetUrl = url;
+  selectedTeacherWorkKeys.clear();
 
   const refreshButton =
     document.getElementById("refreshWorkButton");
@@ -2829,6 +2936,7 @@ function loadSelectedWorkTopics(topics){
 
   currentSheetUrl = "";
   currentWorkData = [];
+  selectedTeacherWorkKeys.clear();
 
   if(refreshButton){
     refreshButton.style.display = "block";
@@ -2907,6 +3015,7 @@ function loadAllWork(){
 
   currentSheetUrl = "";
   currentWorkData = [];
+  selectedTeacherWorkKeys.clear();
 
   const topicSelect = document.getElementById("topic");
   if(topicSelect){
@@ -3542,6 +3651,186 @@ function returnSubmissionForRevision(url, rowIndex, workType){
   });
 }
 
+function getTeacherWorkSelectionKey(item){
+
+  return [
+    String(item.sheetUrl || currentSheetUrl || "").trim(),
+    String(item.rowIndex || "").trim(),
+    String(item.id || "").trim()
+  ].join("|");
+}
+
+function toggleTeacherWorkSelected(checkbox){
+
+  const key =
+    String(checkbox.value || "").trim();
+
+  if(!key){
+    return;
+  }
+
+  if(checkbox.checked){
+    selectedTeacherWorkKeys.add(key);
+  } else {
+    selectedTeacherWorkKeys.delete(key);
+  }
+
+  const card =
+    checkbox.closest(".card");
+
+  if(card){
+    card.classList.toggle("teacher-work-selected", checkbox.checked);
+  }
+
+  updateTeacherWorkSelectionStatus();
+}
+
+function updateTeacherWorkSelectionStatus(){
+
+  const box =
+    document.getElementById("teacherWorkSelectionStatus");
+
+  if(!box){
+    return;
+  }
+
+  box.textContent =
+    "เลือกใบงานนักเรียน " + selectedTeacherWorkKeys.size + " รายการ";
+}
+
+function selectAllVisibleTeacherWorks(){
+
+  const checks =
+    document.querySelectorAll(".teacher-work-select");
+
+  checks.forEach(check => {
+    check.checked = true;
+    selectedTeacherWorkKeys.add(String(check.value || ""));
+
+    const card = check.closest(".card");
+    if(card){
+      card.classList.add("teacher-work-selected");
+    }
+  });
+
+  updateTeacherWorkSelectionStatus();
+}
+
+function clearSelectedTeacherWorks(){
+
+  selectedTeacherWorkKeys.clear();
+
+  document.querySelectorAll(".teacher-work-select").forEach(check => {
+    check.checked = false;
+    const card = check.closest(".card");
+    if(card){
+      card.classList.remove("teacher-work-selected");
+    }
+  });
+
+  updateTeacherWorkSelectionStatus();
+}
+
+function getSelectedTeacherWorkItems(){
+
+  return (Array.isArray(currentWorkData) ? currentWorkData : [])
+    .filter(item => selectedTeacherWorkKeys.has(getTeacherWorkSelectionKey(item)));
+}
+
+function returnSelectedSubmissionsForRevision(){
+
+  const selectedItems =
+    getSelectedTeacherWorkItems()
+      .filter(item => item.sheetUrl && item.rowIndex);
+
+  if(selectedItems.length === 0){
+    alert("กรุณาติ๊กเลือกใบงานนักเรียนก่อน");
+    return;
+  }
+
+  const note =
+    prompt("หมายเหตุส่งงานคืนให้นักเรียนแก้ไข", "");
+
+  if(note === null){
+    return;
+  }
+
+  const confirmed =
+    confirm("ยืนยันส่งงานคืน " + selectedItems.length + " รายการหรือไม่");
+
+  if(!confirmed){
+    return;
+  }
+
+  Promise.all(
+    selectedItems.map(item =>
+      fetch(API_URL + "?action=returnSubmission", {
+        method: "POST",
+        body: JSON.stringify({
+          url: item.sheetUrl,
+          rowIndex: item.rowIndex,
+          workType: item.workType || (isGroupWorkItem(item) ? "งานกลุ่ม" : "งานเดี่ยว"),
+          returnNote: note
+        })
+      })
+      .then(res => res.json())
+      .then(response => ({ item, response }))
+      .catch(error => ({ item, response: { status: "error", message: error.message } }))
+    )
+  ).then(results => {
+
+    const failed =
+      results.filter(result => !result.response || result.response.status !== "success");
+
+    if(failed.length > 0){
+      alert("ส่งคืนบางรายการไม่สำเร็จ " + failed.length + " รายการ");
+    } else {
+      alert("✅ ส่งงานคืนที่เลือกแล้ว");
+    }
+
+    selectedTeacherWorkKeys.clear();
+    refreshWorkList();
+  });
+}
+
+function makeSafeDomId(value){
+
+  return String(value || "")
+    .replace(/[^a-zA-Z0-9_-]/g, "_");
+}
+
+function toggleAllTeacherWorksheets(){
+
+  const boxes =
+    Array.from(document.querySelectorAll(".teacher-worksheet-box"));
+
+  if(boxes.length === 0){
+    alert("ยังไม่มีใบงานในรายการที่โหลดอยู่");
+    return;
+  }
+
+  const shouldOpen =
+    boxes.some(box => window.getComputedStyle(box).display === "none");
+
+  boxes.forEach(box => {
+    box.style.display = shouldOpen ? "block" : "none";
+  });
+
+  document.querySelectorAll(".teacher-worksheet-toggle").forEach(button => {
+    button.textContent = shouldOpen ? "ซ่อนใบงาน" : "ใบงาน/คำสั่ง";
+  });
+
+  const mainButton =
+    document.getElementById("toggleAllTeacherWorksheetsBtn");
+
+  if(mainButton){
+    mainButton.textContent = shouldOpen
+      ? "📄 ปิดใบงานนักเรียนทั้งหมด"
+      : "📄 เปิดใบงานนักเรียนทั้งหมด";
+  }
+}
+
+
 function renderWorkCards(){
 
   const workBox = document.getElementById("work");
@@ -3621,8 +3910,31 @@ function renderWorkCards(){
     const itemWorkType =
       String(s.workType || (isGroup ? "งานกลุ่ม" : "งานเดี่ยว")).trim();
 
+    const workSelectionKey =
+      getTeacherWorkSelectionKey({
+        ...s,
+        sheetUrl: itemSheetUrl
+      });
+
+    const isWorkSelected =
+      selectedTeacherWorkKeys.has(workSelectionKey);
+
+    const worksheetDomId =
+      makeSafeDomId("teacherWorksheet_" + itemSheetUrl + "_" + (s.rowIndex || "") + "_" + visibleCount);
+
     html += `
-      <div class="card">
+      <div class="card ${isWorkSelected ? "teacher-work-selected" : ""}" data-work-selection-key="${escapeAttribute(workSelectionKey)}">
+
+        <label class="teacher-work-select-box">
+          <input
+            type="checkbox"
+            class="teacher-work-select"
+            value="${escapeAttribute(workSelectionKey)}"
+            ${isWorkSelected ? "checked" : ""}
+            onchange="toggleTeacherWorkSelected(this)"
+          >
+          เลือก
+        </label>
 
         <div class="work-card-actions">
 
@@ -3651,7 +3963,8 @@ function renderWorkCards(){
           ${getTeacherWorksheetUrl(s) ? `
             <button
               type="button"
-              onclick="toggleTeacherWorksheet('teacherWorksheet_${escapeJsString(itemSheetUrl + '_' + (s.rowIndex || ''))}', this)"
+              class="teacher-worksheet-toggle"
+              onclick="toggleTeacherWorksheet('${escapeJsString(worksheetDomId)}', this)"
             >
               ใบงาน/คำสั่ง
             </button>
@@ -3708,7 +4021,7 @@ function renderWorkCards(){
 
         ${getTeacherWorksheetUrl(s) ? `
           <div
-            id="teacherWorksheet_${escapeAttribute(itemSheetUrl + '_' + (s.rowIndex || ''))}"
+            id="${escapeAttribute(worksheetDomId)}"
             class="work-box teacher-worksheet-box"
             style="display:none;"
           >
@@ -3786,7 +4099,25 @@ function renderWorkCards(){
       `<div class="status-box">ไม่พบข้อมูลตามตัวกรอง</div>`;
   }
 
-  workBox.innerHTML = html;
+  const selectionToolbar = visibleCount > 0
+    ? `
+      <div class="status-box teacher-work-bulk-tools">
+        <button type="button" onclick="selectAllVisibleTeacherWorks()">
+          เลือกใบงานที่แสดงทั้งหมด
+        </button>
+        <button type="button" onclick="clearSelectedTeacherWorks()">
+          ยกเลิกการเลือก
+        </button>
+        <button type="button" onclick="returnSelectedSubmissionsForRevision()">
+          ส่งคืนงานที่เลือก
+        </button>
+        <span id="teacherWorkSelectionStatus" class="teacher-work-selection-status"></span>
+      </div>
+    `
+    : "";
+
+  workBox.innerHTML = selectionToolbar + html;
+  updateTeacherWorkSelectionStatus();
 }
 // ======================================
 // แสดงงานในช่อง Work
