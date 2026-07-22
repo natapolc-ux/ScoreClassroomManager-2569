@@ -24,6 +24,7 @@ let selectedAssignmentIndexes = new Set();
 let hideViewedWorksEnabled = false;
 let currentMyWorkData = [];
 let selectedMyWorkIndex = null;
+let currentStudentWorkFilter = "all";
 let currentSubmitWorkItem = null;
 let lastSelectedWorkUrls = [];
 let selectedTeacherWorkKeys = new Set();
