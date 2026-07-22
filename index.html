@@ -93,10 +93,10 @@
         id="teacherNavGroupIndividual"
         class="side-menu-item"
         onclick="switchTeacherPage('groupIndividual')"
-        title="ตรวจงานรายกลุ่ม/รายบุคคล"
+        title="เปิดตามรายชื่อ"
       >
         <span class="side-menu-icon">👥</span>
-        <span class="side-menu-label">ตรวจงานรายกลุ่ม/รายบุคคล</span>
+        <span class="side-menu-label">เปิดตามรายชื่อ</span>
       </button>
 
       <button
@@ -104,10 +104,10 @@
         id="teacherNavSettings"
         class="side-menu-item"
         onclick="switchTeacherPage('settings')"
-        title="ตั้งค่า"
+        title="อื่นๆ"
       >
-        <span class="side-menu-icon">⚙</span>
-        <span class="side-menu-label">ตั้งค่า</span>
+        <span class="side-menu-icon">⋯</span>
+        <span class="side-menu-label">อื่นๆ</span>
       </button>
     </aside>
 
@@ -299,16 +299,31 @@
 
 
       <section id="teacherPageGroupIndividual" class="teacher-page">
-        <h3>ตรวจงานรายกลุ่ม/บุคคล</h3>
+        <h3>เปิดตามรายชื่อ</h3>
 
-        <div class="status-box check-mode-controls">
-          <button type="button" onclick="renderGroupIndividualCheckPage()">
-            รีเฟรชจากงานที่โหลดล่าสุด
-          </button>
-          <button type="button" onclick="switchTeacherPage('check')">
-            ไปหน้าโหลดงาน
-          </button>
-          <span>หน้านี้ใช้ข้อมูลจากหัวข้องาน/ห้องที่โหลดไว้ในหน้าตรวจงาน</span>
+        <div class="status-box name-search-panel">
+          <div class="name-search-header">
+            <div>
+              เลือกห้องก่อน แล้วค้นหาด้วยชื่อ / นามสกุล / เลขที่ / เลขประจำตัวนักเรียน หรือชื่อกลุ่ม
+            </div>
+            <button type="button" onclick="switchTeacherPage('check')">
+              ไปหน้าโหลดงาน
+            </button>
+          </div>
+
+          <div class="name-search-toolbar">
+            <select id="nameSearchClass" onchange="renderNameSearchResults()">
+              <option value="">เลือกห้อง</option>
+            </select>
+            <input
+              id="nameSearchQuery"
+              placeholder="พิมพ์ชื่อ นามสกุล เลขที่ เลขประจำตัว หรือชื่อกลุ่ม"
+              oninput="renderNameSearchResults()"
+            >
+            <button type="button" onclick="renderGroupIndividualCheckPage()">
+              รีเฟรชข้อมูลค้นหา
+            </button>
+          </div>
         </div>
 
         <div id="groupIndividualCheckStatus"></div>
@@ -440,11 +455,11 @@
       </section>
 
       <section id="teacherPageSettings" class="teacher-page">
-        <h3>ตั้งค่า</h3>
+        <h3>อื่นๆ</h3>
 
         <div class="settings-dashboard-grid">
           <div class="card settings-dashboard-card">
-            <h4>ตั้งค่าใบคำสั่งงาน</h4>
+            <h4>ใบคำสั่งงาน</h4>
             <p>เพิ่มงานใหม่ ตั้งค่าคะแนนเต็ม สั่งงานเฉพาะห้อง และกำหนด Deadline รายห้อง</p>
             <button type="button" onclick="switchTeacherPage('assignment')">
               ไปหน้าใบคำสั่งงาน
@@ -452,7 +467,7 @@
           </div>
 
           <div class="card settings-dashboard-card">
-            <h4>ตั้งค่าการตรวจงาน</h4>
+            <h4>การตรวจงาน</h4>
             <p>โหลดงาน เปิด/ปิดใบงานนักเรียน เลือกหลายงาน ส่งคืน ลบหลายงาน และให้คะแนนงานที่เลือก</p>
             <button type="button" onclick="switchTeacherPage('check')">
               ไปหน้าตรวจงาน
@@ -460,7 +475,7 @@
           </div>
 
           <div class="card settings-dashboard-card">
-            <h4>ตั้งค่าตารางคะแนน</h4>
+            <h4>ตารางคะแนน</h4>
             <p>ซ่อนคะแนน ล็อกช่องคะแนน ซ่อนช่อง +/- คะแนนรายบุคคล และบันทึกตารางคะแนน</p>
             <button type="button" onclick="switchTeacherPage('score')">
               ไปตารางคะแนน
