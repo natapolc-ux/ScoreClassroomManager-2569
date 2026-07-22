@@ -1,3 +1,28 @@
+// ======================================
+// Matrix Background
+// ======================================
+const canvas =
+  document.getElementById("matrix");
+
+const ctx =
+  canvas.getContext("2d");
+
+canvas.width =
+  window.innerWidth;
+
+canvas.height =
+  window.innerHeight;
+
+const letters =
+  "アイウエオ0123456789";
+
+const fontSize = 16;
+
+let columns =
+  Math.floor(canvas.width / fontSize);
+
+let drops = [];
+
 function initMatrix(){
 
   columns =
