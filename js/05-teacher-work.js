@@ -1850,7 +1850,7 @@ function getGroupMembersForTeacherScoring(item){
   })).filter(member => member.id);
 }
 
-function renderGroupIndividualScoreEditor(item){
+function renderGroupIndividualScoreEditor(item, domPrefix){
 
   if(!isGroupWorkItem(item)){
     return "";
@@ -1869,7 +1869,7 @@ function renderGroupIndividualScoreEditor(item){
 
   const itemSheetUrl = String(item.sheetUrl || currentSheetUrl || "").trim();
   const rowIndex = String(item.rowIndex || "").trim();
-  const baseId = makeSafeDomId(itemSheetUrl + "_" + rowIndex);
+  const baseId = makeSafeDomId((domPrefix || "work") + "_" + itemSheetUrl + "_" + rowIndex);
   const groupScoreId = "groupInlineScore_" + baseId;
   const currentScore = String(item.score || "").trim() === "ตรวจแล้ว" ? "" : String(item.score || "").trim();
 
@@ -2003,8 +2003,9 @@ function renderGroupIndividualCheckPage(){
 
   const statusBox = document.getElementById("groupIndividualCheckStatus");
   const contentBox = document.getElementById("groupIndividualCheckContent");
+  const classSelect = document.getElementById("nameSearchClass");
 
-  if(!statusBox || !contentBox){
+  if(!statusBox || !contentBox || !classSelect){
     return;
   }
 
@@ -2013,61 +2014,221 @@ function renderGroupIndividualCheckPage(){
   if(data.length === 0){
     statusBox.innerHTML = `<div class="status-box">ยังไม่มีข้อมูล ให้ไปหน้า “หน้าตรวจงาน” แล้วโหลดงานก่อน</div>`;
     contentBox.innerHTML = "";
+    classSelect.innerHTML = `<option value="">เลือกห้อง</option>`;
     return;
   }
 
-  const groups = data.filter(item => isGroupWorkItem(item));
-  const individuals = data.filter(item => !isGroupWorkItem(item));
+  const oldClass = String(classSelect.value || "").trim();
+  const classes = [...new Set(
+    data
+      .map(item => String(item.class || "").trim())
+      .filter(Boolean)
+  )].sort((a, b) => String(a).localeCompare(String(b), "th", { numeric:true }));
+
+  classSelect.innerHTML =
+    `<option value="">เลือกห้อง</option>` +
+    classes.map(className => `
+      <option value="${escapeAttribute(className)}">
+        ${escapeHtml(className)}
+      </option>
+    `).join("");
+
+  if(oldClass && classes.includes(oldClass)){
+    classSelect.value = oldClass;
+  }
 
   statusBox.innerHTML = `
     <div class="status-box">
-      ข้อมูลจากงานที่โหลดล่าสุด: งานกลุ่ม ${groups.length} รายการ / งานเดี่ยว ${individuals.length} รายการ
+      ใช้ข้อมูลจากงานที่โหลดล่าสุดทั้งหมด ${data.length} รายการ
     </div>
   `;
 
-  contentBox.innerHTML = `
-    <div class="check-mode-grid">
-      <div>
-        <div class="check-mode-section-title">งานรายกลุ่ม</div>
-        ${groups.length ? groups.map(item => `
-          <div class="card">
-            <h3>${escapeHtml(item.topic || "งานกลุ่ม")} | ${escapeHtml(item.class || "")}</h3>
-            <div class="meta">
-              <div>กลุ่ม: ${escapeHtml(item.groupName || "ไม่ระบุชื่อกลุ่ม")}</div>
-              <div>ผู้ส่ง: ${escapeHtml(item.name || "-")}</div>
-              <div>คะแนนปัจจุบัน: ${escapeHtml(item.score || "ยังไม่ได้ตรวจ")}</div>
-            </div>
-            ${renderGroupIndividualScoreEditor(item)}
-          </div>
-        `).join("") : `<div class="status-box">ไม่พบงานกลุ่ม</div>`}
-      </div>
+  renderNameSearchResults();
+}
 
-      <div>
-        <div class="check-mode-section-title">งานรายบุคคล</div>
-        ${individuals.length ? individuals.map(item => `
-          <div class="card">
-            <h3>${escapeHtml(item.topic || "งานเดี่ยว")} | ${escapeHtml(item.class || "")}</h3>
-            <div class="meta">
-              <div>เลขที่: ${escapeHtml(item.no || "-")}</div>
-              <div>ชื่อ: ${escapeHtml(item.name || "-")}</div>
-              <div>คะแนนปัจจุบัน: ${escapeHtml(item.score || "ยังไม่ได้ตรวจ")}</div>
-            </div>
-            <div class="score-area">
-              <input
-                type="number"
-                id="score_${escapeAttribute(item.rowIndex || item.id)}"
-                value="${String(item.score || "") === "ตรวจแล้ว" ? "" : escapeAttribute(item.score || "") }"
-                placeholder="คะแนน"
-              >
-              <button onclick="saveScore('${escapeJsString(item.sheetUrl || currentSheetUrl || "")}','${escapeJsString(item.id || "")}','${escapeJsString(item.rowIndex || "") }')">
-                บันทึกคะแนน
-              </button>
-            </div>
-          </div>
-        `).join("") : `<div class="status-box">ไม่พบงานรายบุคคล</div>`}
-      </div>
+function getSearchTextForWorkItem(item){
+
+  const memberText =
+    Array.isArray(item.groupMemberAssessments)
+      ? item.groupMemberAssessments.map(member => [
+          member.id,
+          member.name,
+          member.no,
+          member.className,
+          member.status
+        ].join(" ")).join(" ")
+      : "";
+
+  const groupMembersText =
+    Array.isArray(item.groupMembers)
+      ? item.groupMembers.map(member => [
+          member.id,
+          member.name,
+          member.no,
+          member.className
+        ].join(" ")).join(" ")
+      : "";
+
+  return normalizeOptionKey([
+    item.name,
+    item.submitterName,
+    item.no,
+    item.id,
+    item.studentId,
+    item.groupName,
+    item.class,
+    item.topic,
+    memberText,
+    groupMembersText
+  ].join(" "));
+}
+
+function renderNameSearchResults(){
+
+  const statusBox = document.getElementById("groupIndividualCheckStatus");
+  const contentBox = document.getElementById("groupIndividualCheckContent");
+  const classSelect = document.getElementById("nameSearchClass");
+  const searchInput = document.getElementById("nameSearchQuery");
+
+  if(!statusBox || !contentBox || !classSelect || !searchInput){
+    return;
+  }
+
+  const data = Array.isArray(currentWorkData) ? currentWorkData : [];
+  const selectedClass = String(classSelect.value || "").trim();
+  const keyword = normalizeOptionKey(searchInput.value || "");
+
+  if(data.length === 0){
+    contentBox.innerHTML = "";
+    return;
+  }
+
+  if(!selectedClass){
+    contentBox.innerHTML = `<div class="status-box">กรุณาเลือกห้องก่อนค้นหา</div>`;
+    return;
+  }
+
+  if(!keyword){
+    contentBox.innerHTML = `<div class="status-box">กรุณาพิมพ์ชื่อ / นามสกุล / เลขที่ / เลขประจำตัวนักเรียน หรือชื่อกลุ่ม</div>`;
+    return;
+  }
+
+  const result = data.filter(item =>
+    normalizeOptionKey(item.class || "") === normalizeOptionKey(selectedClass) &&
+    getSearchTextForWorkItem(item).includes(keyword)
+  );
+
+  statusBox.innerHTML = `
+    <div class="status-box">
+      ห้อง ${escapeHtml(selectedClass)} พบผลการค้นหา ${result.length} รายการ
     </div>
   `;
+
+  if(result.length === 0){
+    contentBox.innerHTML = `<div class="status-box">ไม่พบงานตามคำค้นนี้</div>`;
+    return;
+  }
+
+  contentBox.innerHTML = result.map((item, index) =>
+    renderNameSearchWorkCard(item, index)
+  ).join("");
+}
+
+function renderNameSearchWorkCard(item, index){
+
+  const isGroup = isGroupWorkItem(item);
+  const itemSheetUrl = String(item.sheetUrl || currentSheetUrl || "").trim();
+  const itemWorkType = String(item.workType || (isGroup ? "งานกลุ่ม" : "งานเดี่ยว")).trim();
+  const scoreText = String(item.score ?? "").trim();
+  const inputId = "nameSearchScore_" + makeSafeDomId(itemSheetUrl + "_" + (item.rowIndex || index));
+  const title = isGroup
+    ? (item.groupName || "ไม่ระบุชื่อกลุ่ม")
+    : (item.name || "ไม่ระบุชื่อ");
+
+  const workValue = item.work !== undefined
+    ? item.work
+    : (item.image !== undefined ? item.image : "");
+
+  return `
+    <div class="card name-search-card">
+      <div class="teacher-work-heading">
+        ${renderStudentPhoto(item.photoUrl || item.studentPhotoUrl || "", title, true)}
+        <h3>
+          ${escapeHtml(item.topic || "งาน")}
+          | ${escapeHtml(item.class || "")}
+          | ${isGroup ? "งานกลุ่ม" : escapeHtml("เลขที่ " + (item.no || "-"))}
+        </h3>
+      </div>
+
+      <div class="meta">
+        ${isGroup ? `<div>ชื่อกลุ่ม: ${escapeHtml(item.groupName || "-")}</div>` : ``}
+        <div>${isGroup ? "ผู้ส่ง" : "ชื่อ"}: ${escapeHtml(item.name || item.submitterName || "-")}</div>
+        <div>รหัสผู้ส่ง: ${escapeHtml(item.id || "-")}</div>
+        <div>คะแนนปัจจุบัน: ${escapeHtml(scoreText || "ยังไม่ได้ตรวจ")}</div>
+        ${item.returnStatus ? `<div class="returned-badge">${escapeHtml(item.returnStatus)}${item.returnNote ? ": " + escapeHtml(item.returnNote) : ""}</div>` : ``}
+        ${item.revisionStatus ? `<div class="revised-badge">${escapeHtml(item.revisionStatus)}${item.revisionNote ? ": " + escapeHtml(item.revisionNote) : ""}</div>` : ``}
+      </div>
+
+      <div class="work-box">
+        <h4>งานที่ส่ง</h4>
+        ${renderWorkContent(workValue)}
+      </div>
+
+      <div class="score-area name-search-score-area">
+        <input
+          type="number"
+          id="${escapeAttribute(inputId)}"
+          value="${scoreText === "ตรวจแล้ว" ? "" : escapeAttribute(scoreText)}"
+          placeholder="คะแนน"
+        >
+        <button
+          type="button"
+          onclick="saveNameSearchScore('${escapeJsString(itemSheetUrl)}','${escapeJsString(item.id || "")}','${escapeJsString(item.rowIndex || "")}','${escapeJsString(inputId)}')"
+        >
+          บันทึกคะแนน
+        </button>
+        <button
+          type="button"
+          onclick="markCheckedNoScore('${escapeJsString(itemSheetUrl)}','${escapeJsString(item.id || "")}','${escapeJsString(item.rowIndex || "")}')"
+        >
+          ตรวจแล้ว
+        </button>
+        <button
+          type="button"
+          onclick="returnSubmissionForRevision('${escapeJsString(itemSheetUrl)}','${escapeJsString(item.rowIndex || "")}','${escapeJsString(itemWorkType)}')"
+        >
+          ส่งงานคืน
+        </button>
+      </div>
+
+      ${isGroup ? renderGroupIndividualScoreEditor(item, "nameSearch") : ""}
+    </div>
+  `;
+}
+
+function saveNameSearchScore(url, studentId, rowIndex, inputId){
+
+  const scoreInput = document.getElementById(inputId);
+
+  if(!scoreInput){
+    alert("ไม่พบช่องกรอกคะแนน");
+    return;
+  }
+
+  const score = String(scoreInput.value || "").trim();
+
+  if(score === ""){
+    alert("กรุณากรอกคะแนน");
+    return;
+  }
+
+  saveScoreValue(
+    url,
+    studentId,
+    rowIndex,
+    score,
+    "✅ บันทึกคะแนนแล้ว"
+  );
 }
 
 function renderWorkCards(){
@@ -2327,7 +2488,7 @@ function renderWorkCards(){
 
             </div>
 
-            ${renderGroupIndividualScoreEditor(s)}
+            ${renderGroupIndividualScoreEditor(s, "work")}
           `
         }
 
