@@ -50,15 +50,17 @@ function switchTeacherPage(page){
   const pages = {
     assignment: "teacherPageAssignment",
     check: "teacherPageCheck",
+    score: "teacherPageScore",
     groupIndividual: "teacherPageGroupIndividual",
-    score: "teacherPageScore"
+    settings: "teacherPageSettings"
   };
 
   const navs = {
     assignment: "teacherNavAssignment",
     check: "teacherNavCheck",
+    score: "teacherNavScore",
     groupIndividual: "teacherNavGroupIndividual",
-    score: "teacherNavScore"
+    settings: "teacherNavSettings"
   };
 
   Object.keys(pages).forEach(key => {
@@ -81,4 +83,78 @@ function switchTeacherPage(page){
   if(page === "groupIndividual"){
     renderGroupIndividualCheckPage();
   }
+}
+
+
+function getStudentWorkFilteredData(){
+  const data = Array.isArray(currentMyWorkData) ? currentMyWorkData : [];
+  const filter = String(currentStudentWorkFilter || "all");
+
+  if(filter === "missing"){
+    return data.filter(item => item.status !== "submitted");
+  }
+
+  if(filter === "submitted"){
+    return data.filter(item => item.status === "submitted");
+  }
+
+  if(filter === "returned"){
+    return data.filter(item =>
+      String(item.returnStatus || "").trim() ||
+      String(item.returnNote || "").trim()
+    );
+  }
+
+  if(filter === "revised"){
+    return data.filter(item =>
+      String(item.revisionStatus || "").trim() ||
+      String(item.revisionTimestamp || "").trim() ||
+      String(item.revisionNote || "").trim()
+    );
+  }
+
+  return data;
+}
+
+function showStudentWorkFilter(filter){
+  currentStudentWorkFilter = String(filter || "all");
+  selectedMyWorkIndex = null;
+  renderMyWorkCards(currentMyWorkData);
+}
+
+function setActiveStudentMenu(){
+  const map = {
+    all: "studentNavAll",
+    missing: "studentNavMissing",
+    submitted: "studentNavSubmitted",
+    returned: "studentNavReturned",
+    revised: "studentNavRevised"
+  };
+
+  Object.keys(map).forEach(key => {
+    const button = document.getElementById(map[key]);
+    if(button){
+      button.classList.toggle("active", key === String(currentStudentWorkFilter || "all"));
+    }
+  });
+}
+
+function updateStudentMenuCounts(data){
+  const allData = Array.isArray(data) ? data : [];
+  const counts = {
+    studentCountAll: allData.length,
+    studentCountMissing: allData.filter(item => item.status !== "submitted").length,
+    studentCountSubmitted: allData.filter(item => item.status === "submitted").length,
+    studentCountReturned: allData.filter(item => String(item.returnStatus || "").trim() || String(item.returnNote || "").trim()).length,
+    studentCountRevised: allData.filter(item => String(item.revisionStatus || "").trim() || String(item.revisionTimestamp || "").trim() || String(item.revisionNote || "").trim()).length
+  };
+
+  Object.keys(counts).forEach(id => {
+    const box = document.getElementById(id);
+    if(box){
+      box.textContent = counts[id];
+    }
+  });
+
+  setActiveStudentMenu();
 }
