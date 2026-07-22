@@ -176,6 +176,11 @@ function submitStudentWork(){
   const url = topicSelect.value;
   const selectedOption = topicSelect.options[topicSelect.selectedIndex];
 
+  const workTypeOverride =
+    currentSubmitWorkItem
+      ? (currentSubmitWorkItem.workType || currentSubmitWorkItem.submitMode || "")
+      : "";
+
   const workType =
     workTypeOverride ||
     (selectedOption ? selectedOption.getAttribute("data-work-type") : "") ||
@@ -346,27 +351,3 @@ if(isRevision && submitMode === "งานกลุ่ม" && revisionMode === "
     sendPayload({});
   }
 }
-// ======================================
-// Matrix Background
-// ======================================
-const canvas =
-  document.getElementById("matrix");
-
-const ctx =
-  canvas.getContext("2d");
-
-canvas.width =
-  window.innerWidth;
-
-canvas.height =
-  window.innerHeight;
-
-const letters =
-  "アイウエオ0123456789";
-
-const fontSize = 16;
-
-let columns =
-  Math.floor(canvas.width / fontSize);
-
-let drops = [];
