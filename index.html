@@ -42,50 +42,72 @@
 
   <div class="teacher-shell">
 
-    <aside class="teacher-sidebar status-box">
-      <div class="side-menu-title-row">
-        <h3>สารบัญครู</h3>
+    <aside class="teacher-sidebar status-box app-sidebar">
+      <div class="side-menu-title-row app-sidebar-title-row">
         <button
           type="button"
           class="sidebar-collapse-button"
           onclick="toggleTeacherSidebar()"
-          title="ย่อ/ขยายสารบัญครู"
+          title="ย่อ/ขยายเมนูครู"
         >
           ☰
         </button>
+        <h3 class="side-menu-title">เมนูครู</h3>
       </div>
 
       <button
         type="button"
         id="teacherNavAssignment"
-        class="active"
+        class="side-menu-item active"
         onclick="switchTeacherPage('assignment')"
+        title="หน้าใบคำสั่งงาน"
       >
-        1. หน้าใบคำสั่งงาน
+        <span class="side-menu-icon">📄</span>
+        <span class="side-menu-label">หน้าใบคำสั่งงาน</span>
       </button>
 
       <button
         type="button"
         id="teacherNavCheck"
+        class="side-menu-item"
         onclick="switchTeacherPage('check')"
+        title="หน้าตรวจงาน"
       >
-        2. หน้าตรวจงาน
-      </button>
-
-      <button
-        type="button"
-        id="teacherNavGroupIndividual"
-        onclick="switchTeacherPage('groupIndividual')"
-      >
-        3. ตรวจรายกลุ่ม/บุคคล
+        <span class="side-menu-icon">📝</span>
+        <span class="side-menu-label">หน้าตรวจงาน</span>
       </button>
 
       <button
         type="button"
         id="teacherNavScore"
+        class="side-menu-item"
         onclick="switchTeacherPage('score')"
+        title="ตารางคะแนน"
       >
-        4. ตารางคะแนน
+        <span class="side-menu-icon">📊</span>
+        <span class="side-menu-label">ตารางคะแนน</span>
+      </button>
+
+      <button
+        type="button"
+        id="teacherNavGroupIndividual"
+        class="side-menu-item"
+        onclick="switchTeacherPage('groupIndividual')"
+        title="ตรวจงานรายกลุ่ม/รายบุคคล"
+      >
+        <span class="side-menu-icon">👥</span>
+        <span class="side-menu-label">ตรวจงานรายกลุ่ม/รายบุคคล</span>
+      </button>
+
+      <button
+        type="button"
+        id="teacherNavSettings"
+        class="side-menu-item"
+        onclick="switchTeacherPage('settings')"
+        title="ตั้งค่า"
+      >
+        <span class="side-menu-icon">⚙</span>
+        <span class="side-menu-label">ตั้งค่า</span>
       </button>
     </aside>
 
@@ -417,6 +439,36 @@
         <div id="exportSummaryStatus"></div>
       </section>
 
+      <section id="teacherPageSettings" class="teacher-page">
+        <h3>ตั้งค่า</h3>
+
+        <div class="settings-dashboard-grid">
+          <div class="card settings-dashboard-card">
+            <h4>ตั้งค่าใบคำสั่งงาน</h4>
+            <p>เพิ่มงานใหม่ ตั้งค่าคะแนนเต็ม สั่งงานเฉพาะห้อง และกำหนด Deadline รายห้อง</p>
+            <button type="button" onclick="switchTeacherPage('assignment')">
+              ไปหน้าใบคำสั่งงาน
+            </button>
+          </div>
+
+          <div class="card settings-dashboard-card">
+            <h4>ตั้งค่าการตรวจงาน</h4>
+            <p>โหลดงาน เปิด/ปิดใบงานนักเรียน เลือกหลายงาน ส่งคืน ลบหลายงาน และให้คะแนนงานที่เลือก</p>
+            <button type="button" onclick="switchTeacherPage('check')">
+              ไปหน้าตรวจงาน
+            </button>
+          </div>
+
+          <div class="card settings-dashboard-card">
+            <h4>ตั้งค่าตารางคะแนน</h4>
+            <p>ซ่อนคะแนน ล็อกช่องคะแนน ซ่อนช่อง +/- คะแนนรายบุคคล และบันทึกตารางคะแนน</p>
+            <button type="button" onclick="switchTeacherPage('score')">
+              ไปตารางคะแนน
+            </button>
+          </div>
+        </div>
+      </section>
+
     </main>
 
   </div>
@@ -501,7 +553,79 @@
   <div id="myWorkStatus"></div>
 
   <div id="studentWorkLayout" class="student-shell">
-    <aside id="studentWorkSidebar" class="student-sidebar"></aside>
+    <aside id="studentWorkSidebar" class="student-sidebar status-box app-sidebar">
+      <div class="side-menu-title-row app-sidebar-title-row">
+        <button
+          type="button"
+          class="sidebar-collapse-button"
+          onclick="toggleStudentSidebar()"
+          title="ย่อ/ขยายเมนูนักเรียน"
+        >
+          ☰
+        </button>
+        <h3 class="side-menu-title">เมนูนักเรียน</h3>
+      </div>
+
+      <button
+        type="button"
+        id="studentNavAll"
+        class="side-menu-item active"
+        onclick="showStudentWorkFilter('all')"
+        title="งานทั้งหมด"
+      >
+        <span class="side-menu-icon">📚</span>
+        <span class="side-menu-label">งานทั้งหมด</span>
+        <span class="side-menu-count" id="studentCountAll">0</span>
+      </button>
+
+      <button
+        type="button"
+        id="studentNavMissing"
+        class="side-menu-item"
+        onclick="showStudentWorkFilter('missing')"
+        title="งานที่ยังไม่ได้ส่ง"
+      >
+        <span class="side-menu-icon">⏳</span>
+        <span class="side-menu-label">งานที่ยังไม่ได้ส่ง</span>
+        <span class="side-menu-count" id="studentCountMissing">0</span>
+      </button>
+
+      <button
+        type="button"
+        id="studentNavSubmitted"
+        class="side-menu-item"
+        onclick="showStudentWorkFilter('submitted')"
+        title="งานที่ส่งแล้ว"
+      >
+        <span class="side-menu-icon">✅</span>
+        <span class="side-menu-label">งานที่ส่งแล้ว</span>
+        <span class="side-menu-count" id="studentCountSubmitted">0</span>
+      </button>
+
+      <button
+        type="button"
+        id="studentNavReturned"
+        class="side-menu-item"
+        onclick="showStudentWorkFilter('returned')"
+        title="งานที่ถูกส่งคืน"
+      >
+        <span class="side-menu-icon">↩️</span>
+        <span class="side-menu-label">งานที่ถูกส่งคืน</span>
+        <span class="side-menu-count" id="studentCountReturned">0</span>
+      </button>
+
+      <button
+        type="button"
+        id="studentNavRevised"
+        class="side-menu-item"
+        onclick="showStudentWorkFilter('revised')"
+        title="งานที่แก้ไขแล้ว"
+      >
+        <span class="side-menu-icon">🛠️</span>
+        <span class="side-menu-label">งานที่แก้ไขแล้ว</span>
+        <span class="side-menu-count" id="studentCountRevised">0</span>
+      </button>
+    </aside>
     <main id="myWork" class="student-main"></main>
   </div>
 
