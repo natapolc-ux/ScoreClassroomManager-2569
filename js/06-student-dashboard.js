@@ -136,53 +136,58 @@ function renderMyWorkCards(data){
     `;
   }
 
-  const sidebar =
-    document.getElementById("studentWorkSidebar");
+  updateStudentMenuCounts(allData);
 
-  if(sidebar){
-    sidebar.innerHTML = allData.length > 0
-      ? `
-        <div class="status-box student-toc">
-          <button
-            type="button"
-            class="sidebar-collapse-button"
-            onclick="toggleStudentSidebar()"
-            title="ย่อ/ขยายสารบัญงาน"
-          >
-            ☰
-          </button>
-          <h3>สารบัญงาน</h3>
-          <div class="student-toc-list">
-            <button
-              type="button"
-              class="${selectedMyWorkIndex === null ? "active" : ""}"
-              onclick="showAllMyWork()"
-            >
-              หน้าหลักรวมทุกงาน
-            </button>
+  const filteredData =
+    allData
+      .map((item, index) => ({ item, index }))
+      .filter(entry => {
+        const filter = String(currentStudentWorkFilter || "all");
 
-            ${allData.map((item, index) => `
-              <button
-                type="button"
-                class="${selectedMyWorkIndex === index ? "active" : ""}"
-                onclick="showSingleMyWork(${index})"
-              >
-                ${item.status !== "submitted" && item.isOverdue ? "เลยกำหนด " : ""}
-                ${escapeHtml(item.topic || "")}
-              </button>
-            `).join("")}
-          </div>
-        </div>
-      `
-      : "";
-  }
+        if(filter === "missing"){
+          return entry.item.status !== "submitted";
+        }
+
+        if(filter === "submitted"){
+          return entry.item.status === "submitted";
+        }
+
+        if(filter === "returned"){
+          return String(entry.item.returnStatus || "").trim() ||
+            String(entry.item.returnNote || "").trim();
+        }
+
+        if(filter === "revised"){
+          return String(entry.item.revisionStatus || "").trim() ||
+            String(entry.item.revisionTimestamp || "").trim() ||
+            String(entry.item.revisionNote || "").trim();
+        }
+
+        return true;
+      });
 
   const displayData =
     selectedMyWorkIndex === null
-    ? allData.map((item, index) => ({ item, index }))
+    ? filteredData
     : allData
         .map((item, index) => ({ item, index }))
         .filter(entry => entry.index === selectedMyWorkIndex);
+
+  if(displayData.length === 0){
+    const labels = {
+      all: "งานทั้งหมด",
+      missing: "งานที่ยังไม่ได้ส่ง",
+      submitted: "งานที่ส่งแล้ว",
+      returned: "งานที่ถูกส่งคืน",
+      revised: "งานที่แก้ไขแล้ว"
+    };
+
+    html += `
+      <div class="status-box">
+        ยังไม่มีรายการในหมวด ${escapeHtml(labels[currentStudentWorkFilter] || "งานทั้งหมด")}
+      </div>
+    `;
+  }
 
   displayData.forEach(entry => {
 
