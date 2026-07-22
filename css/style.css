@@ -1682,3 +1682,192 @@ h2,h3,h4{
   background:#e8eef9;
   color:#111827;
 }
+
+/* ===== Requested sidebar/theme/layout refinements ===== */
+.panel{
+  max-width:none !important;
+  width:100% !important;
+  margin:0 !important;
+  padding:0 !important;
+}
+
+#teacherPanel > h2,
+#studentPanel > h2{
+  margin:0;
+  padding:14px 16px;
+  border-bottom:1px solid rgba(0,255,65,0.35);
+  background:rgba(0,0,0,0.92);
+}
+
+.teacher-shell,
+.student-shell{
+  width:100%;
+  min-height:calc(100vh - 58px);
+  grid-template-columns:280px minmax(0,1fr) !important;
+  gap:0 !important;
+}
+
+.teacher-main,
+.student-main{
+  padding-left:0 !important;
+  padding-right:0 !important;
+  min-width:0;
+}
+
+.teacher-page.active,
+.student-main{
+  padding-bottom:20px;
+}
+
+.teacher-page > h3,
+.teacher-page > .status-box,
+.teacher-page > .assignment-command-toolbar,
+.teacher-page > #assignmentSettingsStatus,
+.teacher-page > #assignmentSettingsList,
+.teacher-page > #addAssignmentBox,
+.teacher-page > #workStatus,
+.teacher-page > #work,
+.teacher-page > #groupIndividualCheckStatus,
+.teacher-page > #groupIndividualCheckContent,
+.teacher-page > .name-search-panel,
+.teacher-page > #scoreTableStatus,
+.teacher-page > #scoreTableWrap,
+.teacher-page > #scoreExportRow,
+.teacher-page > #exportSummaryStatus,
+.settings-dashboard-grid{
+  margin-left:0 !important;
+  margin-right:0 !important;
+}
+
+.teacher-page > h3{
+  padding:14px 16px;
+  margin:0;
+  border-bottom:1px solid rgba(0,255,65,0.25);
+  background:rgba(0,0,0,0.88);
+}
+
+.teacher-sidebar.app-sidebar,
+.student-sidebar.app-sidebar{
+  background:rgba(0,0,0,0.94) !important;
+  color:#00ff41 !important;
+  border-right:1px solid rgba(0,255,65,0.45) !important;
+  box-shadow:0 0 14px rgba(0,255,65,0.24) !important;
+}
+
+.app-sidebar-title-row{
+  background:rgba(0,0,0,0.98) !important;
+  border-bottom:1px solid rgba(0,255,65,0.35) !important;
+}
+
+.app-sidebar-title-row h3,
+.app-sidebar .side-menu-title{
+  color:#00ff41 !important;
+  text-shadow:0 0 8px #00ff41 !important;
+}
+
+.app-sidebar .sidebar-collapse-button{
+  color:#00ff41 !important;
+  background:transparent !important;
+  border:1px solid rgba(0,255,65,0.45) !important;
+}
+
+.app-sidebar .sidebar-collapse-button:hover{
+  background:#00ff41 !important;
+  color:#000 !important;
+}
+
+.side-menu-item,
+.teacher-sidebar.app-sidebar .side-menu-item,
+.student-sidebar.app-sidebar .side-menu-item{
+  color:#00ff41 !important;
+  background:transparent !important;
+  border-left:4px solid transparent !important;
+}
+
+.side-menu-item:hover,
+.teacher-sidebar.app-sidebar .side-menu-item:hover,
+.student-sidebar.app-sidebar .side-menu-item:hover{
+  background:rgba(0,255,65,0.14) !important;
+  color:#00ff41 !important;
+}
+
+.side-menu-item.active,
+.teacher-sidebar.app-sidebar .side-menu-item.active,
+.student-sidebar.app-sidebar .side-menu-item.active{
+  border-left-color:#00ff41 !important;
+  background:rgba(0,255,65,0.20) !important;
+  color:#00ff41 !important;
+  box-shadow:inset 0 0 10px rgba(0,255,65,0.22) !important;
+}
+
+.side-menu-count{
+  background:rgba(0,255,65,0.16) !important;
+  color:#00ff41 !important;
+  border:1px solid rgba(0,255,65,0.35);
+}
+
+.name-search-panel{
+  margin-top:0 !important;
+}
+
+.name-search-header{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+  align-items:center;
+  justify-content:space-between;
+}
+
+.name-search-header button{
+  width:auto;
+  margin-top:0;
+}
+
+.name-search-toolbar{
+  display:grid;
+  grid-template-columns:220px minmax(260px,1fr) auto;
+  gap:10px;
+  align-items:stretch;
+  margin-top:10px;
+}
+
+.name-search-toolbar select,
+.name-search-toolbar input,
+.name-search-toolbar button{
+  margin-top:0;
+  min-height:46px;
+}
+
+.name-search-toolbar button{
+  width:auto;
+  min-width:140px;
+}
+
+.name-search-card{
+  margin-left:0;
+  margin-right:0;
+}
+
+.name-search-score-area{
+  flex-wrap:wrap;
+}
+
+.teacher-shell.sidebar-collapsed,
+.student-shell.sidebar-collapsed{
+  grid-template-columns:72px minmax(0,1fr) !important;
+}
+
+@media(max-width:900px){
+  .teacher-shell,
+  .student-shell{
+    grid-template-columns:72px minmax(0,1fr) !important;
+  }
+
+  .name-search-toolbar{
+    grid-template-columns:1fr;
+  }
+
+  .name-search-toolbar button{
+    width:100%;
+  }
+}
