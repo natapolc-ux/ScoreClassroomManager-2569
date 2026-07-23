@@ -151,6 +151,9 @@
             <label>คะแนนเต็ม
               <input id="newAssignmentFullScore" type="number" placeholder="เช่น 10" />
             </label>
+            <label>จำนวนสมาชิกกลุ่มสูงสุด
+              <input id="newAssignmentMaxGroupMembers" type="number" min="1" placeholder="เช่น 5" />
+            </label>
             <label>ลิงก์ชีทงาน
               <input id="newAssignmentUrl" placeholder="วาง URL ชีทรับงาน" />
             </label>
@@ -304,10 +307,10 @@
         <div class="status-box name-search-panel">
           <div class="name-search-header">
             <div>
-              เลือกห้องก่อน แล้วค้นหาด้วยชื่อ / นามสกุล / เลขที่ / เลขประจำตัวนักเรียน หรือชื่อกลุ่ม
+              ระบบจะโหลดงานทุกหัวข้อให้อัตโนมัติ แล้วเลือกห้องก่อนค้นหาด้วยชื่อ / นามสกุล / เลขที่ / เลขประจำตัวนักเรียน หรือชื่อกลุ่ม
             </div>
-            <button type="button" onclick="switchTeacherPage('check')">
-              ไปหน้าโหลดงาน
+            <button type="button" onclick="loadAllWorkForNameSearch(true)">
+              โหลดทุกงานใหม่
             </button>
           </div>
 
@@ -320,7 +323,7 @@
               placeholder="พิมพ์ชื่อ นามสกุล เลขที่ เลขประจำตัว หรือชื่อกลุ่ม"
               oninput="renderNameSearchResults()"
             >
-            <button type="button" onclick="renderGroupIndividualCheckPage()">
+            <button type="button" onclick="loadAllWorkForNameSearch(true)">
               รีเฟรชข้อมูลค้นหา
             </button>
           </div>
@@ -583,6 +586,17 @@
 
       <button
         type="button"
+        id="studentNavRefresh"
+        class="side-menu-item"
+        onclick="refreshStudentWorkFromSidebar()"
+        title="รีเฟรชงาน"
+      >
+        <span class="side-menu-icon">🔄</span>
+        <span class="side-menu-label">รีเฟรชงาน</span>
+      </button>
+
+      <button
+        type="button"
         id="studentNavAll"
         class="side-menu-item active"
         onclick="showStudentWorkFilter('all')"
@@ -647,16 +661,11 @@
 </div>
 
 
-<script src="js/00-config.js"></script>
-<script src="js/01-utils.js"></script>
-<script src="js/02-auth.js"></script>
-<script src="js/03-layout.js"></script>
-<script src="js/04-assignments.js"></script>
-<script src="js/05-teacher-work.js"></script>
-<script src="js/06-student-dashboard.js"></script>
-<script src="js/07-score-table.js"></script>
-<script src="js/08-student-submit.js"></script>
-<script src="js/09-matrix-bg.js"></script>
+<script src="js/config.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/teacher.js"></script>
+<script src="js/student.js"></script>
+<script src="js/matrix-bg.js"></script>
 
 
 </body>
