@@ -48,11 +48,10 @@
           type="button"
           class="sidebar-collapse-button"
           onclick="toggleTeacherSidebar()"
-          title="ย่อ/ขยายเมนูครู"
+          title="ย่อ/ขยายสารบัญ"
         >
           ☰
         </button>
-        <h3 class="side-menu-title">เมนูครู</h3>
       </div>
 
       <button
@@ -116,9 +115,6 @@
       <section id="teacherPageAssignment" class="teacher-page active">
         <h3>หน้าใบคำสั่งงาน</h3>
 
-        <div class="status-box">
-          จัดการใบคำสั่งงาน ห้องที่สั่งงาน และคะแนนเต็มของแต่ละงาน
-        </div>
 
         <div class="assignment-command-toolbar">
           <select id="assignmentLevelFilter" onchange="handleAssignmentLevelFilterChange()">
@@ -189,112 +185,118 @@
       <section id="teacherPageCheck" class="teacher-page">
         <h3>หน้าตรวจงาน</h3>
 
-        <div class="toolbar teacher-header-bar">
+        <div class="teacher-work-control-card teacher-header-bar">
 
-          <button class="toolbar-button" onclick="loadWork()">
-            โหลดงาน
-          </button>
+          <div class="toolbar teacher-work-main-toolbar">
 
-          <select id="workLevelFilter" onchange="handleWorkLevelFilterChange()">
-            <option value="">ทุกระดับชั้น</option>
-          </select>
-
-          <select
-            id="topic"
-            class="topic-multi-select"
-            onchange="updateWorkClassFilterByTopic()"
-          >
-            <option value="">กำลังโหลดหัวข้องาน...</option>
-          </select>
-
-          <select id="classFilter">
-            <option value="">ทุกห้อง</option>
-          </select>
-
-          <input
-            id="noFilter"
-            type="number"
-            placeholder="กรองเลขที่"
-          >
-
-          <div class="settings-wrap">
+            <button class="toolbar-button" onclick="loadWork()">
+              โหลดงาน
+            </button>
 
             <button
               type="button"
-              class="gear-button"
-              onclick="toggleWorkSettingsPopup()"
-              title="ตั้งค่าการแสดงผล"
+              id="refreshWorkButton"
+              class="refresh-work-button"
+              onclick="refreshWorkList()"
             >
-              ⚙
+              🔄 รีเฟรชผลงาน
             </button>
 
-            <div id="workSettingsPopup" class="settings-popup">
+            <select id="workLevelFilter" onchange="handleWorkLevelFilterChange()">
+              <option value="">ทุกระดับชั้น</option>
+            </select>
 
-              <div class="settings-title">
-                ตั้งค่าการตรวจงาน
+            <select
+              id="topic"
+              class="topic-multi-select"
+              onchange="updateWorkClassFilterByTopic()"
+            >
+              <option value="">กำลังโหลดหัวข้องาน...</option>
+            </select>
+
+            <select id="classFilter">
+              <option value="">ทุกห้อง</option>
+            </select>
+
+            <input
+              id="noFilter"
+              type="number"
+              placeholder="กรองเลขที่"
+            >
+
+            <div class="settings-wrap">
+
+              <button
+                type="button"
+                class="gear-button"
+                onclick="toggleWorkSettingsPopup()"
+                title="ตั้งค่าการแสดงผล"
+              >
+                ⚙
+              </button>
+
+              <div id="workSettingsPopup" class="settings-popup">
+
+                <div class="settings-title">
+                  ตั้งค่าการตรวจงาน
+                </div>
+
+                <button
+                  type="button"
+                  id="autoRefreshToggleBtn"
+                  onclick="toggleAutoRefreshWork()"
+                >
+                  ⏸ อัปเดตอัตโนมัติ: ปิด
+                </button>
+
+                <button
+                  type="button"
+                  onclick="stopLoadedWork()"
+                >
+                  ⏹ หยุดโหลดงาน
+                </button>
+
+                <button
+                  type="button"
+                  id="toggleAllTeacherWorksheetsBtn"
+                  onclick="toggleAllTeacherWorksheets()"
+                >
+                  📄 เปิดใบงานนักเรียนทั้งหมด
+                </button>
+
+                <label>เรียงลำดับผลงาน</label>
+
+                <select id="workSortMode" onchange="applyWorkSortAndRender()">
+                  <option value="latest">ส่งล่าสุด</option>
+                  <option value="oldest">ส่งก่อน</option>
+                  <option value="noAsc">เลขที่น้อยไปมาก</option>
+                  <option value="noDesc">เลขที่มากไปน้อย</option>
+                  <option value="studentSeqAsc">ลำดับนักเรียน</option>
+                  <option value="groupAsc">ชื่อกลุ่ม ก-ฮ</option>
+                </select>
+
+                <button type="button" onclick="sortCurrentWorkSheet()">
+                  🔃 เรียงในชีต
+                </button>
+
               </div>
-
-              <button
-                type="button"
-                id="autoRefreshToggleBtn"
-                onclick="toggleAutoRefreshWork()"
-              >
-                ⏸ อัปเดตอัตโนมัติ: ปิด
-              </button>
-
-              <button
-                type="button"
-                onclick="stopLoadedWork()"
-              >
-                ⏹ หยุดโหลดงาน
-              </button>
-
-              <button
-                type="button"
-                id="toggleAllTeacherWorksheetsBtn"
-                onclick="toggleAllTeacherWorksheets()"
-              >
-                📄 เปิดใบงานนักเรียนทั้งหมด
-              </button>
-
-              <label>เรียงลำดับผลงาน</label>
-
-              <select id="workSortMode" onchange="applyWorkSortAndRender()">
-                <option value="latest">ส่งล่าสุด</option>
-                <option value="oldest">ส่งก่อน</option>
-                <option value="noAsc">เลขที่น้อยไปมาก</option>
-                <option value="noDesc">เลขที่มากไปน้อย</option>
-                <option value="studentSeqAsc">ลำดับนักเรียน</option>
-                <option value="groupAsc">ชื่อกลุ่ม ก-ฮ</option>
-              </select>
-
-              <button type="button" onclick="sortCurrentWorkSheet()">
-                🔃 เรียงในชีต
-              </button>
 
             </div>
 
           </div>
 
+          <div class="teacher-work-secondary-controls">
+            <label class="hide-score-box teacher-check-controls">
+              <input
+                type="checkbox"
+                id="hideViewedWorksToggle"
+                onchange="toggleHideViewedWorks()"
+              >
+              ซ่อนงานที่ตรวจแล้ว
+            </label>
+          </div>
+
         </div>
-
-        <button
-          type="button"
-          id="refreshWorkButton"
-          class="refresh-work-button"
-          onclick="refreshWorkList()"
-        >
-          🔄 รีเฟรชผลงาน
-        </button>
-
-        <label class="hide-score-box teacher-check-controls">
-          <input
-            type="checkbox"
-            id="hideViewedWorksToggle"
-            onchange="toggleHideViewedWorks()"
-          >
-          ซ่อนงานที่ตรวจแล้ว
-        </label>
 
         <div id="workStatus"></div>
         <div id="work"></div>
