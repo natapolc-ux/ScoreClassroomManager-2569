@@ -1902,3 +1902,81 @@ h2,h3,h4{
   color:#ffcc80;
   background:rgba(58,36,0,0.32);
 }
+
+/* ===== UI cleanup + no-reload work controls ===== */
+.teacher-work-control-card{
+  margin:0 0 12px 0;
+  padding:10px;
+  border:1px solid rgba(0,255,65,0.65);
+  background:rgba(0,0,0,0.97);
+  box-shadow:0 0 14px rgba(0,255,65,0.45);
+}
+
+.teacher-work-main-toolbar{
+  grid-template-columns:130px 150px 1fr 2fr 1fr 1fr 48px;
+  margin-bottom:0;
+}
+
+.teacher-work-secondary-controls{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+  align-items:center;
+  margin-top:10px;
+  padding-top:10px;
+  border-top:1px dashed rgba(0,255,65,0.35);
+}
+
+.teacher-work-secondary-controls .teacher-check-controls{
+  margin-top:0;
+}
+
+.teacher-work-control-card .refresh-work-button{
+  display:none;
+  height:46px;
+  min-height:46px;
+  margin-top:0;
+}
+
+.app-sidebar-title-row{
+  justify-content:center;
+}
+
+.teacher-sidebar.app-sidebar .app-sidebar-title-row{
+  justify-content:flex-start;
+}
+
+.app-sidebar .sidebar-collapse-button{
+  display:inline-flex !important;
+  align-items:center;
+  justify-content:center;
+  line-height:1;
+}
+
+.work-saving-state{
+  opacity:0.78;
+  border-color:#ffd43b !important;
+  box-shadow:0 0 12px #ffd43b !important;
+}
+
+.work-save-status{
+  display:inline-block;
+  margin-left:8px;
+  padding:4px 8px;
+  border:1px solid rgba(0,255,65,0.55);
+  background:rgba(0,0,0,0.7);
+  color:#00ff41;
+  font-size:12px;
+}
+
+@media(max-width:1100px){
+  .teacher-work-main-toolbar{
+    grid-template-columns:1fr 1fr;
+  }
+}
+
+@media(max-width:700px){
+  .teacher-work-main-toolbar{
+    grid-template-columns:1fr;
+  }
+}
