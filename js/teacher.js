@@ -2333,8 +2333,13 @@ function returnSubmissionForRevision(url, rowIndex, workType){
       return;
     }
 
+    updateCurrentWorkItemLocally(url, rowIndex, "", item => {
+      item.returnStatus = "ส่งคืนให้แก้ไข";
+      item.returnNote = note;
+    });
+
     alert("✅ ส่งงานคืนแล้ว");
-    refreshWorkList();
+    renderWorkWithoutReload();
   })
   .catch(error => {
     console.error(error);
@@ -2349,6 +2354,124 @@ function getTeacherWorkSelectionKey(item){
     String(item.rowIndex || "").trim(),
     String(item.id || "").trim()
   ].join("|");
+}
+
+
+function isSameWorkItem(item, url, rowIndex, studentId){
+
+  const targetUrl = String(url || currentSheetUrl || "").trim();
+  const itemUrl = String(item.sheetUrl || currentSheetUrl || "").trim();
+  const targetRow = String(rowIndex || "").trim();
+  const itemRow = String(item.rowIndex || "").trim();
+  const targetStudentId = String(studentId || "").trim();
+  const itemStudentId = String(item.id || "").trim();
+
+  if(targetUrl && itemUrl && targetUrl !== itemUrl){
+    return false;
+  }
+
+  if(targetRow && itemRow && targetRow === itemRow){
+    return true;
+  }
+
+  if(targetStudentId && itemStudentId && targetStudentId === itemStudentId){
+    return true;
+  }
+
+  return false;
+}
+
+function findCurrentWorkItem(url, rowIndex, studentId){
+  return (Array.isArray(currentWorkData) ? currentWorkData : [])
+    .find(item => isSameWorkItem(item, url, rowIndex, studentId));
+}
+
+function updateCurrentWorkItemLocally(url, rowIndex, studentId, updater){
+
+  const item = findCurrentWorkItem(url, rowIndex, studentId);
+
+  if(!item){
+    return null;
+  }
+
+  updater(item);
+  return item;
+}
+
+function updateCurrentWorkItemsLocally(items, updater){
+
+  const changedKeys = [];
+
+  (items || []).forEach(source => {
+    const item = updateCurrentWorkItemLocally(
+      source.sheetUrl || source.url || currentSheetUrl,
+      source.rowIndex,
+      source.id || source.studentId,
+      target => updater(target, source)
+    );
+
+    if(item){
+      changedKeys.push(getTeacherWorkSelectionKey(item));
+    }
+  });
+
+  return changedKeys;
+}
+
+function removeCurrentWorkItemsLocally(items){
+
+  const removeKeys = new Set(
+    (items || []).map(item => [
+      String(item.sheetUrl || item.url || currentSheetUrl || "").trim(),
+      String(item.rowIndex || "").trim(),
+      String(item.id || item.studentId || "").trim()
+    ].join("|"))
+  );
+
+  currentWorkData = (Array.isArray(currentWorkData) ? currentWorkData : [])
+    .filter(item => {
+      const key = [
+        String(item.sheetUrl || currentSheetUrl || "").trim(),
+        String(item.rowIndex || "").trim(),
+        String(item.id || "").trim()
+      ].join("|");
+
+      return !removeKeys.has(key);
+    });
+}
+
+function renderWorkWithoutReload(){
+
+  const scrollX = window.scrollX;
+  const scrollY = window.scrollY;
+
+  const activeGroupPage =
+    document.getElementById("teacherPageGroupIndividual") &&
+    document.getElementById("teacherPageGroupIndividual").classList.contains("active");
+
+  if(activeGroupPage){
+    renderNameSearchResults();
+  } else {
+    renderWorkCards();
+  }
+
+  requestAnimationFrame(() => {
+    window.scrollTo(scrollX, scrollY);
+  });
+}
+
+function setWorkCardSavingState(url, rowIndex, studentId, isSaving){
+
+  const item = findCurrentWorkItem(url, rowIndex, studentId);
+  if(!item){ return; }
+
+  const key = getTeacherWorkSelectionKey(item);
+  const card = Array.from(document.querySelectorAll("[data-work-selection-key]"))
+    .find(element => element.getAttribute("data-work-selection-key") === key);
+
+  if(card){
+    card.classList.toggle("work-saving-state", !!isSaving);
+  }
 }
 
 function toggleTeacherWorkSelected(checkbox){
@@ -2479,8 +2602,21 @@ function returnSelectedSubmissionsForRevision(){
       alert("✅ ส่งงานคืนที่เลือกแล้ว");
     }
 
+    if(failed.length < results.length){
+      updateCurrentWorkItemsLocally(
+        results.filter(result => result.response && result.response.status === "success").map(result => ({
+          ...result.item,
+          returnNote: note
+        })),
+        (item, source) => {
+          item.returnStatus = "ส่งคืนให้แก้ไข";
+          item.returnNote = source.returnNote || "";
+        }
+      );
+    }
+
     selectedTeacherWorkKeys.clear();
-    refreshWorkList();
+    renderWorkWithoutReload();
   });
 }
 
@@ -2526,8 +2662,19 @@ function updateSelectedTeacherWorksScore(score, successText){
     } else {
       alert(successText || "✅ บันทึกคะแนนที่เลือกแล้ว");
     }
+    if(failed.length < results.length){
+      updateCurrentWorkItemsLocally(
+        results.filter(result => result.response && result.response.status === "success").map(result => result.item),
+        item => {
+          item.score = score;
+          markWorkAsViewed(item.rowIndex, item.sheetUrl || currentSheetUrl);
+          setWorkCollapsed(item.rowIndex, true, item.sheetUrl || currentSheetUrl);
+        }
+      );
+    }
+
     selectedTeacherWorkKeys.clear();
-    refreshWorkList();
+    renderWorkWithoutReload();
   });
 }
 
@@ -2589,8 +2736,23 @@ function applyFullScoreToSelectedTeacherWorks(){
     } else {
       alert("✅ ใส่คะแนนเต็มให้ใบงานที่เลือกแล้ว");
     }
+    if(failed.length < results.length){
+      const successful = results
+        .filter(result => result.response && result.response.status === "success")
+        .map(result => {
+          const score = String(result.item.fullScore || (getTopicMetaByUrl(result.item.sheetUrl) || {}).fullScore || "").trim();
+          return { ...result.item, appliedScore: score };
+        });
+
+      updateCurrentWorkItemsLocally(successful, (item, source) => {
+        item.score = source.appliedScore || item.score || "";
+        markWorkAsViewed(item.rowIndex, item.sheetUrl || currentSheetUrl);
+        setWorkCollapsed(item.rowIndex, true, item.sheetUrl || currentSheetUrl);
+      });
+    }
+
     selectedTeacherWorkKeys.clear();
-    refreshWorkList();
+    renderWorkWithoutReload();
   });
 }
 
@@ -2673,8 +2835,9 @@ function deleteSelectedTeacherWorks(){
     }
 
     alert("✅ " + (response.message || "ลบงานที่เลือกแล้ว"));
+    removeCurrentWorkItemsLocally(selectedItems);
     selectedTeacherWorkKeys.clear();
-    refreshWorkList();
+    renderWorkWithoutReload();
   })
   .catch(error => {
     console.error(error);
@@ -2853,8 +3016,17 @@ function saveGroupIndividualUpdates(updates){
       return;
     }
 
+    updateCurrentWorkItemsLocally(updates, (item, source) => {
+      item.score = source.score;
+      item.individualAdjustment = source.individualAdjustment || item.individualAdjustment || "";
+      item.individualAdjustments = item.individualAdjustments || {};
+      if(source.studentId){
+        item.individualAdjustments[source.studentId] = source.individualAdjustment || "";
+      }
+    });
+
     alert("✅ บันทึกคะแนนรายบุคคลแล้ว");
-    refreshWorkList();
+    renderWorkWithoutReload();
   })
   .catch(error => {
     console.error(error);
@@ -3632,6 +3804,8 @@ function saveScore(url, studentId, rowIndex){
 
 function saveScoreValue(url, studentId, rowIndex, score, successMessage){
 
+  setWorkCardSavingState(url, rowIndex, studentId, true);
+
   fetch(
     API_URL
     + "?action=updateScore"
@@ -3650,9 +3824,12 @@ function saveScoreValue(url, studentId, rowIndex, score, successMessage){
       markWorkAsViewed(rowIndex, url);
       setWorkCollapsed(rowIndex, true, url);
 
-      alert(successMessage || "✅ บันทึกแล้ว");
+      updateCurrentWorkItemLocally(url, rowIndex, studentId, item => {
+        item.score = score;
+      });
 
-      refreshWorkList();
+      alert(successMessage || "✅ บันทึกแล้ว");
+      renderWorkWithoutReload();
     }
 
     else{
@@ -3663,6 +3840,9 @@ function saveScoreValue(url, studentId, rowIndex, score, successMessage){
   .catch(error => {
     console.error(error);
     alert("❌ เชื่อมต่อ API ไม่สำเร็จ");
+  })
+  .finally(() => {
+    setWorkCardSavingState(url, rowIndex, studentId, false);
   });
 }
 
@@ -3772,7 +3952,16 @@ function deleteSubmission(url, rowIndex, workTypeOverride){
     }
 
     alert("✅ " + response.message);
-    loadWork();
+    removeCurrentWorkItemsLocally([{
+      url: url,
+      rowIndex: rowIndex
+    }]);
+    selectedTeacherWorkKeys.delete([
+      String(url || currentSheetUrl || "").trim(),
+      String(rowIndex || "").trim(),
+      ""
+    ].join("|"));
+    renderWorkWithoutReload();
   })
   .catch(error => {
     console.error(error);
