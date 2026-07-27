@@ -3709,6 +3709,27 @@ function renderWorkContent(work){
     return `<p class="empty-text">ยังไม่มีข้อมูลงานที่ส่ง</p>`;
   }
 
+  const lines =
+    value
+      .split(/\n+/)
+      .map(line => line.trim())
+      .filter(Boolean);
+
+  const isMultiLine = lines.length > 1;
+
+  if(isMultiLine){
+    return `
+      <div class="multi-file-list">
+        ${lines.map((line, index) => `
+          <div class="multi-file-item">
+            <div class="empty-text">รายการที่ ${index + 1}</div>
+            ${renderWorkContent(line)}
+          </div>
+        `).join("")}
+      </div>
+    `;
+  }
+
   const driveFileId = extractDriveFileId(value);
 
   if(driveFileId){
