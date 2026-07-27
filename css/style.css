@@ -1085,7 +1085,7 @@ h2,h3,h4{
 
 .assignment-command-toolbar{
   display:grid;
-  grid-template-columns:1fr auto;
+  grid-template-columns:minmax(150px, 1fr) minmax(240px, 2fr) auto;
   gap:10px;
   align-items:end;
 }
@@ -1201,6 +1201,10 @@ h2,h3,h4{
 }
 
 @media(max-width:900px){
+  .assignment-command-toolbar{
+    grid-template-columns:1fr;
+  }
+
   .teacher-shell{
     grid-template-columns:1fr;
   }
@@ -1274,6 +1278,28 @@ h2,h3,h4{
   margin-top:14px;
   border-color:#ffd43b;
 }
+
+.assignment-add-header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+}
+
+.assignment-add-header h3{
+  margin:0;
+}
+
+.assignment-add-toggle{
+  width:auto;
+  min-width:150px;
+  margin-top:0;
+}
+
+.assignment-add-content{
+  margin-top:12px;
+}
+
 
 .assignment-add-grid{
   display:grid;
@@ -1913,7 +1939,7 @@ h2,h3,h4{
 }
 
 .teacher-work-main-toolbar{
-  grid-template-columns:130px 150px 1fr 2fr 1fr 1fr 48px;
+  grid-template-columns:130px 150px 1fr 2fr 1fr 1fr;
   margin-bottom:0;
 }
 
@@ -1930,6 +1956,25 @@ h2,h3,h4{
 .teacher-work-secondary-controls .teacher-check-controls{
   margin-top:0;
 }
+
+.teacher-work-secondary-controls button,
+.teacher-work-secondary-controls select{
+  width:auto;
+  min-width:150px;
+  margin-top:0;
+}
+
+.teacher-work-secondary-controls .work-sort-label{
+  display:inline-flex;
+  align-items:center;
+  min-height:46px;
+  opacity:0.95;
+}
+
+.teacher-work-secondary-controls #workSortMode{
+  min-width:190px;
+}
+
 
 .teacher-work-control-card .refresh-work-button{
   display:none;
@@ -2018,4 +2063,64 @@ h2,h3,h4{
 
 .multi-file-item{
   margin-top:10px;
+}
+
+
+/* ===== Thai deadline picker and assignment setting layout ===== */
+.assignment-inline-settings-actions{
+  align-items:center;
+}
+
+.assignment-primary-action{
+  border-color:#ffd43b !important;
+  color:#000 !important;
+  background:#ffd43b !important;
+  font-weight:bold;
+}
+
+.assignment-primary-action:hover{
+  background:#fff3bf !important;
+  color:#000 !important;
+}
+
+.assignment-setting-inline-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));
+  gap:10px;
+  align-items:end;
+}
+
+.assignment-setting-inline-grid label{
+  display:block;
+  margin-top:0;
+}
+
+.thai-deadline-grid{
+  grid-template-columns:1fr;
+}
+
+.thai-deadline-picker{
+  display:grid;
+  grid-template-columns:80px minmax(150px, 1fr) 110px 90px 90px;
+  gap:8px;
+  align-items:center;
+  margin-top:6px;
+}
+
+.thai-deadline-picker input,
+.thai-deadline-picker select{
+  margin-top:0;
+  min-height:42px;
+}
+
+.assignment-deadline-grid label > span{
+  display:block;
+  margin-bottom:4px;
+  color:#ffcc80;
+}
+
+@media(max-width:900px){
+  .thai-deadline-picker{
+    grid-template-columns:1fr 1fr;
+  }
 }
