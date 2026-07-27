@@ -59,10 +59,10 @@
         id="teacherNavAssignment"
         class="side-menu-item active"
         onclick="switchTeacherPage('assignment')"
-        title="หน้าใบคำสั่งงาน"
+        title="ใบงาน"
       >
         <span class="side-menu-icon">📄</span>
-        <span class="side-menu-label">หน้าใบคำสั่งงาน</span>
+        <span class="side-menu-label">ใบงาน</span>
       </button>
 
       <button
@@ -113,7 +113,7 @@
     <main class="teacher-main">
 
       <section id="teacherPageAssignment" class="teacher-page active">
-        <h3>หน้าใบคำสั่งงาน</h3>
+        <h3>ใบงาน</h3>
 
 
         <div class="assignment-command-toolbar">
@@ -121,13 +121,23 @@
             <option value="">เลือกระดับชั้น</option>
           </select>
 
+          <select id="assignmentTopicFilter" onchange="renderAssignmentSettingsList()">
+            <option value="">ทุกใบงานของระดับชั้นนี้</option>
+          </select>
+
           <button type="button" onclick="renderAssignmentSettingsList()">
             รีเฟรช
           </button>
         </div>
 
-        <div id="addAssignmentBox" class="card assignment-add-card">
-          <h3>เพิ่มงานใหม่ผ่านหน้าเว็บ</h3>
+        <div id="addAssignmentBox" class="card assignment-add-card assignment-add-collapsed">
+          <div class="assignment-add-header">
+            <h3>เพิ่มงานใหม่ผ่านหน้าเว็บ</h3>
+            <button type="button" id="toggleAddAssignmentButton" class="assignment-add-toggle" onclick="toggleAddAssignmentBox(this)">
+              เปิดฟอร์มเพิ่มงาน
+            </button>
+          </div>
+          <div id="addAssignmentContent" class="assignment-add-content" style="display:none;">
           <div class="assignment-add-grid">
             <label>ระดับชั้น
               <select id="newAssignmentLevel" onchange="renderNewAssignmentClassDeadlineOptions()">
@@ -138,7 +148,7 @@
               <input id="newAssignmentTopic" placeholder="เช่น ใบงานที่ 1" />
             </label>
             <label>ประเภทงาน
-              <select id="newAssignmentWorkType">
+              <select id="newAssignmentWorkType" onchange="updateNewAssignmentMaxGroupMembersVisibility()">
                 <option value="งานเดี่ยว">งานเดี่ยว</option>
                 <option value="งานกลุ่ม">งานกลุ่ม</option>
                 <option value="เลือกส่ง">เลือกส่ง</option>
@@ -147,8 +157,9 @@
             <label>คะแนนเต็ม
               <input id="newAssignmentFullScore" type="number" placeholder="เช่น 10" />
             </label>
-            <label>จำนวนสมาชิกกลุ่มสูงสุด
+            <label id="newAssignmentMaxGroupMembersField" style="display:none;">จำนวนสมาชิกกลุ่มสูงสุด
               <input id="newAssignmentMaxGroupMembers" type="number" min="1" placeholder="เช่น 5" />
+              <span class="empty-text">งานเดี่ยวไม่ต้องกำหนดจำนวนสมาชิก</span>
             </label>
             <label>ลิงก์ชีทงาน
               <input id="newAssignmentUrl" placeholder="วาง URL ชีทรับงาน" />
@@ -161,7 +172,10 @@
             </label>
           </div>
 
-          <div class="assignment-card-controls">
+          <div class="assignment-card-controls assignment-inline-settings-actions">
+            <button type="button" class="assignment-primary-action" onclick="createAssignmentFromForm()">
+              ➕ เพิ่มงาน
+            </button>
             <button type="button" onclick="toggleAssignmentSection('newAssignmentClassesSection', this)">
               แสดง/ซ่อน การสั่งงานเฉพาะห้อง
             </button>
@@ -172,11 +186,8 @@
 
           <div id="newAssignmentClassesSection" class="assignment-hidden-section"></div>
           <div id="newAssignmentDeadlinesSection" class="assignment-hidden-section"></div>
-
-          <button type="button" onclick="createAssignmentFromForm()">
-            ➕ เพิ่มงาน
-          </button>
-        </div>
+        
+          </div></div>
 
         <div id="assignmentSettingsStatus"></div>
         <div id="assignmentSettingsList"></div>
@@ -224,68 +235,45 @@
               placeholder="กรองเลขที่"
             >
 
-            <div class="settings-wrap">
-
-              <button
-                type="button"
-                class="gear-button"
-                onclick="toggleWorkSettingsPopup()"
-                title="ตั้งค่าการแสดงผล"
-              >
-                ⚙
-              </button>
-
-              <div id="workSettingsPopup" class="settings-popup">
-
-                <div class="settings-title">
-                  ตั้งค่าการตรวจงาน
-                </div>
-
-                <button
-                  type="button"
-                  id="autoRefreshToggleBtn"
-                  onclick="toggleAutoRefreshWork()"
-                >
-                  ⏸ อัปเดตอัตโนมัติ: ปิด
-                </button>
-
-                <button
-                  type="button"
-                  onclick="stopLoadedWork()"
-                >
-                  ⏹ หยุดโหลดงาน
-                </button>
-
-                <button
-                  type="button"
-                  id="toggleAllTeacherWorksheetsBtn"
-                  onclick="toggleAllTeacherWorksheets()"
-                >
-                  📄 เปิดใบงานนักเรียนทั้งหมด
-                </button>
-
-                <label>เรียงลำดับผลงาน</label>
-
-                <select id="workSortMode" onchange="applyWorkSortAndRender()">
-                  <option value="latest">ส่งล่าสุด</option>
-                  <option value="oldest">ส่งก่อน</option>
-                  <option value="noAsc">เลขที่น้อยไปมาก</option>
-                  <option value="noDesc">เลขที่มากไปน้อย</option>
-                  <option value="studentSeqAsc">ลำดับนักเรียน</option>
-                  <option value="groupAsc">ชื่อกลุ่ม ก-ฮ</option>
-                </select>
-
-                <button type="button" onclick="sortCurrentWorkSheet()">
-                  🔃 เรียงในชีต
-                </button>
-
-              </div>
-
-            </div>
 
           </div>
 
           <div class="teacher-work-secondary-controls">
+            <button
+              type="button"
+              id="autoRefreshToggleBtn"
+              onclick="toggleAutoRefreshWork()"
+            >
+              ⏸ อัปเดตอัตโนมัติ: ปิด
+            </button>
+
+            <button type="button" onclick="stopLoadedWork()">
+              ⏹ หยุดโหลดงาน
+            </button>
+
+            <button
+              type="button"
+              id="toggleAllTeacherWorksheetsBtn"
+              onclick="toggleAllTeacherWorksheets()"
+            >
+              📄 เปิดใบงานนักเรียนทั้งหมด
+            </button>
+
+            <label class="work-sort-label">เรียงลำดับผลงาน</label>
+
+            <select id="workSortMode" onchange="applyWorkSortAndRender()">
+              <option value="latest">ส่งล่าสุด</option>
+              <option value="oldest">ส่งก่อน</option>
+              <option value="noAsc">เลขที่น้อยไปมาก</option>
+              <option value="noDesc">เลขที่มากไปน้อย</option>
+              <option value="studentSeqAsc">ลำดับนักเรียน</option>
+              <option value="groupAsc">ชื่อกลุ่ม ก-ฮ</option>
+            </select>
+
+            <button type="button" onclick="sortCurrentWorkSheet()">
+              🔃 เรียงในชีต
+            </button>
+
             <label class="hide-score-box teacher-check-controls">
               <input
                 type="checkbox"
@@ -464,10 +452,10 @@
 
         <div class="settings-dashboard-grid">
           <div class="card settings-dashboard-card">
-            <h4>ใบคำสั่งงาน</h4>
+            <h4>ใบงาน</h4>
             <p>เพิ่มงานใหม่ ตั้งค่าคะแนนเต็ม สั่งงานเฉพาะห้อง และกำหนด Deadline รายห้อง</p>
             <button type="button" onclick="switchTeacherPage('assignment')">
-              ไปหน้าใบคำสั่งงาน
+              ไปหน้าใบงาน
             </button>
           </div>
 
