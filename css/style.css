@@ -1939,8 +1939,9 @@ h2,h3,h4{
 }
 
 .teacher-work-main-toolbar{
-  grid-template-columns:130px 150px 1fr 2fr 1fr 1fr;
+  grid-template-columns:130px 160px 1fr 2fr 1fr 1fr 48px;
   margin-bottom:0;
+  align-items:stretch;
 }
 
 .teacher-work-secondary-controls{
@@ -1977,10 +1978,34 @@ h2,h3,h4{
 
 
 .teacher-work-control-card .refresh-work-button{
-  display:none;
+  display:block;
   height:46px;
   min-height:46px;
   margin-top:0;
+}
+
+.teacher-work-gear-wrap{
+  min-width:48px;
+  align-items:stretch;
+}
+
+.teacher-work-gear-wrap .gear-button{
+  height:46px;
+  min-height:46px;
+  margin-top:0;
+}
+
+.teacher-work-settings-popup{
+  top:54px;
+  right:0;
+}
+
+.teacher-work-settings-popup .teacher-check-controls{
+  margin-top:10px;
+}
+
+.teacher-work-settings-popup .teacher-check-controls input{
+  width:auto;
 }
 
 .app-sidebar-title-row{
@@ -2122,5 +2147,17 @@ h2,h3,h4{
 @media(max-width:900px){
   .thai-deadline-picker{
     grid-template-columns:1fr 1fr;
+  }
+}
+
+
+@media(max-width:900px){
+  .teacher-work-main-toolbar{
+    grid-template-columns:1fr;
+  }
+
+  .teacher-work-gear-wrap,
+  .teacher-work-gear-wrap .gear-button{
+    width:100%;
   }
 }
