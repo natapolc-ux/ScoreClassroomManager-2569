@@ -235,53 +235,71 @@
               placeholder="กรองเลขที่"
             >
 
+            <div class="settings-wrap teacher-work-gear-wrap">
 
-          </div>
-
-          <div class="teacher-work-secondary-controls">
-            <button
-              type="button"
-              id="autoRefreshToggleBtn"
-              onclick="toggleAutoRefreshWork()"
-            >
-              ⏸ อัปเดตอัตโนมัติ: ปิด
-            </button>
-
-            <button type="button" onclick="stopLoadedWork()">
-              ⏹ หยุดโหลดงาน
-            </button>
-
-            <button
-              type="button"
-              id="toggleAllTeacherWorksheetsBtn"
-              onclick="toggleAllTeacherWorksheets()"
-            >
-              📄 เปิดใบงานนักเรียนทั้งหมด
-            </button>
-
-            <label class="work-sort-label">เรียงลำดับผลงาน</label>
-
-            <select id="workSortMode" onchange="applyWorkSortAndRender()">
-              <option value="latest">ส่งล่าสุด</option>
-              <option value="oldest">ส่งก่อน</option>
-              <option value="noAsc">เลขที่น้อยไปมาก</option>
-              <option value="noDesc">เลขที่มากไปน้อย</option>
-              <option value="studentSeqAsc">ลำดับนักเรียน</option>
-              <option value="groupAsc">ชื่อกลุ่ม ก-ฮ</option>
-            </select>
-
-            <button type="button" onclick="sortCurrentWorkSheet()">
-              🔃 เรียงในชีต
-            </button>
-
-            <label class="hide-score-box teacher-check-controls">
-              <input
-                type="checkbox"
-                id="hideViewedWorksToggle"
-                onchange="toggleHideViewedWorks()"
+              <button
+                type="button"
+                class="gear-button"
+                onclick="toggleWorkSettingsPopup()"
+                title="ตั้งค่าการจัดการงาน"
               >
-              ซ่อนงานที่ตรวจแล้ว
-            </label>
+                ⚙
+              </button>
+
+              <div id="workSettingsPopup" class="settings-popup teacher-work-settings-popup">
+
+                <div class="settings-title">
+                  ตัวเลือกการจัดการงาน
+                </div>
+
+                <button
+                  type="button"
+                  id="autoRefreshToggleBtn"
+                  onclick="toggleAutoRefreshWork()"
+                >
+                  ⏸ อัปเดตอัตโนมัติ: ปิด
+                </button>
+
+                <button type="button" onclick="stopLoadedWork()">
+                  ⏹ หยุดโหลดงาน
+                </button>
+
+                <button
+                  type="button"
+                  id="toggleAllTeacherWorksheetsBtn"
+                  onclick="toggleAllTeacherWorksheets()"
+                >
+                  📄 เปิดใบงานนักเรียนทั้งหมด
+                </button>
+
+                <label>เรียงลำดับผลงาน</label>
+
+                <select id="workSortMode" onchange="applyWorkSortAndRender()">
+                  <option value="latest">ส่งล่าสุด</option>
+                  <option value="oldest">ส่งก่อน</option>
+                  <option value="noAsc">เลขที่น้อยไปมาก</option>
+                  <option value="noDesc">เลขที่มากไปน้อย</option>
+                  <option value="studentSeqAsc">ลำดับนักเรียน</option>
+                  <option value="groupAsc">ชื่อกลุ่ม ก-ฮ</option>
+                </select>
+
+                <button type="button" onclick="sortCurrentWorkSheet()">
+                  🔃 เรียงในชีต
+                </button>
+
+                <label class="hide-score-box teacher-check-controls">
+                  <input
+                    type="checkbox"
+                    id="hideViewedWorksToggle"
+                    onchange="toggleHideViewedWorks()"
+                  >
+                  ซ่อนงานที่ตรวจแล้ว
+                </label>
+
+              </div>
+
+            </div>
+
           </div>
 
         </div>
