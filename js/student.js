@@ -494,6 +494,71 @@ function getGroupMemberLimitText(){
   return limit > 0 ? `จำกัดสมาชิกไม่เกิน ${limit} คน รวมผู้ส่งงาน` : "ไม่จำกัดจำนวนสมาชิก";
 }
 
+
+function isFixedGroupAssignmentForCurrentSubmit(){
+
+  const workType =
+    currentSubmitWorkItem
+      ? String(currentSubmitWorkItem.workType || currentSubmitWorkItem.submitMode || "").trim()
+      : "";
+
+  return workType === "งานกลุ่ม";
+}
+
+function getFixedGroupMembersForCurrentSubmit(){
+
+  const members =
+    currentSubmitWorkItem &&
+    Array.isArray(currentSubmitWorkItem.groupMembers)
+      ? currentSubmitWorkItem.groupMembers
+      : [];
+
+  const normalized = [];
+
+  members.forEach(member => {
+
+    if(!member || !member.id){
+      return;
+    }
+
+    const exists =
+      normalized.some(item =>
+        String(item.id || "").trim() === String(member.id || "").trim()
+      );
+
+    if(!exists){
+      normalized.push({
+        id: String(member.id || "").trim(),
+        name: String(member.name || "").trim(),
+        no: String(member.no || "").trim(),
+        className: String(member.className || member.class || currentStudentClass || "").trim(),
+        photoUrl: String(member.photoUrl || "").trim(),
+        studentOrder: String(member.studentOrder || "").trim(),
+        status: String(member.status || "").trim()
+      });
+    }
+  });
+
+  if(normalized.length === 0){
+    normalized.push({
+      id: currentStudentId,
+      name: currentStudentName,
+      no: currentStudentNo,
+      className: currentStudentClass,
+      status: ""
+    });
+  }
+
+  return normalized.sort((a, b) =>
+    String(a.studentOrder || calculateStudentOrder(a.className, a.no) || a.no || a.name || a.id)
+      .localeCompare(
+        String(b.studentOrder || calculateStudentOrder(b.className, b.no) || b.no || b.name || b.id),
+        "th",
+        { numeric: true }
+      )
+  );
+}
+
 function getGroupCandidateMembersFromSubmitItem(){
 
   const candidates =
@@ -627,7 +692,7 @@ function buildGroupMemberSelectOptions(selectedId, locked){
   return html;
 }
 
-function buildGroupMemberRowHtml(rowData, index, locked){
+function buildGroupMemberRowHtml(rowData, index, locked, fixedMode){
 
   const selectedId =
     String(rowData && rowData.id ? rowData.id : "").trim();
@@ -635,19 +700,39 @@ function buildGroupMemberRowHtml(rowData, index, locked){
   const selectedStatus =
     String(rowData && rowData.status ? rowData.status : "").trim();
 
+  const member =
+    fixedMode
+      ? (rowData || getCandidateMemberById(selectedId) || {})
+      : getCandidateMemberById(selectedId);
+
+  const fixedLabel =
+    `${member && member.no ? "เลขที่ " + member.no + " " : ""}${member && member.name ? member.name : selectedId}`;
+
   return `
     <div class="group-assessment-row group-member-select-row" data-row-index="${escapeAttribute(index)}">
-      <label>${locked ? "ผู้ส่งงาน" : "สมาชิกกลุ่ม"}</label>
+      <label>${fixedMode ? "สมาชิกกลุ่มที่กำหนดไว้" : (locked ? "ผู้ส่งงาน" : "สมาชิกกลุ่ม")}</label>
 
-      <select
-        class="group-member-select"
-        onchange="refreshGroupMemberDuplicateRules()"
-        ${locked ? "disabled" : ""}
-      >
-        ${buildGroupMemberSelectOptions(selectedId, locked)}
-      </select>
+      ${
+        fixedMode
+          ? `
+            <div class="group-fixed-member-name">
+              ${escapeHtml(fixedLabel || "-")}
+              <span class="group-fixed-member-badge">ดึงจากกลุ่มที่ครูกำหนด</span>
+            </div>
+            <input type="hidden" class="group-member-fixed-id" value="${escapeAttribute(selectedId)}">
+          `
+          : `
+            <select
+              class="group-member-select"
+              onchange="refreshGroupMemberDuplicateRules()"
+              ${locked ? "disabled" : ""}
+            >
+              ${buildGroupMemberSelectOptions(selectedId, locked)}
+            </select>
 
-      ${locked ? `<input type="hidden" class="group-member-fixed-id" value="${escapeAttribute(selectedId)}">` : ``}
+            ${locked ? `<input type="hidden" class="group-member-fixed-id" value="${escapeAttribute(selectedId)}">` : ``}
+          `
+      }
 
       <div class="group-assessment-options">
         <label>
@@ -665,7 +750,7 @@ function buildGroupMemberRowHtml(rowData, index, locked){
       </div>
 
       ${
-        locked
+        locked || fixedMode
           ? ``
           : `<button type="button" onclick="removeGroupMemberRow(${index})">ลบสมาชิกนี้</button>`
       }
@@ -673,7 +758,7 @@ function buildGroupMemberRowHtml(rowData, index, locked){
   `;
 }
 
-function renderGroupMemberRows(rows){
+function renderGroupMemberRows(rows, fixedMode){
 
   const rowsBox =
     document.getElementById("groupMemberRows");
@@ -705,8 +790,12 @@ function renderGroupMemberRows(rows){
 
   rowsBox.innerHTML =
     limitedRows.map((row, index) =>
-      buildGroupMemberRowHtml(row, index, index === 0)
+      buildGroupMemberRowHtml(row, index, index === 0, fixedMode === true)
     ).join("");
+
+  if(fixedMode === true){
+    return;
+  }
 
   refreshGroupMemberDuplicateRules();
 }
@@ -790,14 +879,26 @@ function renderGroupAssessmentBox(workType){
     return;
   }
 
+  const fixedMode =
+    isFixedGroupAssignmentForCurrentSubmit();
+
+  const fixedMembers =
+    fixedMode
+      ? getFixedGroupMembersForCurrentSubmit()
+      : [];
+
   const candidates =
     getGroupCandidateMembersFromSubmitItem();
 
   box.style.display = "block";
   box.innerHTML = `
-    <h4>เลือกสมาชิกกลุ่มและประเมินการทำงานกลุ่ม</h4>
+    <h4>${fixedMode ? "สมาชิกกลุ่มที่ครูกำหนดไว้" : "เลือกสมาชิกกลุ่มและประเมินการทำงานกลุ่ม"}</h4>
     <div class="empty-text">
-      เลือกได้เฉพาะนักเรียนห้องเดียวกัน และระบบจะไม่ให้เลือกชื่อซ้ำ
+      ${
+        fixedMode
+          ? "ระบบดึงรายชื่อจากชีท Groups นักเรียนไม่ต้องเลือกชื่อเพื่อน"
+          : "สำหรับงานเลือกส่งแบบกลุ่ม นักเรียนเลือกสมาชิกห้องเดียวกันได้ และระบบจะไม่ให้เลือกชื่อซ้ำ"
+      }
     </div>
     <div class="group-member-limit-note">
       ${escapeHtml(getGroupMemberLimitText())}
@@ -805,9 +906,11 @@ function renderGroupAssessmentBox(workType){
 
     <div id="groupMemberRows"></div>
 
-    <button type="button" onclick="addGroupMemberRow()">
-      เพิ่มสมาชิกกลุ่ม
-    </button>
+    ${
+      fixedMode
+        ? ``
+        : `<button type="button" onclick="addGroupMemberRow()">เพิ่มสมาชิกกลุ่ม</button>`
+    }
 
     <label>หมายเหตุถึงครู</label>
     <textarea
@@ -817,12 +920,17 @@ function renderGroupAssessmentBox(workType){
     ></textarea>
   `;
 
+  if(fixedMode){
+    renderGroupMemberRows(fixedMembers, true);
+    return;
+  }
+
   const startingRows =
     candidates.some(member => String(member.id || "").trim() === String(currentStudentId || "").trim())
       ? [{ id: currentStudentId, status: "" }]
       : [{ id: currentStudentId, status: "" }];
 
-  renderGroupMemberRows(startingRows);
+  renderGroupMemberRows(startingRows, false);
 }
 
 function collectGroupAssessmentBeforeSubmit(submitMode){
@@ -1426,10 +1534,10 @@ if(isRevision && submitMode === "งานกลุ่ม" && revisionMode === "
   const fileInput =
     document.getElementById("submitFile");
 
-  const file =
-    fileInput && fileInput.files.length > 0
-      ? fileInput.files[0]
-      : null;
+  const files =
+    fileInput && fileInput.files && fileInput.files.length > 0
+      ? Array.from(fileInput.files)
+      : [];
 
   const statusBox =
     document.getElementById("submitWorkStatus");
@@ -1437,10 +1545,13 @@ if(isRevision && submitMode === "งานกลุ่ม" && revisionMode === "
   const maxFileSizeMB = 5;
   const maxFileSizeBytes = maxFileSizeMB * 1024 * 1024;
 
-  if(file && file.size > maxFileSizeBytes){
+  const oversizedFile =
+    files.find(file => file.size > maxFileSizeBytes);
+
+  if(oversizedFile){
     statusBox.innerHTML =
       `<div class="status-box">
-        ❌ ไฟล์ใหญ่เกินไป กรุณาเลือกไฟล์ไม่เกิน ${maxFileSizeMB} MB
+        ❌ ไฟล์ ${escapeHtml(oversizedFile.name || "")} ใหญ่เกินไป กรุณาเลือกไฟล์ละไม่เกิน ${maxFileSizeMB} MB
         <br>
         <button type="button" onclick="openImageCompressor()">
           เปิดเว็บบีบอัดรูป
@@ -1455,7 +1566,7 @@ if(isRevision && submitMode === "งานกลุ่ม" && revisionMode === "
     return;
   }
 
-  if(!work && !file){
+  if(!work && files.length === 0){
     statusBox.innerHTML =
       `<div class="status-box">❌ กรุณาพิมพ์คำตอบหรือแนบไฟล์ก่อน</div>`;
     return;
@@ -1532,24 +1643,39 @@ if(isRevision && submitMode === "งานกลุ่ม" && revisionMode === "
     });
   };
 
-  if(file){
+  if(files.length > 0){
 
-    const reader = new FileReader();
+    Promise
+      .all(files.map(file => new Promise((resolve, reject) => {
 
-    reader.onload = function(){
-      sendPayload({
-        fileName: file.name,
-        mimeType: file.type,
-        fileData: reader.result
+        const reader = new FileReader();
+
+        reader.onload = function(){
+          resolve({
+            fileName: file.name,
+            mimeType: file.type,
+            fileData: reader.result
+          });
+        };
+
+        reader.onerror = function(){
+          reject(new Error("อ่านไฟล์ไม่สำเร็จ: " + (file.name || "")));
+        };
+
+        reader.readAsDataURL(file);
+      })))
+      .then(filePayloads => {
+        sendPayload({
+          files: filePayloads,
+          fileName: filePayloads[0] ? filePayloads[0].fileName : "",
+          mimeType: filePayloads[0] ? filePayloads[0].mimeType : "",
+          fileData: filePayloads[0] ? filePayloads[0].fileData : ""
+        });
+      })
+      .catch(error => {
+        statusBox.innerHTML =
+          `<div class="status-box">❌ ${escapeHtml(error.message || "อ่านไฟล์ไม่สำเร็จ กรุณาเลือกไฟล์ใหม่")}</div>`;
       });
-    };
-
-    reader.onerror = function(){
-      statusBox.innerHTML =
-        `<div class="status-box">❌ อ่านไฟล์ไม่สำเร็จ กรุณาเลือกไฟล์ใหม่</div>`;
-    };
-
-    reader.readAsDataURL(file);
   }
 
   else{
