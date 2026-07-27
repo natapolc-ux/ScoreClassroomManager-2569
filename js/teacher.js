@@ -1625,7 +1625,7 @@ function stopLoadedWork(){
     document.getElementById("refreshWorkButton");
 
   if(refreshButton){
-    refreshButton.style.display = "none";
+    refreshButton.style.display = "block";
   }
 
   const workStatus =
