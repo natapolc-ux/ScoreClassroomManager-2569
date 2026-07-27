@@ -185,6 +185,20 @@ function toggleAssignmentSection(id, button){
   }
 }
 
+function toggleAddAssignmentBox(button){
+  const content = document.getElementById("addAssignmentContent");
+  const box = document.getElementById("addAssignmentBox");
+  if(!content){ return; }
+  const hidden = window.getComputedStyle(content).display === "none";
+  content.style.display = hidden ? "block" : "none";
+  if(box){
+    box.classList.toggle("assignment-add-collapsed", !hidden);
+  }
+  if(button){
+    button.textContent = hidden ? "ย่อฟอร์มเพิ่มงาน" : "เปิดฟอร์มเพิ่มงาน";
+  }
+}
+
 function formatDateTimeLocalInput(value){
   if(!value){ return ""; }
   const date = new Date(value);
@@ -204,6 +218,153 @@ function getDeadlineValue(deadlines, className){
   }
   const key = Object.keys(deadlines).find(name => normalizeOptionKey(name) === target);
   return key ? deadlines[key] : "";
+}
+
+const THAI_FULL_MONTHS = [
+  "มกราคม",
+  "กุมภาพันธ์",
+  "มีนาคม",
+  "เมษายน",
+  "พฤษภาคม",
+  "มิถุนายน",
+  "กรกฎาคม",
+  "สิงหาคม",
+  "กันยายน",
+  "ตุลาคม",
+  "พฤศจิกายน",
+  "ธันวาคม"
+];
+
+function deadlineToThaiParts(value){
+  if(!value){
+    return { day:"", month:"", yearBE:"", hour:"", minute:"" };
+  }
+
+  const date = new Date(value);
+  if(!isNaN(date.getTime())){
+    const pad = n => String(n).padStart(2, "0");
+    return {
+      day: String(date.getDate()),
+      month: String(date.getMonth() + 1),
+      yearBE: String(date.getFullYear() + 543),
+      hour: pad(date.getHours()),
+      minute: pad(date.getMinutes())
+    };
+  }
+
+  const match = String(value).match(/(\d{4})-(\d{1,2})-(\d{1,2})[T\s]?(\d{1,2})?:?(\d{1,2})?/);
+  if(match){
+    const pad = n => String(n || "0").padStart(2, "0");
+    const yearCE = Number(match[1]);
+    return {
+      day: String(Number(match[3])),
+      month: String(Number(match[2])),
+      yearBE: String(yearCE + 543),
+      hour: pad(match[4] || "0"),
+      minute: pad(match[5] || "0")
+    };
+  }
+
+  return { day:"", month:"", yearBE:"", hour:"", minute:"" };
+}
+
+function deadlineSelectOptions(start, end, selected, blankText){
+  let html = `<option value="">${escapeHtml(blankText || "-")}</option>`;
+  for(let i = start; i <= end; i++){
+    const value = String(i);
+    const label = start === 0 ? String(i).padStart(2, "0") : String(i);
+    html += `<option value="${escapeAttribute(value)}" ${String(selected) === value || String(selected) === label ? "selected" : ""}>${escapeHtml(label)}</option>`;
+  }
+  return html;
+}
+
+function renderThaiDeadlineInput(hiddenId, dataAttributes, value){
+  const parts = deadlineToThaiParts(value);
+  const dataAttrs = Object.keys(dataAttributes || {})
+    .map(key => `${key}="${escapeAttribute(dataAttributes[key])}"`)
+    .join(" ");
+
+  return `
+    <div class="thai-deadline-picker">
+      <input
+        type="hidden"
+        id="${escapeAttribute(hiddenId)}"
+        value="${escapeAttribute(formatDateTimeLocalInput(value))}"
+        ${dataAttrs}
+      >
+      <select data-deadline-target="${escapeAttribute(hiddenId)}" data-thai-deadline-part="day" onchange="updateThaiDeadlineHidden('${hiddenId}')">
+        ${deadlineSelectOptions(1, 31, parts.day, "วัน")}
+      </select>
+      <select data-deadline-target="${escapeAttribute(hiddenId)}" data-thai-deadline-part="month" onchange="updateThaiDeadlineHidden('${hiddenId}')">
+        <option value="">เดือน</option>
+        ${THAI_FULL_MONTHS.map((monthName, idx) => `
+          <option value="${idx + 1}" ${String(parts.month) === String(idx + 1) ? "selected" : ""}>${escapeHtml(monthName)}</option>
+        `).join("")}
+      </select>
+      <input
+        type="number"
+        min="2500"
+        max="2700"
+        placeholder="ปี พ.ศ."
+        value="${escapeAttribute(parts.yearBE)}"
+        data-deadline-target="${escapeAttribute(hiddenId)}"
+        data-thai-deadline-part="yearBE"
+        oninput="updateThaiDeadlineHidden('${hiddenId}')"
+      >
+      <select data-deadline-target="${escapeAttribute(hiddenId)}" data-thai-deadline-part="hour" onchange="updateThaiDeadlineHidden('${hiddenId}')">
+        ${deadlineSelectOptions(0, 23, parts.hour, "ชั่วโมง")}
+      </select>
+      <select data-deadline-target="${escapeAttribute(hiddenId)}" data-thai-deadline-part="minute" onchange="updateThaiDeadlineHidden('${hiddenId}')">
+        ${deadlineSelectOptions(0, 59, parts.minute, "นาที")}
+      </select>
+    </div>
+  `;
+}
+
+function updateThaiDeadlineHidden(hiddenId){
+  const hidden = document.getElementById(hiddenId);
+  if(!hidden){ return; }
+
+  const controls = document.querySelectorAll(`[data-deadline-target="${hiddenId}"]`);
+  const parts = {};
+  controls.forEach(control => {
+    parts[control.getAttribute("data-thai-deadline-part")] = String(control.value || "").trim();
+  });
+
+  const day = Number(parts.day || 0);
+  const month = Number(parts.month || 0);
+  const yearBE = Number(parts.yearBE || 0);
+  const hour = Number(parts.hour || 0);
+  const minute = Number(parts.minute || 0);
+
+  if(!day && !month && !yearBE && parts.hour === "" && parts.minute === ""){
+    hidden.value = "";
+    return;
+  }
+
+  if(!day || !month || !yearBE || parts.hour === "" || parts.minute === ""){
+    hidden.value = "";
+    return;
+  }
+
+  const yearCE = yearBE >= 2400 ? yearBE - 543 : yearBE;
+  const pad = n => String(n).padStart(2, "0");
+  hidden.value = `${yearCE}-${pad(month)}-${pad(day)}T${pad(hour)}:${pad(minute)}`;
+}
+
+function updateNewAssignmentMaxGroupMembersVisibility(){
+  const type = String(document.getElementById("newAssignmentWorkType")?.value || "งานเดี่ยว").trim();
+  const field = document.getElementById("newAssignmentMaxGroupMembersField");
+  const input = document.getElementById("newAssignmentMaxGroupMembers");
+
+  if(!field){ return; }
+
+  const shouldShow = type !== "งานเดี่ยว";
+  field.style.display = shouldShow ? "block" : "none";
+
+  if(!shouldShow && input){
+    input.value = "";
+  }
 }
 
 
@@ -372,6 +533,37 @@ function populateAssignmentLevelFilter(topics){
   }
 
   populateNewAssignmentLevelSelect(levels, select.value);
+  populateAssignmentTopicFilter(select.value);
+}
+
+function populateAssignmentTopicFilter(level){
+
+  const select = document.getElementById("assignmentTopicFilter");
+  if(!select){ return; }
+
+  const oldValue = String(select.value || "").trim();
+  const selectedLevel = String(level || "").trim();
+
+  const topics = (Array.isArray(teacherTopicsData) ? teacherTopicsData : [])
+    .filter(item => selectedLevel && String(item.level || "").trim() === selectedLevel);
+
+  let html = `<option value="">ทุกใบงานของระดับชั้นนี้</option>`;
+
+  topics.forEach(item => {
+    html += `
+      <option value="${escapeAttribute(item.url || "")}">
+        ${escapeHtml(item.topic || "-")}
+      </option>
+    `;
+  });
+
+  select.innerHTML = html;
+
+  if(oldValue && topics.some(item => String(item.url || "").trim() === oldValue)){
+    select.value = oldValue;
+  } else {
+    select.value = "";
+  }
 }
 
 function populateNewAssignmentLevelSelect(levels, selectedLevel){
@@ -405,6 +597,7 @@ function handleAssignmentLevelFilterChange(){
     addLevel.value = filter.value;
     renderNewAssignmentClassDeadlineOptions();
   }
+  populateAssignmentTopicFilter(filter ? filter.value : "");
   renderAssignmentSettingsList();
 }
 
@@ -473,18 +666,23 @@ function renderAssignmentDeadlineInputsForCard(topic, index){
   }
 
   return `
-    <div class="assignment-deadline-grid">
-      ${classes.map(className => `
-        <label>
-          ${escapeHtml(className)}
-          <input
-            type="datetime-local"
-            data-assignment-deadline-index="${escapeAttribute(index)}"
-            data-class-name="${escapeAttribute(className)}"
-            value="${escapeAttribute(formatDateTimeLocalInput(getDeadlineValue(deadlines, className)))}"
-          >
-        </label>
-      `).join("")}
+    <div class="assignment-deadline-grid thai-deadline-grid">
+      ${classes.map((className, classIndex) => {
+        const hiddenId = `assignmentDeadline_${index}_${classIndex}`;
+        return `
+          <label>
+            <span>${escapeHtml(className)}</span>
+            ${renderThaiDeadlineInput(
+              hiddenId,
+              {
+                "data-assignment-deadline-index": index,
+                "data-class-name": className
+              },
+              getDeadlineValue(deadlines, className)
+            )}
+          </label>
+        `;
+      }).join("")}
     </div>
   `;
 }
@@ -519,17 +717,29 @@ function renderNewAssignmentClassDeadlineOptions(){
     deadlineBox.innerHTML = classes.length > 0
       ? `
         <h4>Deadline รายห้อง</h4>
-        <div class="assignment-deadline-grid">
-          ${classes.map(className => `
-            <label>
-              ${escapeHtml(className)}
-              <input type="datetime-local" data-new-assignment-deadline data-class-name="${escapeAttribute(className)}">
-            </label>
-          `).join("")}
+        <div class="assignment-deadline-grid thai-deadline-grid">
+          ${classes.map((className, classIndex) => {
+            const hiddenId = `newAssignmentDeadline_${classIndex}`;
+            return `
+              <label>
+                <span>${escapeHtml(className)}</span>
+                ${renderThaiDeadlineInput(
+                  hiddenId,
+                  {
+                    "data-new-assignment-deadline": "true",
+                    "data-class-name": className
+                  },
+                  ""
+                )}
+              </label>
+            `;
+          }).join("")}
         </div>
       `
       : `<div class="empty-text">เลือกระดับชั้นก่อน</div>`;
   }
+
+  updateNewAssignmentMaxGroupMembersVisibility();
 }
 
 function getAssignmentDeadlinesFromCard(index){
@@ -565,12 +775,15 @@ function getNewAssignmentDeadlines(){
 
 function createAssignmentFromForm(){
 
+  const selectedWorkType =
+    document.getElementById("newAssignmentWorkType")?.value || "งานเดี่ยว";
+
   const payload = {
     level: document.getElementById("newAssignmentLevel")?.value || "",
     topic: document.getElementById("newAssignmentTopic")?.value || "",
-    workType: document.getElementById("newAssignmentWorkType")?.value || "งานเดี่ยว",
+    workType: selectedWorkType,
     fullScore: document.getElementById("newAssignmentFullScore")?.value || "",
-    maxGroupMembers: document.getElementById("newAssignmentMaxGroupMembers")?.value || "",
+    maxGroupMembers: selectedWorkType === "งานเดี่ยว" ? "" : (document.getElementById("newAssignmentMaxGroupMembers")?.value || ""),
     url: document.getElementById("newAssignmentUrl")?.value || "",
     folderId: document.getElementById("newAssignmentFolderId")?.value || "",
     worksheetUrl: document.getElementById("newAssignmentWorksheetUrl")?.value || "",
@@ -635,12 +848,19 @@ function renderAssignmentSettingsList(){
   const selectedLevel =
     levelFilter ? String(levelFilter.value || "").trim() : "";
 
+  const topicFilter =
+    document.getElementById("assignmentTopicFilter");
+
+  const selectedTopicUrl =
+    topicFilter ? String(topicFilter.value || "").trim() : "";
+
   const filteredTopics =
     topics
       .map((topic, index) => ({ topic, index }))
       .filter(item =>
         selectedLevel &&
-        String(item.topic.level || "").trim() === selectedLevel
+        String(item.topic.level || "").trim() === selectedLevel &&
+        (!selectedTopicUrl || String(item.topic.url || "").trim() === selectedTopicUrl)
       );
 
   if(status){
@@ -661,7 +881,7 @@ function renderAssignmentSettingsList(){
 
   if(filteredTopics.length === 0){
     box.innerHTML =
-      `<div class="status-box">ไม่พบงานของระดับชั้นที่เลือก</div>`;
+      `<div class="status-box">ไม่พบใบงานตามตัวเลือกที่เลือก</div>`;
     return;
   }
 
@@ -683,7 +903,14 @@ function renderAssignmentSettingsList(){
               ${topic.workType ? `<span class="student-order-badge">${escapeHtml(topic.workType)}</span>` : ``}
             </h4>
 
-            <div class="assignment-card-controls">
+            <div class="assignment-card-controls assignment-inline-settings-actions">
+              <button
+                type="button"
+                class="assignment-primary-action"
+                onclick="saveAssignmentSettingsFromCard(${index})"
+              >
+                บันทึกการตั้งค่า
+              </button>
               <button type="button" onclick="toggleAssignmentSection('assignmentFullScoreSection_${index}', this)">
                 แสดง/ซ่อน คะแนนเต็มของงาน
               </button>
@@ -696,22 +923,28 @@ function renderAssignmentSettingsList(){
             </div>
 
             <div id="assignmentFullScoreSection_${index}" class="assignment-hidden-section">
-              <label>คะแนนเต็มของงาน</label>
-              <input
-                id="assignmentFullScore_${index}"
-                type="number"
-                value="${escapeAttribute(topic.fullScore || "")}"
-                placeholder="เช่น 10"
-              >
-              <label>จำนวนสมาชิกกลุ่มสูงสุด</label>
-              <input
-                id="assignmentMaxGroupMembers_${index}"
-                type="number"
-                min="1"
-                value="${escapeAttribute(topic.maxGroupMembers || "")}"
-                placeholder="${escapeAttribute("ไม่ใส่ = ใช้ค่าเริ่มต้น " + DEFAULT_MAX_GROUP_MEMBERS + " คน")}"
-              >
-              <div class="empty-text">นับรวมผู้ส่งงานด้วย</div>
+              <div class="assignment-setting-inline-grid">
+                <label>คะแนนเต็มของงาน
+                  <input
+                    id="assignmentFullScore_${index}"
+                    type="number"
+                    value="${escapeAttribute(topic.fullScore || "")}"
+                    placeholder="เช่น 10"
+                  >
+                </label>
+                ${String(topic.workType || "").trim() === "งานเดี่ยว" ? `` : `
+                  <label>จำนวนสมาชิกกลุ่มสูงสุด
+                    <input
+                      id="assignmentMaxGroupMembers_${index}"
+                      type="number"
+                      min="1"
+                      value="${escapeAttribute(topic.maxGroupMembers || "")}"
+                      placeholder="${escapeAttribute("ไม่ใส่ = ใช้ค่าเริ่มต้น " + DEFAULT_MAX_GROUP_MEMBERS + " คน")}"
+                    >
+                    <span class="empty-text">นับรวมผู้ส่งงานด้วย</span>
+                  </label>
+                `}
+              </div>
             </div>
 
             <div id="assignmentClassesSection_${index}" class="assignment-hidden-section">
@@ -724,15 +957,6 @@ function renderAssignmentSettingsList(){
               ${renderAssignmentDeadlineInputsForCard(topic, index)}
             </div>
 
-            <div class="student-work-actions">
-              <button
-                type="button"
-                onclick="saveAssignmentSettingsFromCard(${index})"
-              >
-                บันทึกการตั้งค่า
-              </button>
-            </div>
-
             ${
               worksheetUrl
               ? `
@@ -740,11 +964,11 @@ function renderAssignmentSettingsList(){
                   id="${escapeAttribute(worksheetId)}"
                   class="work-box assignment-worksheet-box"
                 >
-                  <h4>ใบคำสั่งงาน</h4>
+                  <h4>ใบงาน</h4>
                   ${renderWorksheetContent(worksheetUrl)}
                 </div>
               `
-              : `<div class="empty-text">ยังไม่ได้ใส่ลิงก์ใบคำสั่งงาน</div>`
+              : `<div class="empty-text">ยังไม่ได้ใส่ลิงก์ใบงาน</div>`
             }
           </div>
         `;
@@ -843,7 +1067,7 @@ function toggleAssignmentWorksheet(id, button){
   box.style.display = isHidden ? "block" : "none";
 
   if(button){
-    button.textContent = isHidden ? "ซ่อนใบคำสั่งงาน" : "เปิดใบคำสั่งงาน";
+    button.textContent = isHidden ? "ซ่อนใบงาน" : "เปิดใบงาน";
   }
 }
 
@@ -4033,6 +4257,7 @@ function loadScoreOptions(){
     scoreOptionsData = response.data;
     updateWorkClassFilterByTopic();
     renderNewAssignmentClassDeadlineOptions();
+    updateNewAssignmentMaxGroupMembersVisibility();
     renderAssignmentSettingsList();
 
     if(scoreOptionsData.length === 0){
