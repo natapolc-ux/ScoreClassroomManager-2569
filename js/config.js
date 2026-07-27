@@ -31,7 +31,7 @@ let selectedTeacherWorkKeys = new Set();
 let nameSearchAllWorkLoading = false;
 let nameSearchLoadedAllWork = false;
 
-// จำนวนสมาชิกงานกลุ่มสูงสุดเริ่มต้น ถ้าไม่ได้กำหนดรายงานในหน้าใบคำสั่งงาน
+// จำนวนสมาชิกงานกลุ่มสูงสุดเริ่มต้น ถ้าไม่ได้กำหนดรายงานในหน้าใบงาน
 const DEFAULT_MAX_GROUP_MEMBERS = 5;
 
 const VIEWED_WORKS_STORAGE_KEY = "matrixViewedWorks";
