@@ -225,7 +225,7 @@
               <option value="">กำลังโหลดหัวข้องาน...</option>
             </select>
 
-            <select id="classFilter">
+            <select id="classFilter" onchange="renderWorkCards()">
               <option value="">ทุกห้อง</option>
             </select>
 
@@ -233,6 +233,7 @@
               id="noFilter"
               type="number"
               placeholder="กรองเลขที่"
+              oninput="renderWorkCards()"
             >
 
             <div class="settings-wrap teacher-work-gear-wrap">
@@ -302,6 +303,8 @@
 
           </div>
 
+          <div id="teacherWorkBulkToolsMount"></div>
+
         </div>
 
         <div id="workStatus"></div>
@@ -346,11 +349,11 @@
 
         <div class="score-toolbar score-header-bar">
 
-          <select id="scoreLevel">
+          <select id="scoreLevel" onchange="updateScoreClassOptions()">
             <option value="">กำลังโหลดระดับชั้น...</option>
           </select>
 
-          <select id="scoreClass">
+          <select id="scoreClass" onchange="loadScoreTableIfReady()">
             <option value="">ทุกห้อง</option>
           </select>
 
@@ -467,32 +470,6 @@
 
       <section id="teacherPageSettings" class="teacher-page">
         <h3>อื่นๆ</h3>
-
-        <div class="settings-dashboard-grid">
-          <div class="card settings-dashboard-card">
-            <h4>ใบงาน</h4>
-            <p>เพิ่มงานใหม่ ตั้งค่าคะแนนเต็ม สั่งงานเฉพาะห้อง และกำหนด Deadline รายห้อง</p>
-            <button type="button" onclick="switchTeacherPage('assignment')">
-              ไปหน้าใบงาน
-            </button>
-          </div>
-
-          <div class="card settings-dashboard-card">
-            <h4>การตรวจงาน</h4>
-            <p>โหลดงาน เปิด/ปิดใบงานนักเรียน เลือกหลายงาน ส่งคืน ลบหลายงาน และให้คะแนนงานที่เลือก</p>
-            <button type="button" onclick="switchTeacherPage('check')">
-              ไปหน้าตรวจงาน
-            </button>
-          </div>
-
-          <div class="card settings-dashboard-card">
-            <h4>ตารางคะแนน</h4>
-            <p>ซ่อนคะแนน ล็อกช่องคะแนน ซ่อนช่อง +/- คะแนนรายบุคคล และบันทึกตารางคะแนน</p>
-            <button type="button" onclick="switchTeacherPage('score')">
-              ไปตารางคะแนน
-            </button>
-          </div>
-        </div>
       </section>
 
     </main>
