@@ -1524,20 +1524,41 @@ function updateWorkClassFilterByTopic(keepClassValue){
 
   let classes = [];
 
-  if(selectedLevel && Array.isArray(scoreOptionsData)){
+  if(Array.isArray(scoreOptionsData)){
 
-    const foundLevel =
-      scoreOptionsData.find(item =>
-        normalizeOptionKey(item.level) === normalizeOptionKey(selectedLevel)
-      );
+    if(selectedLevel){
+      const foundLevel =
+        scoreOptionsData.find(item =>
+          normalizeOptionKey(item.level) === normalizeOptionKey(selectedLevel)
+        );
 
-    if(foundLevel && Array.isArray(foundLevel.classes)){
-      classes = foundLevel.classes;
+      if(foundLevel && Array.isArray(foundLevel.classes)){
+        classes = foundLevel.classes;
+      }
+    }
+
+    else{
+      classes = scoreOptionsData
+        .flatMap(item => Array.isArray(item.classes) ? item.classes : []);
     }
   }
 
-  let html =
-    `<option value="">ทุกห้อง</option>`;
+  if(classes.length === 0 && Array.isArray(currentWorkData) && currentWorkData.length > 0){
+    classes = currentWorkData
+      .filter(item => !selectedLevel || normalizeOptionKey(item.level) === normalizeOptionKey(selectedLevel))
+      .map(item => String(item.class || "").trim())
+      .filter(Boolean);
+  }
+
+  classes = [
+    ...new Set(
+      classes
+        .map(item => String(item || "").trim())
+        .filter(Boolean)
+    )
+  ].sort((a, b) => String(a).localeCompare(String(b), "th", { numeric: true }));
+
+  let html = `<option value="">ทุกห้อง</option>`;
 
   classes.forEach(className => {
     html += `
@@ -1550,12 +1571,10 @@ function updateWorkClassFilterByTopic(keepClassValue){
   classSelect.innerHTML = html;
 
   if(oldClassValue){
-    const hasOldClass =
-      Array.from(classSelect.options)
-        .some(option => option.value === oldClassValue);
-
-    if(hasOldClass){
-      classSelect.value = oldClassValue;
+    const option = Array.from(classSelect.options)
+      .find(item => normalizeOptionKey(item.value) === normalizeOptionKey(oldClassValue));
+    if(option){
+      classSelect.value = option.value;
     }
   }
 
@@ -1567,6 +1586,7 @@ function updateWorkClassFilterByTopic(keepClassValue){
 
   renderAssignedClassOptions();
 }
+
 function toggleWorkSettingsPopup(){
 
   const popup =
@@ -1640,6 +1660,13 @@ function stopLoadedWork(){
 
   if(workBox){
     workBox.innerHTML = "";
+  }
+
+  const selectionMount =
+    document.getElementById("teacherWorkBulkToolsMount");
+
+  if(selectionMount){
+    selectionMount.innerHTML = "";
   }
 }
 function startAutoRefreshWork(){
@@ -2046,13 +2073,19 @@ function populateClassFilter(data){
 
   const classSelect = document.getElementById("classFilter");
 
+  if(!classSelect){
+    return;
+  }
+
+  const oldValue = String(classSelect.value || "").trim();
+
   const classes = [
     ...new Set(
-      data
+      (Array.isArray(data) ? data : [])
         .map(item => String(item.class || "").trim())
         .filter(Boolean)
     )
-  ];
+  ].sort((a, b) => String(a).localeCompare(String(b), "th", { numeric: true }));
 
   let html = `<option value="">ทุกห้อง</option>`;
 
@@ -2066,8 +2099,20 @@ function populateClassFilter(data){
 
   classSelect.innerHTML = html;
 
+  if(oldValue){
+    const option = Array.from(classSelect.options)
+      .find(item => normalizeOptionKey(item.value) === normalizeOptionKey(oldValue));
+    if(option){
+      classSelect.value = option.value;
+    }
+  }
+
   classSelect.onchange = renderWorkCards;
-  document.getElementById("noFilter").oninput = renderWorkCards;
+
+  const noFilter = document.getElementById("noFilter");
+  if(noFilter){
+    noFilter.oninput = renderWorkCards;
+  }
 }
 
 
@@ -3915,7 +3960,17 @@ function renderWorkCards(){
     `
     : "";
 
-  workBox.innerHTML = selectionToolbar + html;
+  const selectionMount =
+    document.getElementById("teacherWorkBulkToolsMount");
+
+  if(selectionMount){
+    selectionMount.innerHTML = selectionToolbar;
+    workBox.innerHTML = html;
+  }
+  else{
+    workBox.innerHTML = selectionToolbar + html;
+  }
+
   updateTeacherWorkSelectionStatus();
 }
 // ======================================
@@ -4291,40 +4346,77 @@ function loadScoreOptions(){
 }
 
 
+
+function loadScoreTableIfReady(){
+  const level = document.getElementById("scoreLevel");
+  const classSelect = document.getElementById("scoreClass");
+
+  if(!level || !classSelect){
+    return;
+  }
+
+  if(level.value && lastScoreTableData){
+    loadScoreTable();
+  }
+}
+
 // ======================================
 // เปลี่ยนรายการห้องตามระดับชั้นที่เลือก
 // ======================================
 function updateScoreClassOptions(){
 
+  const levelSelect =
+    document.getElementById("scoreLevel");
+
   const selectedLevel =
-    document.getElementById("scoreLevel").value;
+    levelSelect ? String(levelSelect.value || "").trim() : "";
 
   const classSelect =
     document.getElementById("scoreClass");
+
+  if(!classSelect){
+    return;
+  }
+
+  const oldClassValue = String(classSelect.value || "").trim();
 
   let html =
     `<option value="">ทุกห้อง</option>`;
 
   const selectedData =
-    scoreOptionsData.find(item =>
-      String(item.level) === String(selectedLevel)
-    );
+    (Array.isArray(scoreOptionsData) ? scoreOptionsData : [])
+      .find(item =>
+        normalizeOptionKey(item.level) === normalizeOptionKey(selectedLevel)
+      );
 
   if(
     selectedData &&
     Array.isArray(selectedData.classes)
   ){
-    selectedData.classes.forEach(className => {
-      html += `
-        <option value="${escapeAttribute(className)}">
-          ${escapeHtml(className)}
-        </option>
-      `;
-    });
+    selectedData.classes
+      .map(className => String(className || "").trim())
+      .filter(Boolean)
+      .sort((a, b) => String(a).localeCompare(String(b), "th", { numeric: true }))
+      .forEach(className => {
+        html += `
+          <option value="${escapeAttribute(className)}">
+            ${escapeHtml(className)}
+          </option>
+        `;
+      });
   }
 
   classSelect.innerHTML = html;
+
+  if(oldClassValue){
+    const option = Array.from(classSelect.options)
+      .find(item => normalizeOptionKey(item.value) === normalizeOptionKey(oldClassValue));
+    if(option){
+      classSelect.value = option.value;
+    }
+  }
 }
+
 // ======================================
 // โหลดตารางคะแนนรายงาน
 // ======================================
