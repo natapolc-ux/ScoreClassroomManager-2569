@@ -2161,3 +2161,15 @@ h2,h3,h4{
     width:100%;
   }
 }
+
+
+#teacherWorkBulkToolsMount .teacher-work-bulk-tools{
+  position:static !important;
+  margin-top:10px;
+  box-shadow:none;
+}
+
+.teacher-work-control-card .teacher-work-bulk-tools{
+  border-top:1px dashed rgba(0,255,65,0.35);
+  padding-top:10px;
+}
