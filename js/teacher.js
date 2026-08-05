@@ -5,6 +5,134 @@
 // ============================================================
 
 // ===== BEGIN 02-auth.js =====
+const LOGIN_SESSION_STORAGE_KEY = "matrixLoginSessionV1";
+const LOGIN_SESSION_MAX_AGE = 1000 * 60 * 60 * 12;
+
+function saveLoginSession(data){
+  try{
+    const session = {
+      savedAt: Date.now(),
+      status: "success",
+      role: data.role || "",
+      name: data.name || "",
+      id: data.id || "",
+      level: data.level || "",
+      className: data.className || "",
+      no: data.no || "",
+      photoUrl: data.photoUrl || "",
+      studentOrder: data.studentOrder || ""
+    };
+    localStorage.setItem(LOGIN_SESSION_STORAGE_KEY, JSON.stringify(session));
+  }catch(error){
+    console.warn("ไม่สามารถบันทึกสถานะเข้าสู่ระบบได้", error);
+  }
+}
+
+function clearLoginSession(){
+  try{
+    localStorage.removeItem(LOGIN_SESSION_STORAGE_KEY);
+  }catch(error){
+    console.warn(error);
+  }
+}
+
+function getSavedLoginSession(){
+  try{
+    const raw = localStorage.getItem(LOGIN_SESSION_STORAGE_KEY);
+    if(!raw){
+      return null;
+    }
+
+    const session = JSON.parse(raw);
+    if(!session || session.status !== "success" || !session.id || !session.role){
+      clearLoginSession();
+      return null;
+    }
+
+    const savedAt = Number(session.savedAt || 0);
+    if(!savedAt || Date.now() - savedAt > LOGIN_SESSION_MAX_AGE){
+      clearLoginSession();
+      return null;
+    }
+
+    return session;
+  }catch(error){
+    clearLoginSession();
+    return null;
+  }
+}
+
+function applyLoggedInUser(data){
+  const loginBox = document.getElementById("loginBox");
+  const teacherPanel = document.getElementById("teacherPanel");
+  const studentPanel = document.getElementById("studentPanel");
+  const msg = document.getElementById("msg");
+
+  if(loginBox){
+    loginBox.style.display = "none";
+  }
+  if(teacherPanel){
+    teacherPanel.style.display = "none";
+  }
+  if(studentPanel){
+    studentPanel.style.display = "none";
+  }
+  if(msg){
+    msg.innerHTML = "";
+  }
+
+  if(String(data.role || "").trim() === "teacher"){
+    if(teacherPanel){
+      teacherPanel.style.display = "block";
+    }
+
+    loadTopics();
+    loadScoreOptions();
+    loadHideViewedWorksSetting();
+    loadScoreTableSettings();
+    return;
+  }
+
+  currentStudentId = data.id || "";
+  currentStudentName = data.name || "";
+  currentStudentLevel = data.level || "";
+  currentStudentClass = data.className || "";
+  currentStudentNo = data.no || "";
+  currentStudentPhotoUrl = data.photoUrl || "";
+  currentStudentOrder = data.studentOrder || calculateStudentOrder(currentStudentClass, currentStudentNo);
+
+  if(studentPanel){
+    studentPanel.style.display = "block";
+  }
+
+  const studentData = document.getElementById("studentData");
+  if(studentData){
+    studentData.innerHTML =
+    `<div class="status-box student-profile-card">
+      ${renderStudentPhoto(currentStudentPhotoUrl, data.name, false)}
+      <div>
+        <div>ยินดีต้อนรับ ${escapeHtml(data.name || "")}</div>
+      </div>
+    </div>`;
+  }
+
+  if(typeof loadMyWork === "function"){
+    loadMyWork();
+  }
+  if(typeof loadSubmitTopics === "function"){
+    loadSubmitTopics();
+  }
+}
+
+function restoreLoginSession(){
+  const session = getSavedLoginSession();
+  if(!session){
+    return;
+  }
+
+  applyLoggedInUser(session);
+}
+
 function login(){
 
   const id = document
@@ -38,50 +166,8 @@ function login(){
   .then(data => {
 
     if(data.status === "success"){
-
-      document
-        .getElementById("loginBox")
-        .style.display = "none";
-
-      if(String(data.role).trim() === "teacher"){
-
-        document
-          .getElementById("teacherPanel")
-          .style.display = "block";
-
-        loadTopics();
-        loadScoreOptions();
-        loadHideViewedWorksSetting();
-        loadScoreTableSettings();
-      }
-
-      else{
-
-currentStudentId = data.id;
-currentStudentName = data.name;
-currentStudentLevel = data.level || "";
-currentStudentClass = data.className || "";
-currentStudentNo = data.no || "";
-currentStudentPhotoUrl = data.photoUrl || "";
-currentStudentOrder = data.studentOrder || calculateStudentOrder(currentStudentClass, currentStudentNo);
-
-  document
-    .getElementById("studentPanel")
-    .style.display = "block";
-
-  document
-    .getElementById("studentData")
-    .innerHTML =
-    `<div class="status-box student-profile-card">
-      ${renderStudentPhoto(currentStudentPhotoUrl, data.name, false)}
-      <div>
-        <div>ยินดีต้อนรับ ${escapeHtml(data.name)}</div>
-      </div>
-    </div>`;
-
-  loadMyWork();
-  loadSubmitTopics();
-}
+      saveLoginSession(data);
+      applyLoggedInUser(data);
     }
 
     else{
@@ -95,8 +181,6 @@ currentStudentOrder = data.studentOrder || calculateStudentOrder(currentStudentC
     msg.innerHTML = "❌ เชื่อมต่อ API ไม่สำเร็จ";
   });
 }
-
-
 
 function calculateStudentOrder(className, no){
 
@@ -156,6 +240,61 @@ function renderStudentPhoto(photoUrl, name, small){
     >
   `;
 }
+
+
+
+function logout(){
+  clearLoginSession();
+  try{
+    if(typeof stopLoadedWork === "function"){
+      stopLoadedWork();
+    }
+  }catch(error){
+    console.warn(error);
+  }
+
+  try{
+    if(typeof stopLoadedScoreTable === "function"){
+      stopLoadedScoreTable();
+    }
+  }catch(error){
+    console.warn(error);
+  }
+
+  currentWorkData = [];
+  currentSheetUrl = "";
+  currentMyWorkData = [];
+  selectedTeacherWorkKeys = new Set();
+  selectedAssignmentIndexes = new Set();
+  changedScoreMap = {};
+  lastScoreTableData = null;
+  currentSubmitWorkItem = null;
+  selectedMyWorkIndex = null;
+  currentStudentWorkFilter = "all";
+
+  ["teacherPanel", "studentPanel"].forEach(id => {
+    const el = document.getElementById(id);
+    if(el){
+      el.style.display = "none";
+    }
+  });
+
+  const loginBox = document.getElementById("loginBox");
+  if(loginBox){
+    loginBox.style.display = "block";
+  }
+
+  const idInput = document.getElementById("id");
+  const passInput = document.getElementById("pass");
+  const msg = document.getElementById("msg");
+
+  if(idInput){ idInput.value = ""; }
+  if(passInput){ passInput.value = ""; }
+  if(msg){ msg.innerHTML = "ออกจากระบบแล้ว"; }
+
+  window.scrollTo({ top:0, left:0, behavior:"smooth" });
+}
+
 
 // ===== END 02-auth.js =====
 
@@ -404,7 +543,7 @@ function switchTeacherPage(page){
   }
 
   if(page === "groupIndividual"){
-    loadAllWorkForNameSearch(false);
+    prepareNameSearchPage();
   }
 }
 
@@ -1688,7 +1827,7 @@ function startAutoRefreshWork(){
 
     refreshWorkList();
 
-  }, 30000);
+  }, 90000);
 }
 
 
@@ -1712,7 +1851,7 @@ function toggleAutoRefreshWork(){
   if(autoRefreshWorkEnabled){
 
     if(button){
-      button.textContent = "▶ อัปเดตอัตโนมัติ: เปิด";
+      button.textContent = "▶ อัปเดตอัตโนมัติ: เปิด (90 วินาที)";
     }
 
     startAutoRefreshWork();
@@ -2137,6 +2276,12 @@ function getSortedWorkData(data){
 
   sorted.sort((a, b) => {
 
+    if(sortMode === "sheetOrder"){
+      return getTopicOrderValue(a) - getTopicOrderValue(b)
+        || getSheetOrderValue(a) - getSheetOrderValue(b)
+        || getTimeValue(a.timestamp) - getTimeValue(b.timestamp);
+    }
+
     if(sortMode === "latest"){
       return getTimeValue(b.timestamp) - getTimeValue(a.timestamp);
     }
@@ -2180,6 +2325,53 @@ function getSortedWorkData(data){
   });
 
   return sorted;
+}
+
+
+function getSheetOrderValue(item){
+
+  const rowIndex = parseInt(item && item.rowIndex, 10);
+
+  return isNaN(rowIndex) ? 999999 : rowIndex;
+}
+
+
+function getTopicOrderValue(item){
+
+  const itemUrl = normalizeOptionKey(
+    (item && item.sheetUrl) || currentSheetUrl || ""
+  );
+
+  if(!itemUrl || !Array.isArray(teacherTopicsData)){
+    return 999999;
+  }
+
+  const index = teacherTopicsData.findIndex(topic =>
+    normalizeOptionKey(topic && topic.url) === itemUrl
+  );
+
+  return index >= 0 ? index : 999999;
+}
+
+
+function toggleGroupPanel(panelId, button, openText, closeText){
+
+  const panel = document.getElementById(panelId);
+
+  if(!panel){
+    return;
+  }
+
+  const willShow =
+    panel.style.display === "none" || panel.style.display === "";
+
+  panel.style.display = willShow ? "block" : "none";
+
+  if(button){
+    button.textContent = willShow
+      ? (closeText || "ซ่อน")
+      : (openText || "แสดง");
+  }
 }
 
 
@@ -3304,6 +3496,76 @@ function saveGroupIndividualUpdates(updates){
 }
 
 
+function prepareNameSearchPage(){
+  const statusBox = document.getElementById("groupIndividualCheckStatus");
+  const contentBox = document.getElementById("groupIndividualCheckContent");
+  const classSelect = document.getElementById("nameSearchClass");
+
+  populateNameSearchClassOptionsFromTopics();
+
+  if(statusBox){
+    statusBox.innerHTML = `<div class="status-box">เลือกห้อง แล้วพิมพ์คำค้น จากนั้นกด “ค้นหางาน” ระบบจะค่อยโหลดงานเมื่อต้องค้นหา</div>`;
+  }
+  if(contentBox){
+    contentBox.innerHTML = "";
+  }
+  if(classSelect && !classSelect.innerHTML.trim()){
+    classSelect.innerHTML = `<option value="">เลือกห้อง</option>`;
+  }
+}
+
+function populateNameSearchClassOptionsFromTopics(){
+  const classSelect = document.getElementById("nameSearchClass");
+  if(!classSelect){
+    return;
+  }
+
+  const oldValue = String(classSelect.value || "").trim();
+  const classes = getAllClassOptionsFromScoreOptions();
+
+  classSelect.innerHTML = `<option value="">เลือกห้อง</option>` +
+    classes.map(className => `
+      <option value="${escapeAttribute(className)}">${escapeHtml(className)}</option>
+    `).join("");
+
+  if(oldValue && classes.includes(oldValue)){
+    classSelect.value = oldValue;
+  }
+}
+
+function getAllClassOptionsFromScoreOptions(){
+  const classes = [];
+  (Array.isArray(scoreOptionsData) ? scoreOptionsData : []).forEach(item => {
+    (item.classes || []).forEach(className => {
+      const text = String(className || "").trim();
+      if(text && !classes.includes(text)){
+        classes.push(text);
+      }
+    });
+  });
+  return classes.sort((a,b) => String(a).localeCompare(String(b), "th", { numeric:true }));
+}
+
+function searchNameWorkOnDemand(){
+  const classSelect = document.getElementById("nameSearchClass");
+  const searchInput = document.getElementById("nameSearchQuery");
+  const contentBox = document.getElementById("groupIndividualCheckContent");
+
+  const selectedClass = classSelect ? String(classSelect.value || "").trim() : "";
+  const keyword = searchInput ? String(searchInput.value || "").trim() : "";
+
+  if(!selectedClass){
+    if(contentBox){ contentBox.innerHTML = `<div class="status-box">กรุณาเลือกห้องก่อนค้นหา</div>`; }
+    return;
+  }
+  if(!keyword){
+    if(contentBox){ contentBox.innerHTML = `<div class="status-box">กรุณาพิมพ์ชื่อ / นามสกุล / เลขที่ / เลขประจำตัวนักเรียน หรือชื่อกลุ่ม</div>`; }
+    return;
+  }
+
+  loadAllWorkForNameSearch(true);
+}
+
 function loadAllWorkForNameSearch(forceRefresh){
 
   const statusBox = document.getElementById("groupIndividualCheckStatus");
@@ -3378,12 +3640,15 @@ function loadAllWorkForNameSearch(forceRefresh){
               ? result.data
               : [];
 
-          return rows.map(row =>
-            applyAssignmentMetaToRow({
-              ...row,
-              sheetUrl: topic.url || row.sheetUrl || ""
-            }, topic)
-          );
+          const selectedClass = classSelect ? String(classSelect.value || "").trim() : "";
+          return rows
+            .filter(row => !selectedClass || normalizeOptionKey(row.class || "") === normalizeOptionKey(selectedClass))
+            .map(row =>
+              applyAssignmentMetaToRow({
+                ...row,
+                sheetUrl: topic.url || row.sheetUrl || ""
+              }, topic)
+            );
         })
         .catch(error => {
           console.error(error);
@@ -3462,7 +3727,7 @@ function renderGroupIndividualCheckPage(){
 
   statusBox.innerHTML = `
     <div class="status-box">
-      ใช้ข้อมูลจากงานที่โหลดล่าสุดทั้งหมด ${data.length} รายการ
+      ใช้ข้อมูลจากงานที่โหลดสำหรับห้องที่เลือก ${data.length} รายการ
     </div>
   `;
 
@@ -3597,34 +3862,57 @@ function renderNameSearchWorkCard(item, index){
         ${renderWorkContent(workValue)}
       </div>
 
-      <div class="score-area name-search-score-area">
-        <input
-          type="number"
-          id="${escapeAttribute(inputId)}"
-          value="${scoreText === "ตรวจแล้ว" ? "" : escapeAttribute(scoreText)}"
-          placeholder="คะแนน"
-        >
-        <button
-          type="button"
-          onclick="saveNameSearchScore('${escapeJsString(itemSheetUrl)}','${escapeJsString(item.id || "")}','${escapeJsString(item.rowIndex || "")}','${escapeJsString(inputId)}')"
-        >
-          บันทึกคะแนน
-        </button>
-        <button
-          type="button"
-          onclick="markCheckedNoScore('${escapeJsString(itemSheetUrl)}','${escapeJsString(item.id || "")}','${escapeJsString(item.rowIndex || "")}')"
-        >
-          ตรวจแล้ว
-        </button>
-        <button
-          type="button"
-          onclick="returnSubmissionForRevision('${escapeJsString(itemSheetUrl)}','${escapeJsString(item.rowIndex || "")}','${escapeJsString(itemWorkType)}')"
-        >
-          ส่งงานคืน
-        </button>
-      </div>
+      ${
+        isGroup
+        ? `
+          <div class="group-panel-actions">
+            <button
+              type="button"
+              onclick="toggleGroupPanel('nameSearchGroupScore_${escapeJsString(inputId)}', this, 'แสดงการให้คะแนนรายบุคคล', 'ซ่อนการให้คะแนนรายบุคคล')"
+            >
+              แสดงการให้คะแนนรายบุคคล
+            </button>
+            <button
+              type="button"
+              onclick="returnSubmissionForRevision('${escapeJsString(itemSheetUrl)}','${escapeJsString(item.rowIndex || "")}','${escapeJsString(itemWorkType)}')"
+            >
+              ส่งงานคืน
+            </button>
+          </div>
 
-      ${isGroup ? renderGroupIndividualScoreEditor(item, "nameSearch") : ""}
+          <div id="nameSearchGroupScore_${escapeAttribute(inputId)}" class="group-hidden-panel" style="display:none;">
+            ${renderGroupIndividualScoreEditor(item, "nameSearch")}
+          </div>
+        `
+        : `
+          <div class="score-area name-search-score-area">
+            <input
+              type="number"
+              id="${escapeAttribute(inputId)}"
+              value="${scoreText === "ตรวจแล้ว" ? "" : escapeAttribute(scoreText)}"
+              placeholder="คะแนน"
+            >
+            <button
+              type="button"
+              onclick="saveNameSearchScore('${escapeJsString(itemSheetUrl)}','${escapeJsString(item.id || "")}','${escapeJsString(item.rowIndex || "")}','${escapeJsString(inputId)}')"
+            >
+              บันทึกคะแนน
+            </button>
+            <button
+              type="button"
+              onclick="markCheckedNoScore('${escapeJsString(itemSheetUrl)}','${escapeJsString(item.id || "")}','${escapeJsString(item.rowIndex || "")}')"
+            >
+              ตรวจแล้ว
+            </button>
+            <button
+              type="button"
+              onclick="returnSubmissionForRevision('${escapeJsString(itemSheetUrl)}','${escapeJsString(item.rowIndex || "")}','${escapeJsString(itemWorkType)}')"
+            >
+              ส่งงานคืน
+            </button>
+          </div>
+        `
+      }
     </div>
   `;
 }
@@ -3745,6 +4033,15 @@ function renderWorkCards(){
     const worksheetDomId =
       makeSafeDomId("teacherWorksheet_" + itemSheetUrl + "_" + (s.rowIndex || "") + "_" + visibleCount);
 
+    const groupInfoDomId =
+      makeSafeDomId("teacherGroupInfo_" + itemSheetUrl + "_" + (s.rowIndex || "") + "_" + visibleCount);
+
+    const groupScoreDomId =
+      makeSafeDomId("teacherGroupScore_" + itemSheetUrl + "_" + (s.rowIndex || "") + "_" + visibleCount);
+
+    const groupInfoHtml =
+      isGroup ? renderTeacherOnlyGroupInfo(s) : "";
+
     html += `
       <div class="card ${isWorkSelected ? "teacher-work-selected" : ""}" data-work-selection-key="${escapeAttribute(workSelectionKey)}">
 
@@ -3839,7 +4136,6 @@ function renderWorkCards(){
             `
             : ``
           }
-          ${renderTeacherOnlyGroupInfo(s)}
         </div>
 
         ${getTeacherWorksheetUrl(s) ? `
@@ -3868,50 +4164,81 @@ function renderWorkCards(){
               ${renderWorkContent(workValue)}
             </div>
 
-            <div class="score-area">
+            ${
+              isGroup
+              ? `
+                <div class="group-panel-actions">
+                  ${groupInfoHtml ? `
+                    <button
+                      type="button"
+                      onclick="toggleGroupPanel('${escapeJsString(groupInfoDomId)}', this, 'แสดงข้อมูลการทำงานกลุ่ม', 'ซ่อนข้อมูลการทำงานกลุ่ม')"
+                    >
+                      แสดงข้อมูลการทำงานกลุ่ม
+                    </button>
+                  ` : ``}
+                  <button
+                    type="button"
+                    onclick="toggleGroupPanel('${escapeJsString(groupScoreDomId)}', this, 'แสดงการให้คะแนนรายบุคคล', 'ซ่อนการให้คะแนนรายบุคคล')"
+                  >
+                    แสดงการให้คะแนนรายบุคคล
+                  </button>
+                </div>
 
-              <input
-                type="number"
-                id="score_${escapeAttribute(s.rowIndex || s.id)}"
-                value="${scoreText === "ตรวจแล้ว" ? "" : escapeAttribute(s.score || "")}"
-                placeholder="คะแนน"
-              >
+                ${groupInfoHtml ? `
+                  <div id="${escapeAttribute(groupInfoDomId)}" class="group-hidden-panel" style="display:none;">
+                    ${groupInfoHtml}
+                  </div>
+                ` : ``}
 
-              <button
-                onclick="saveScore(
-                  '${escapeJsString(itemSheetUrl)}',
-                  '${escapeJsString(s.id || "")}',
-                  '${escapeJsString(s.rowIndex || "")}'
-                )"
-              >
-                บันทึกคะแนน
-              </button>
+                <div id="${escapeAttribute(groupScoreDomId)}" class="group-hidden-panel" style="display:none;">
+                  ${renderGroupIndividualScoreEditor(s, "work")}
+                </div>
+              `
+              : `
+                <div class="score-area">
 
-              <button
-                type="button"
-                onclick="markCheckedNoScore(
-                  '${escapeJsString(itemSheetUrl)}',
-                  '${escapeJsString(s.id || "")}',
-                  '${escapeJsString(s.rowIndex || "")}'
-                )"
-              >
-                ตรวจแล้ว แต่ยังไม่ให้คะแนน
-              </button>
+                  <input
+                    type="number"
+                    id="score_${escapeAttribute(s.rowIndex || s.id)}"
+                    value="${scoreText === "ตรวจแล้ว" ? "" : escapeAttribute(s.score || "")}"
+                    placeholder="คะแนน"
+                  >
 
-              <button
-                type="button"
-                onclick="giveFullScore(
-                  '${escapeJsString(itemSheetUrl)}',
-                  '${escapeJsString(s.id || "")}',
-                  '${escapeJsString(s.rowIndex || "")}'
-                )"
-              >
-                คะแนนเต็ม
-              </button>
+                  <button
+                    onclick="saveScore(
+                      '${escapeJsString(itemSheetUrl)}',
+                      '${escapeJsString(s.id || "")}',
+                      '${escapeJsString(s.rowIndex || "")}'
+                    )"
+                  >
+                    บันทึกคะแนน
+                  </button>
 
-            </div>
+                  <button
+                    type="button"
+                    onclick="markCheckedNoScore(
+                      '${escapeJsString(itemSheetUrl)}',
+                      '${escapeJsString(s.id || "")}',
+                      '${escapeJsString(s.rowIndex || "")}'
+                    )"
+                  >
+                    ตรวจแล้ว แต่ยังไม่ให้คะแนน
+                  </button>
 
-            ${renderGroupIndividualScoreEditor(s, "work")}
+                  <button
+                    type="button"
+                    onclick="giveFullScore(
+                      '${escapeJsString(itemSheetUrl)}',
+                      '${escapeJsString(s.id || "")}',
+                      '${escapeJsString(s.rowIndex || "")}'
+                    )"
+                  >
+                    คะแนนเต็ม
+                  </button>
+
+                </div>
+              `
+            }
           `
         }
 
@@ -4019,11 +4346,16 @@ function renderWorkContent(work){
       + "/preview";
 
     return `
-      <iframe
-        class="drive-preview"
-        src="${escapeAttribute(previewUrl)}"
-        allow="autoplay"
-      ></iframe>
+      <div class="lazy-preview-box">
+        <button
+          type="button"
+          class="lazy-preview-button"
+          onclick="loadLazyDrivePreview(this, '${escapeJsString(previewUrl)}')"
+        >
+          โหลดตัวอย่างไฟล์
+        </button>
+        <div class="lazy-preview-target"></div>
+      </div>
 
       <a
         class="file-link"
