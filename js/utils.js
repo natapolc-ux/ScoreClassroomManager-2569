@@ -66,3 +66,36 @@ function escapeJsString(value){
 // ======================================
 // จัดรูปแบบวันและเวลาส่งงาน
 // ======================================
+
+
+function loadLazyDrivePreview(button, previewUrl){
+  if(!button){
+    return;
+  }
+
+  const box = button.closest(".lazy-preview-box");
+  const target = box ? box.querySelector(".lazy-preview-target") : null;
+
+  if(!target){
+    window.open(previewUrl, "_blank", "noopener,noreferrer");
+    return;
+  }
+
+  if(target.dataset.loaded === "true"){
+    const shouldHide = target.style.display !== "none";
+    target.style.display = shouldHide ? "none" : "block";
+    button.textContent = shouldHide ? "แสดงตัวอย่างไฟล์" : "ซ่อนตัวอย่างไฟล์";
+    return;
+  }
+
+  target.innerHTML = `
+    <iframe
+      class="drive-preview"
+      src="${escapeAttribute(previewUrl)}"
+      allow="autoplay"
+      loading="lazy"
+    ></iframe>
+  `;
+  target.dataset.loaded = "true";
+  button.textContent = "ซ่อนตัวอย่างไฟล์";
+}
