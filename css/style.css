@@ -2173,3 +2173,165 @@ h2,h3,h4{
   border-top:1px dashed rgba(0,255,65,0.35);
   padding-top:10px;
 }
+
+
+/* ===== Group work scoring visibility update ===== */
+.group-panel-actions{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+  margin-top:12px;
+}
+
+.group-panel-actions button{
+  width:auto;
+  margin-top:0;
+}
+
+.group-hidden-panel{
+  margin-top:10px;
+}
+
+
+/* ===== Logout button + stable collapsed sidebar icons ===== */
+#teacherPanel,
+#studentPanel{
+  position:relative;
+}
+
+#teacherPanel > h2,
+#studentPanel > h2{
+  padding-right:150px !important;
+}
+
+.app-logout-button{
+  position:fixed;
+  top:10px;
+  right:12px;
+  z-index:3000;
+  width:auto !important;
+  min-width:116px;
+  height:40px;
+  min-height:40px;
+  margin-top:0 !important;
+  padding:0 14px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  border:1px solid #ff3b3b;
+  background:rgba(139,0,0,0.92);
+  color:#ffffff;
+  box-shadow:0 0 10px rgba(255,59,59,0.65);
+  font-weight:bold;
+}
+
+.app-logout-button:hover{
+  background:#ff3b3b;
+  color:#ffffff;
+}
+
+.app-sidebar-title-row{
+  justify-content:flex-start !important;
+  min-height:70px;
+  padding-left:18px !important;
+}
+
+.app-sidebar .sidebar-collapse-button{
+  width:50px !important;
+  min-width:50px !important;
+  height:50px !important;
+  min-height:50px !important;
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  font-size:24px !important;
+}
+
+.side-menu-item,
+.teacher-sidebar.app-sidebar .side-menu-item,
+.student-sidebar.app-sidebar .side-menu-item{
+  display:flex !important;
+  align-items:center !important;
+}
+
+.side-menu-icon{
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  width:28px !important;
+  min-width:28px !important;
+  height:28px !important;
+  font-size:19px !important;
+}
+
+.teacher-shell.sidebar-collapsed .teacher-sidebar .side-menu-item,
+.student-shell.sidebar-collapsed .student-sidebar .side-menu-item{
+  display:flex !important;
+  justify-content:flex-start !important;
+  align-items:center !important;
+  padding:12px 18px !important;
+  min-height:56px;
+}
+
+.teacher-shell.sidebar-collapsed .teacher-sidebar .side-menu-icon,
+.student-shell.sidebar-collapsed .student-sidebar .side-menu-icon{
+  margin:0 !important;
+  display:inline-flex !important;
+  opacity:1 !important;
+  visibility:visible !important;
+}
+
+.teacher-shell.sidebar-collapsed .teacher-sidebar .app-sidebar-title-row,
+.student-shell.sidebar-collapsed .student-sidebar .app-sidebar-title-row{
+  justify-content:flex-start !important;
+  padding-left:18px !important;
+}
+
+.teacher-shell.sidebar-collapsed .teacher-sidebar .side-menu-label,
+.teacher-shell.sidebar-collapsed .teacher-sidebar .side-menu-title,
+.student-shell.sidebar-collapsed .student-sidebar .side-menu-label,
+.student-shell.sidebar-collapsed .student-sidebar .side-menu-title,
+.student-shell.sidebar-collapsed .student-sidebar .side-menu-count{
+  display:none !important;
+}
+
+.teacher-shell.sidebar-collapsed .teacher-sidebar .side-menu-item::after,
+.student-shell.sidebar-collapsed .student-sidebar .side-menu-item::after{
+  content:"";
+}
+
+@media(max-width:700px){
+  .app-logout-button{
+    position:absolute;
+    top:8px;
+    right:8px;
+    min-width:92px;
+    height:36px;
+    min-height:36px;
+    font-size:12px;
+  }
+}
+
+
+.lazy-preview-box{
+  margin-top:10px;
+  padding:10px;
+  border:1px dashed rgba(0,255,65,0.55);
+  background:rgba(0,0,0,0.55);
+}
+
+.lazy-preview-button{
+  width:auto;
+  margin-top:0;
+}
+
+.lazy-preview-target{
+  margin-top:10px;
+}
+
+.app-logout-button{
+  position:fixed;
+  top:12px;
+  right:16px;
+  z-index:2000;
+}
