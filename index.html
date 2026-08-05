@@ -39,6 +39,7 @@
 <div id="teacherPanel" class="panel">
 
   <h2>Teacher Dashboard</h2>
+  <button type="button" class="app-logout-button" onclick="logout()">ออกจากระบบ</button>
 
   <div class="teacher-shell">
 
@@ -280,6 +281,7 @@
                   <option value="oldest">ส่งก่อน</option>
                   <option value="noAsc">เลขที่น้อยไปมาก</option>
                   <option value="noDesc">เลขที่มากไปน้อย</option>
+                  <option value="sheetOrder">ตามลำดับในชีต</option>
                   <option value="studentSeqAsc">ลำดับนักเรียน</option>
                   <option value="groupAsc">ชื่อกลุ่ม ก-ฮ</option>
                 </select>
@@ -318,10 +320,10 @@
         <div class="status-box name-search-panel">
           <div class="name-search-header">
             <div>
-              ระบบจะโหลดงานทุกหัวข้อให้อัตโนมัติ แล้วเลือกห้องก่อนค้นหาด้วยชื่อ / นามสกุล / เลขที่ / เลขประจำตัวนักเรียน หรือชื่อกลุ่ม
+              เลือกห้องก่อน แล้วพิมพ์คำค้น ระบบจะค่อยโหลดงานเมื่อต้องค้นหา เพื่อให้หน้าเปิดเร็วขึ้น
             </div>
-            <button type="button" onclick="loadAllWorkForNameSearch(true)">
-              โหลดทุกงานใหม่
+            <button type="button" onclick="searchNameWorkOnDemand()">
+              ค้นหางาน
             </button>
           </div>
 
@@ -332,10 +334,10 @@
             <input
               id="nameSearchQuery"
               placeholder="พิมพ์ชื่อ นามสกุล เลขที่ เลขประจำตัว หรือชื่อกลุ่ม"
-              oninput="renderNameSearchResults()"
+              onkeydown="if(event.key === 'Enter'){ searchNameWorkOnDemand(); }"
             >
-            <button type="button" onclick="loadAllWorkForNameSearch(true)">
-              รีเฟรชข้อมูลค้นหา
+            <button type="button" onclick="searchNameWorkOnDemand()">
+              ค้นหา/รีเฟรชข้อมูล
             </button>
           </div>
         </div>
@@ -482,6 +484,7 @@
 <div id="studentPanel" class="panel">
 
   <h2>Student Dashboard</h2>
+  <button type="button" class="app-logout-button" onclick="logout()">ออกจากระบบ</button>
 
   <div id="studentData"></div>
 
