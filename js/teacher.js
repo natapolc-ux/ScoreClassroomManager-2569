@@ -509,6 +509,19 @@ function updateNewAssignmentMaxGroupMembersVisibility(){
 
 function switchTeacherPage(page){
 
+  const teacherPageTitles = {
+    assignment: "ใบงาน",
+    check: "หน้าตรวจงาน",
+    score: "ตารางคะแนน",
+    groupIndividual: "เปิดตามรายชื่อ",
+    settings: "อื่นๆ"
+  };
+
+  const teacherPageTitle = document.getElementById("teacherPageTitle");
+  if(teacherPageTitle){
+    teacherPageTitle.textContent = teacherPageTitles[page] || "Teacher Dashboard";
+  }
+
   const pages = {
     assignment: "teacherPageAssignment",
     check: "teacherPageCheck",
