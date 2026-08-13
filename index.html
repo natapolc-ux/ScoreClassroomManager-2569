@@ -3155,6 +3155,581 @@ input, select, textarea, button{
 }
 
 
+
+
+/* ===== Final compact controls patch: stable collapsed menu icon positions ===== */
+:root{
+  --sidebar-collapsed:92px;
+}
+
+#teacherPanel .app-page-header.teacher-page-header{
+  grid-template-columns:58px minmax(0, 1fr) auto !important;
+  gap:14px !important;
+}
+
+#teacherPanel .app-header-menu-button.app-header-logo{
+  width:52px !important;
+  min-width:52px !important;
+  height:52px !important;
+  min-height:52px !important;
+  font-size:22px !important;
+  border-width:1px !important;
+}
+
+#teacherPanel .app-logout-button.app-header-logout{
+  min-width:88px !important;
+  height:52px !important;
+  min-height:52px !important;
+  padding:0 12px !important;
+  font-size:13px !important;
+  line-height:1.1 !important;
+}
+
+#teacherPanel .teacher-sidebar.app-sidebar .side-menu-item{
+  min-height:52px !important;
+  padding:0 18px !important;
+  gap:12px !important;
+}
+
+#teacherPanel .teacher-sidebar.app-sidebar .side-menu-icon{
+  width:26px !important;
+  min-width:26px !important;
+  height:26px !important;
+  font-size:17px !important;
+  line-height:1 !important;
+}
+
+#teacherPanel .teacher-shell.sidebar-collapsed .teacher-sidebar.app-sidebar .side-menu-item{
+  justify-content:flex-start !important;
+  padding:0 18px !important;
+  gap:0 !important;
+}
+
+#teacherPanel .teacher-shell.sidebar-collapsed .teacher-sidebar.app-sidebar .side-menu-icon{
+  width:26px !important;
+  min-width:26px !important;
+  height:26px !important;
+  margin:0 !important;
+  font-size:17px !important;
+  transform:none !important;
+}
+
+#teacherPanel .teacher-shell.sidebar-collapsed .teacher-sidebar.app-sidebar{
+  width:var(--sidebar-collapsed) !important;
+  min-width:var(--sidebar-collapsed) !important;
+}
+
+@media(max-width:980px){
+  :root{
+    --sidebar-collapsed:82px;
+  }
+
+  #teacherPanel .app-page-header.teacher-page-header{
+    grid-template-columns:48px minmax(0, 1fr) auto !important;
+    gap:10px !important;
+  }
+
+  #teacherPanel .app-header-menu-button.app-header-logo{
+    width:44px !important;
+    min-width:44px !important;
+    height:44px !important;
+    min-height:44px !important;
+    font-size:20px !important;
+  }
+
+  #teacherPanel .app-logout-button.app-header-logout{
+    min-width:74px !important;
+    height:44px !important;
+    min-height:44px !important;
+    padding:0 8px !important;
+    font-size:11px !important;
+  }
+
+  #teacherPanel .teacher-sidebar.app-sidebar .side-menu-item,
+  #teacherPanel .teacher-shell.sidebar-collapsed .teacher-sidebar.app-sidebar .side-menu-item{
+    padding:0 16px !important;
+  }
+}
+
+
+/* ===== Final layout pass from 2026-08-13 page sketches ===== */
+:root{
+  --mx-sidebar-expanded:260px;
+  --mx-sidebar-collapsed:88px;
+  --mx-header-height:74px;
+  --mx-toolbar-top:74px;
+  --mx-control-bg:rgba(72, 6, 8, 0.96);
+  --mx-control-border:#ff4d4f;
+  --mx-card-bg:rgba(92, 24, 116, 0.70);
+  --mx-info-bg:rgba(184, 198, 208, 0.10);
+}
+
+html, body{
+  overflow-x:hidden;
+}
+
+#teacherPanel .teacher-shell.app-shell-layout{
+  display:grid !important;
+  grid-template-columns:var(--mx-sidebar-expanded) minmax(0, 1fr) !important;
+  gap:0 !important;
+  width:100% !important;
+  min-height:100vh !important;
+}
+
+#teacherPanel .teacher-shell.app-shell-layout.sidebar-collapsed{
+  grid-template-columns:var(--mx-sidebar-collapsed) minmax(0, 1fr) !important;
+}
+
+#teacherPanel .teacher-sidebar.app-sidebar{
+  position:sticky !important;
+  top:0 !important;
+  z-index:1300 !important;
+  height:100vh !important;
+  max-height:100vh !important;
+  padding:12px 0 !important;
+  overflow:hidden auto !important;
+}
+
+#teacherPanel .teacher-sidebar.app-sidebar .side-menu-item,
+#teacherPanel .teacher-shell.sidebar-collapsed .teacher-sidebar.app-sidebar .side-menu-item{
+  height:48px !important;
+  min-height:48px !important;
+  margin:2px 0 !important;
+  padding:0 18px !important;
+  display:flex !important;
+  justify-content:flex-start !important;
+  align-items:center !important;
+  gap:12px !important;
+}
+
+#teacherPanel .teacher-sidebar.app-sidebar .side-menu-icon,
+#teacherPanel .teacher-shell.sidebar-collapsed .teacher-sidebar.app-sidebar .side-menu-icon{
+  width:24px !important;
+  min-width:24px !important;
+  height:24px !important;
+  margin:0 !important;
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  font-size:16px !important;
+  line-height:1 !important;
+  transform:none !important;
+}
+
+#teacherPanel .teacher-shell.sidebar-collapsed .teacher-sidebar.app-sidebar .side-menu-label,
+#teacherPanel .teacher-shell.sidebar-collapsed .teacher-sidebar.app-sidebar .side-menu-title{
+  display:none !important;
+}
+
+#teacherPanel .teacher-main.app-main-layout{
+  min-width:0 !important;
+  width:100% !important;
+  padding:0 !important;
+}
+
+#teacherPanel .app-page-header.teacher-page-header{
+  position:sticky !important;
+  top:0 !important;
+  z-index:1200 !important;
+  height:var(--mx-header-height) !important;
+  min-height:var(--mx-header-height) !important;
+  margin:0 !important;
+  padding:0 20px !important;
+  display:grid !important;
+  grid-template-columns:46px minmax(0, 1fr) auto !important;
+  gap:12px !important;
+  align-items:center !important;
+  background:rgba(0,0,0,0.94) !important;
+  border-bottom:2px solid rgba(0,255,65,0.45) !important;
+}
+
+#teacherPanel .app-header-menu-button.app-header-logo{
+  width:42px !important;
+  min-width:42px !important;
+  height:42px !important;
+  min-height:42px !important;
+  font-size:18px !important;
+  background:#005c1c !important;
+}
+
+#teacherPanel .app-logout-button.app-header-logout{
+  min-width:78px !important;
+  height:42px !important;
+  min-height:42px !important;
+  padding:0 10px !important;
+  font-size:12px !important;
+}
+
+#teacherPanel .app-header-title{
+  font-size:21px !important;
+  line-height:1.2 !important;
+}
+
+#teacherPanel .teacher-page.active{
+  padding:0 0 36px !important;
+}
+
+#teacherPanel .teacher-page > h3{
+  display:none !important;
+}
+
+/* แถบเครื่องมือสีแดงใต้ header: sticky เวลาเลื่อนขึ้น/ลง */
+#teacherPanel .assignment-command-toolbar,
+#teacherPanel .teacher-work-control-card,
+#teacherPanel .score-header-bar,
+#teacherPanel .name-search-panel{
+  position:sticky !important;
+  top:var(--mx-toolbar-top) !important;
+  z-index:1100 !important;
+  margin:0 !important;
+  padding:16px 20px !important;
+  border:0 !important;
+  border-bottom:2px solid var(--mx-control-border) !important;
+  border-left:0 !important;
+  background:linear-gradient(90deg, var(--mx-control-bg), rgba(25,0,0,.98)) !important;
+  box-shadow:0 10px 24px rgba(0,0,0,.35) !important;
+}
+
+#teacherPanel .assignment-command-toolbar,
+#teacherPanel .score-header-bar,
+#teacherPanel .name-search-toolbar{
+  grid-template-columns:minmax(160px, 220px) minmax(220px, 1fr) auto !important;
+  align-items:center !important;
+}
+
+#teacherPanel .teacher-work-main-toolbar{
+  grid-template-columns:110px 142px minmax(120px,160px) minmax(240px,1fr) minmax(110px,150px) minmax(100px,120px) 44px !important;
+  gap:10px !important;
+  align-items:center !important;
+}
+
+#teacherPanel .teacher-work-control-card button,
+#teacherPanel .assignment-command-toolbar button,
+#teacherPanel .score-header-bar button,
+#teacherPanel .name-search-panel button{
+  min-height:38px !important;
+}
+
+#teacherPanel .teacher-work-control-card select,
+#teacherPanel .teacher-work-control-card input,
+#teacherPanel .assignment-command-toolbar select,
+#teacherPanel .score-header-bar select,
+#teacherPanel .name-search-panel select,
+#teacherPanel .name-search-panel input{
+  min-height:38px !important;
+}
+
+#teacherPanel #scoreToolsPanel{
+  position:sticky !important;
+  top:calc(var(--mx-toolbar-top) + 74px) !important;
+  z-index:1050 !important;
+  margin:0 !important;
+  padding:12px 20px !important;
+  border:0 !important;
+  border-bottom:2px solid var(--mx-control-border) !important;
+  background:linear-gradient(90deg, rgba(72,6,8,.95), rgba(12,0,0,.98)) !important;
+  box-shadow:0 10px 20px rgba(0,0,0,.25) !important;
+}
+
+#teacherPanel #workStatus,
+#teacherPanel #assignmentSettingsStatus,
+#teacherPanel #groupIndividualCheckStatus,
+#teacherPanel #scoreTableStatus,
+#teacherPanel #exportSummaryStatus{
+  margin:14px 24px 0 !important;
+}
+
+/* หน้าใบงาน: ช่องม่วง 1 งาน / กล่องใบงานซ้าย + รายละเอียดขวา จัดกลางแต่ละช่อง */
+#teacherPanel #addAssignmentBox{
+  margin:18px 24px !important;
+}
+
+#teacherPanel #assignmentSettingsList{
+  margin:0 !important;
+  padding:0 0 22px !important;
+}
+
+#teacherPanel .assignment-settings-grid{
+  display:grid !important;
+  grid-template-columns:1fr !important;
+  gap:0 !important;
+  margin:0 !important;
+}
+
+#teacherPanel .assignment-setting-card{
+  width:100% !important;
+  margin:0 !important;
+  padding:22px 24px !important;
+  box-sizing:border-box !important;
+  display:grid !important;
+  grid-template-columns:minmax(280px, min(42vw, 520px)) minmax(300px, min(42vw, 560px)) !important;
+  justify-content:center !important;
+  align-items:center !important;
+  column-gap:clamp(24px, 7vw, 120px) !important;
+  row-gap:14px !important;
+  min-height:380px !important;
+  border:0 !important;
+  border-bottom:2px solid rgba(255,255,255,.10) !important;
+  background:linear-gradient(90deg, rgba(80,16,104,.82), rgba(110,28,138,.72)) !important;
+  box-shadow:none !important;
+}
+
+#teacherPanel .assignment-setting-card > h4{
+  grid-column:1 / -1 !important;
+  width:100% !important;
+  max-width:calc(min(42vw,520px) + min(42vw,560px) + clamp(24px, 7vw, 120px)) !important;
+  justify-self:center !important;
+  margin:0 0 8px !important;
+  color:#ffef99 !important;
+}
+
+#teacherPanel .assignment-setting-card .assignment-worksheet-box,
+#teacherPanel .assignment-setting-card > .empty-text{
+  grid-column:1 !important;
+  grid-row:2 / span 6 !important;
+  align-self:center !important;
+  justify-self:center !important;
+  width:100% !important;
+  max-width:520px !important;
+  min-height:280px !important;
+  display:flex !important;
+  flex-direction:column !important;
+  justify-content:center !important;
+  background:rgba(0,255,255,.10) !important;
+  border:1px solid rgba(0,255,255,.55) !important;
+}
+
+#teacherPanel .assignment-setting-card .assignment-card-controls,
+#teacherPanel .assignment-setting-card .assignment-hidden-section{
+  grid-column:2 !important;
+  justify-self:center !important;
+  align-self:center !important;
+  width:100% !important;
+  max-width:560px !important;
+  box-sizing:border-box !important;
+}
+
+#teacherPanel .assignment-setting-card .assignment-card-controls{
+  padding:14px !important;
+  border:1px solid rgba(255,255,255,.18) !important;
+  background:var(--mx-info-bg) !important;
+}
+
+#teacherPanel .assignment-setting-card .drive-preview,
+#teacherPanel .assignment-setting-card iframe{
+  max-height:420px !important;
+}
+
+/* หน้าตรวจงานรวม / รายบุคคล: โครงซ้ายเป็นผลงาน ขวาเป็นรายละเอียดเหมือนกัน */
+#teacherPanel #work,
+#teacherPanel #groupIndividualCheckContent{
+  margin:0 !important;
+  padding:0 0 24px !important;
+}
+
+#teacherPanel #work .card,
+#teacherPanel #groupIndividualCheckContent .card{
+  width:100% !important;
+  margin:0 !important;
+  padding:22px 24px !important;
+  box-sizing:border-box !important;
+  display:grid !important;
+  grid-template-columns:minmax(280px, min(42vw, 560px)) minmax(320px, min(42vw, 560px)) !important;
+  justify-content:center !important;
+  align-items:center !important;
+  column-gap:clamp(24px, 7vw, 120px) !important;
+  row-gap:12px !important;
+  min-height:360px !important;
+  border:0 !important;
+  border-bottom:2px solid rgba(255,255,255,.10) !important;
+  background:linear-gradient(90deg, rgba(80,16,104,.82), rgba(110,28,138,.72)) !important;
+  box-shadow:none !important;
+}
+
+#teacherPanel #work .card > .teacher-work-select-box,
+#teacherPanel #groupIndividualCheckContent .card > .teacher-work-select-box{
+  grid-column:1 / -1 !important;
+  justify-self:start !important;
+  margin:0 !important;
+}
+
+#teacherPanel #work .card > .work-card-actions,
+#teacherPanel #groupIndividualCheckContent .card > .work-card-actions{
+  grid-column:2 !important;
+  grid-row:2 !important;
+  justify-self:end !important;
+  align-self:end !important;
+  transform:translateY(-8px) !important;
+  display:flex !important;
+  flex-wrap:nowrap !important;
+  gap:10px !important;
+  max-width:none !important;
+}
+
+#teacherPanel #work .card > .teacher-work-heading,
+#teacherPanel #groupIndividualCheckContent .card > .teacher-work-heading{
+  grid-column:1 / -1 !important;
+  justify-self:center !important;
+  width:100% !important;
+  max-width:calc(min(42vw,560px) + min(42vw,560px) + clamp(24px, 7vw, 120px)) !important;
+  margin:0 !important;
+}
+
+#teacherPanel #work .card > .work-box:not(.teacher-worksheet-box),
+#teacherPanel #groupIndividualCheckContent .card > .work-box:not(.teacher-worksheet-box){
+  grid-column:1 !important;
+  grid-row:3 / span 8 !important;
+  align-self:center !important;
+  justify-self:center !important;
+  width:100% !important;
+  max-width:560px !important;
+  min-height:280px !important;
+  display:flex !important;
+  flex-direction:column !important;
+  justify-content:center !important;
+  background:rgba(0,255,255,.10) !important;
+  border:1px solid rgba(0,255,255,.55) !important;
+}
+
+#teacherPanel #work .card > .meta,
+#teacherPanel #work .card > .score-area,
+#teacherPanel #work .card > .group-panel-actions,
+#teacherPanel #work .card > .group-hidden-panel,
+#teacherPanel #work .card > .teacher-worksheet-box,
+#teacherPanel #groupIndividualCheckContent .card > .meta,
+#teacherPanel #groupIndividualCheckContent .card > .score-area,
+#teacherPanel #groupIndividualCheckContent .card > .group-panel-actions,
+#teacherPanel #groupIndividualCheckContent .card > .group-hidden-panel,
+#teacherPanel #groupIndividualCheckContent .card > .teacher-worksheet-box{
+  grid-column:2 !important;
+  justify-self:center !important;
+  width:100% !important;
+  max-width:560px !important;
+  box-sizing:border-box !important;
+}
+
+#teacherPanel #work .card > .meta,
+#teacherPanel #groupIndividualCheckContent .card > .meta{
+  grid-row:3 !important;
+  align-self:start !important;
+  min-height:150px !important;
+  padding:16px !important;
+  background:var(--mx-info-bg) !important;
+  border:1px solid rgba(255,255,255,.18) !important;
+}
+
+#teacherPanel #work .card > .score-area,
+#teacherPanel #groupIndividualCheckContent .card > .score-area{
+  grid-row:4 !important;
+  grid-template-columns:1fr 1fr !important;
+}
+
+#teacherPanel #work .card > .group-panel-actions,
+#teacherPanel #groupIndividualCheckContent .card > .group-panel-actions{
+  grid-row:4 !important;
+}
+
+#teacherPanel #work .card > .group-hidden-panel,
+#teacherPanel #groupIndividualCheckContent .card > .group-hidden-panel,
+#teacherPanel #work .card > .teacher-worksheet-box,
+#teacherPanel #groupIndividualCheckContent .card > .teacher-worksheet-box{
+  grid-row:auto !important;
+}
+
+#teacherPanel .work-card-actions button{
+  width:46px !important;
+  min-width:46px !important;
+  height:42px !important;
+  min-height:42px !important;
+  padding:0 !important;
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  overflow:hidden !important;
+  white-space:nowrap !important;
+  font-size:0 !important;
+  background:#ffd43b !important;
+  color:#000 !important;
+  border:0 !important;
+}
+
+#teacherPanel .work-card-actions button .work-action-icon{
+  font-size:24px !important;
+  line-height:1 !important;
+}
+
+#teacherPanel .work-card-actions button::first-letter{
+  font-size:24px !important;
+}
+
+/* ตารางคะแนน */
+#teacherPanel #scoreTableWrap{
+  margin:0 !important;
+  padding:0 !important;
+}
+
+#teacherPanel .score-table-wrap{
+  overflow:auto !important;
+  max-height:calc(100vh - var(--mx-header-height) - 152px) !important;
+}
+
+#teacherPanel .score-table{
+  width:max-content !important;
+  min-width:100% !important;
+}
+
+#teacherPanel .score-table thead th{
+  position:sticky !important;
+  top:0 !important;
+  z-index:10 !important;
+}
+
+@media(max-width:1100px){
+  #teacherPanel .assignment-command-toolbar,
+  #teacherPanel .score-header-bar,
+  #teacherPanel .name-search-toolbar,
+  #teacherPanel .teacher-work-main-toolbar{
+    grid-template-columns:1fr 1fr !important;
+  }
+
+  #teacherPanel .assignment-setting-card,
+  #teacherPanel #work .card,
+  #teacherPanel #groupIndividualCheckContent .card{
+    grid-template-columns:1fr !important;
+    row-gap:14px !important;
+  }
+
+  #teacherPanel .assignment-setting-card > *,
+  #teacherPanel #work .card > *,
+  #teacherPanel #groupIndividualCheckContent .card > *{
+    grid-column:1 !important;
+    max-width:100% !important;
+  }
+}
+
+@media(max-width:700px){
+  #teacherPanel .teacher-shell.app-shell-layout,
+  #teacherPanel .teacher-shell.app-shell-layout.sidebar-collapsed{
+    grid-template-columns:76px minmax(0, 1fr) !important;
+  }
+
+  #teacherPanel .app-page-header.teacher-page-header{
+    grid-template-columns:42px minmax(0,1fr) auto !important;
+    padding:0 8px !important;
+  }
+
+  #teacherPanel .app-header-title{
+    font-size:16px !important;
+  }
+
+  #teacherPanel .assignment-command-toolbar,
+  #teacherPanel .score-header-bar,
+  #teacherPanel .name-search-toolbar,
+  #teacherPanel .teacher-work-main-toolbar{
+    grid-template-columns:1fr !important;
+  }
+}
+
 </style>
 
 
