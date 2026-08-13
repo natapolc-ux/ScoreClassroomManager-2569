@@ -526,10 +526,10 @@ function updateNewAssignmentMaxGroupMembersVisibility(){
 function switchTeacherPage(page){
 
   const teacherPageTitles = {
-    assignment: "ใบงาน",
-    check: "หน้าตรวจงาน",
+    assignment: "คำสั่งงาน",
+    check: "ตรวจงานรวม",
     score: "ตารางคะแนน",
-    groupIndividual: "เปิดตามรายชื่อ",
+    groupIndividual: "ตรวจงานรายบุคคล",
     settings: "อื่นๆ"
   };
 
@@ -4098,8 +4098,10 @@ function renderWorkCards(){
               ${isCollapsed ? "false" : "true"},
               '${escapeJsString(itemSheetUrl)}'
             )"
+          title="${isCollapsed ? "แสดงงานที่ส่ง" : "ซ่อนงานที่ส่ง"}"
           >
-            ${isCollapsed ? "👁 แสดงงาน" : "🙈 ซ่อนงาน"}
+            <span class="work-action-icon">👁</span>
+            <span class="work-action-label">${isCollapsed ? "แสดงงาน" : "ซ่อนงาน"}</span>
           </button>
 
           <button
@@ -4109,8 +4111,10 @@ function renderWorkCards(){
               '${escapeJsString(s.rowIndex || "")}',
               '${escapeJsString(itemWorkType)}'
             )"
+          title="ส่งงานคืน"
           >
-            ส่งงานคืน
+            <span class="work-action-icon">↩</span>
+            <span class="work-action-label">ส่งงานคืน</span>
           </button>
 
           ${getTeacherWorksheetUrl(s) ? `
@@ -4118,8 +4122,10 @@ function renderWorkCards(){
               type="button"
               class="teacher-worksheet-toggle"
               onclick="toggleTeacherWorksheet('${escapeJsString(worksheetDomId)}', this)"
+              title="แสดงคำสั่งใบงาน"
             >
-              ใบงาน/คำสั่ง
+              <span class="work-action-icon">📄</span>
+              <span class="work-action-label">ใบงาน/คำสั่ง</span>
             </button>
           ` : ``}
 
@@ -4130,8 +4136,10 @@ function renderWorkCards(){
               '${escapeJsString(s.rowIndex || "")}',
               '${escapeJsString(itemWorkType)}'
             )"
+          title="ลบงาน"
           >
-            ลบงาน
+            <span class="work-action-icon">🗑</span>
+            <span class="work-action-label">ลบงาน</span>
           </button>
 
         </div>
