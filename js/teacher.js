@@ -133,6 +133,22 @@ function restoreLoginSession(){
   applyLoggedInUser(session);
 }
 
+function scheduleRestoreLoginSession(){
+  const runRestore = () => {
+    if(typeof restoreLoginSession === "function"){
+      restoreLoginSession();
+    }
+  };
+
+  if(document.readyState === "loading"){
+    document.addEventListener("DOMContentLoaded", runRestore, { once: true });
+  } else {
+    setTimeout(runRestore, 0);
+  }
+}
+
+scheduleRestoreLoginSession();
+
 function login(){
 
   const id = document
@@ -2499,17 +2515,21 @@ function sortCurrentWorkSheet(){
 }
 function loadHideViewedWorksSetting(){
 
-  const saved =
-    localStorage.getItem(HIDE_VIEWED_STORAGE_KEY);
+  // ค่าเริ่มต้นของหน้าตรวจงานให้ซ่อนงานที่ตรวจแล้วเสมอ
+  // ถ้าครูอยากดูทั้งหมด สามารถเอาเครื่องหมายถูกออกได้ในรอบการใช้งานนั้น
+  hideViewedWorksEnabled = true;
 
-  hideViewedWorksEnabled =
-    saved === "true";
+  try {
+    localStorage.setItem(HIDE_VIEWED_STORAGE_KEY, "true");
+  } catch(error) {
+    console.warn("ไม่สามารถบันทึกค่าซ่อนงานที่ตรวจแล้วได้", error);
+  }
 
   const checkbox =
     document.getElementById("hideViewedWorksToggle");
 
   if(checkbox){
-    checkbox.checked = hideViewedWorksEnabled;
+    checkbox.checked = true;
   }
 }
 
@@ -3872,7 +3892,7 @@ function renderNameSearchWorkCard(item, index){
 
       <div class="work-box">
         <h4>งานที่ส่ง</h4>
-        ${renderWorkContent(workValue)}
+        ${renderWorkContent(workValue, { autoPreview: !hasScoreValue(scoreText) })}
       </div>
 
       ${
@@ -4174,7 +4194,7 @@ function renderWorkCards(){
           : `
             <div class="work-box">
               <h4>งานที่ส่ง</h4>
-              ${renderWorkContent(workValue)}
+              ${renderWorkContent(workValue, { autoPreview: !hasScoreValue(scoreText) })}
             </div>
 
             ${
@@ -4320,7 +4340,7 @@ function renderWorkCards(){
 // ถ้าเป็น URL ทั่วไป = แสดงลิงก์
 // ถ้าไม่ใช่ URL = แสดงข้อความ
 // ======================================
-function renderWorkContent(work){
+function renderWorkContent(work, options = {}){
 
   const value = String(work || "").trim();
 
@@ -4342,7 +4362,7 @@ function renderWorkContent(work){
         ${lines.map((line, index) => `
           <div class="multi-file-item">
             <div class="empty-text">รายการที่ ${index + 1}</div>
-            ${renderWorkContent(line)}
+            ${renderWorkContent(line, options)}
           </div>
         `).join("")}
       </div>
@@ -4357,6 +4377,25 @@ function renderWorkContent(work){
       "https://drive.google.com/file/d/"
       + driveFileId
       + "/preview";
+
+    if(options && options.autoPreview){
+      return `
+        <iframe
+          class="file-preview"
+          src="${escapeAttribute(previewUrl)}"
+          loading="lazy"
+        ></iframe>
+
+        <a
+          class="file-link"
+          href="${escapeAttribute(value)}"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          เปิดไฟล์ในแท็บใหม่
+        </a>
+      `;
+    }
 
     return `
       <div class="lazy-preview-box">
