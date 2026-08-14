@@ -3730,6 +3730,120 @@ html, body{
   }
 }
 
+
+/* ===== Hotfix: lock teacher sidebar/header/toolbars while page scrolls =====
+/* ใช้ fixed แทน sticky เพื่อไม่ให้แถบเลื่อนไปกับเนื้อหา */
+#teacherPanel{
+  --mx-current-toolbar-height:96px;
+}
+
+#teacherPanel .teacher-shell.app-shell-layout,
+#teacherPanel .teacher-shell.app-shell-layout.sidebar-collapsed{
+  display:block !important;
+  grid-template-columns:none !important;
+  min-height:100vh !important;
+}
+
+#teacherPanel .teacher-sidebar.app-sidebar{
+  position:fixed !important;
+  left:0 !important;
+  top:0 !important;
+  bottom:0 !important;
+  z-index:1800 !important;
+  width:var(--mx-sidebar-expanded) !important;
+  min-width:var(--mx-sidebar-expanded) !important;
+  height:auto !important;
+  min-height:0 !important;
+  max-height:none !important;
+  overflow:hidden auto !important;
+}
+
+#teacherPanel .teacher-shell.sidebar-collapsed .teacher-sidebar.app-sidebar{
+  width:var(--mx-sidebar-collapsed) !important;
+  min-width:var(--mx-sidebar-collapsed) !important;
+}
+
+#teacherPanel .teacher-main.app-main-layout{
+  margin-left:var(--mx-sidebar-expanded) !important;
+  width:calc(100% - var(--mx-sidebar-expanded)) !important;
+  min-height:100vh !important;
+}
+
+#teacherPanel .teacher-shell.sidebar-collapsed .teacher-main.app-main-layout{
+  margin-left:var(--mx-sidebar-collapsed) !important;
+  width:calc(100% - var(--mx-sidebar-collapsed)) !important;
+}
+
+#teacherPanel .app-page-header.teacher-page-header{
+  position:fixed !important;
+  top:0 !important;
+  left:var(--mx-sidebar-expanded) !important;
+  right:0 !important;
+  width:auto !important;
+  z-index:1700 !important;
+  margin:0 !important;
+}
+
+#teacherPanel .teacher-shell.sidebar-collapsed .app-page-header.teacher-page-header{
+  left:var(--mx-sidebar-collapsed) !important;
+}
+
+#teacherPanel .teacher-page.active{
+  padding-top:calc(var(--mx-header-height) + var(--mx-current-toolbar-height, 96px)) !important;
+}
+
+#teacherPanel .teacher-page.active > .assignment-command-toolbar,
+#teacherPanel .teacher-page.active > .teacher-work-control-card,
+#teacherPanel .teacher-page.active > .score-header-bar,
+#teacherPanel .teacher-page.active > .name-search-panel{
+  position:fixed !important;
+  top:var(--mx-header-height) !important;
+  left:var(--mx-sidebar-expanded) !important;
+  right:0 !important;
+  width:auto !important;
+  max-width:none !important;
+  z-index:1600 !important;
+  box-sizing:border-box !important;
+}
+
+#teacherPanel .teacher-shell.sidebar-collapsed .teacher-page.active > .assignment-command-toolbar,
+#teacherPanel .teacher-shell.sidebar-collapsed .teacher-page.active > .teacher-work-control-card,
+#teacherPanel .teacher-shell.sidebar-collapsed .teacher-page.active > .score-header-bar,
+#teacherPanel .teacher-shell.sidebar-collapsed .teacher-page.active > .name-search-panel{
+  left:var(--mx-sidebar-collapsed) !important;
+}
+
+#teacherPanel #scoreToolsPanel{
+  margin-left:24px !important;
+  margin-right:24px !important;
+}
+
+@media(max-width:700px){
+  #teacherPanel .teacher-sidebar.app-sidebar{
+    width:76px !important;
+    min-width:76px !important;
+  }
+
+  #teacherPanel .teacher-main.app-main-layout,
+  #teacherPanel .teacher-shell.sidebar-collapsed .teacher-main.app-main-layout{
+    margin-left:76px !important;
+    width:calc(100% - 76px) !important;
+  }
+
+  #teacherPanel .app-page-header.teacher-page-header,
+  #teacherPanel .teacher-shell.sidebar-collapsed .app-page-header.teacher-page-header,
+  #teacherPanel .teacher-page.active > .assignment-command-toolbar,
+  #teacherPanel .teacher-page.active > .teacher-work-control-card,
+  #teacherPanel .teacher-page.active > .score-header-bar,
+  #teacherPanel .teacher-page.active > .name-search-panel,
+  #teacherPanel .teacher-shell.sidebar-collapsed .teacher-page.active > .assignment-command-toolbar,
+  #teacherPanel .teacher-shell.sidebar-collapsed .teacher-page.active > .teacher-work-control-card,
+  #teacherPanel .teacher-shell.sidebar-collapsed .teacher-page.active > .score-header-bar,
+  #teacherPanel .teacher-shell.sidebar-collapsed .teacher-page.active > .name-search-panel{
+    left:76px !important;
+  }
+}
+
 </style>
 
 
