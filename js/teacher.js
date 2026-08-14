@@ -7,6 +7,8 @@
 // ===== BEGIN 02-auth.js =====
 const LOGIN_SESSION_STORAGE_KEY = "matrixLoginSessionV1";
 const LOGIN_SESSION_MAX_AGE = 1000 * 60 * 60 * 12;
+let restoreLoginSessionHasRun = false;
+
 
 function saveLoginSession(data){
   try{
@@ -86,10 +88,10 @@ function applyLoggedInUser(data){
       teacherPanel.style.display = "block";
     }
 
-    loadTopics();
-    loadScoreOptions();
-    loadHideViewedWorksSetting();
-    loadScoreTableSettings();
+    // เรียกหลัง DOM/JS พร้อม เพื่อป้องกันบางหน้าหา select หรือ container ไม่เจอหลัง refresh
+    setTimeout(() => {
+      bootstrapTeacherData();
+    }, 0);
     return;
   }
 
@@ -116,20 +118,28 @@ function applyLoggedInUser(data){
     </div>`;
   }
 
-  if(typeof loadMyWork === "function"){
-    loadMyWork();
-  }
-  if(typeof loadSubmitTopics === "function"){
-    loadSubmitTopics();
-  }
+  // หน่วงเวลาเล็กน้อยเพื่อให้ student.js โหลดครบก่อน โดยเฉพาะตอนกู้ session หลังรีเฟรช
+  setTimeout(() => {
+    if(typeof loadMyWork === "function"){
+      loadMyWork();
+    }
+    if(typeof loadSubmitTopics === "function"){
+      loadSubmitTopics();
+    }
+  }, 0);
 }
 
 function restoreLoginSession(){
+  if(restoreLoginSessionHasRun){
+    return;
+  }
+
   const session = getSavedLoginSession();
   if(!session){
     return;
   }
 
+  restoreLoginSessionHasRun = true;
   applyLoggedInUser(session);
 }
 
@@ -140,14 +150,55 @@ function scheduleRestoreLoginSession(){
     }
   };
 
-  if(document.readyState === "loading"){
-    document.addEventListener("DOMContentLoaded", runRestore, { once: true });
-  } else {
+  // ใช้ load แทน DOMContentLoaded เพื่อให้ js/student.js โหลดเรียบร้อยก่อนกู้ session
+  if(document.readyState === "complete"){
     setTimeout(runRestore, 0);
+  } else {
+    window.addEventListener("load", runRestore, { once: true });
   }
 }
 
 scheduleRestoreLoginSession();
+
+function bootstrapTeacherData(){
+  if(document.getElementById("topic") || document.getElementById("assignmentLevelFilter")){
+    if(!Array.isArray(teacherTopicsData) || teacherTopicsData.length === 0){
+      loadTopics();
+    } else {
+      renderWorkTopicOptions();
+      populateAssignmentLevelFilter(teacherTopicsData);
+      renderAssignmentSettingsList();
+      updateWorkClassFilterByTopic();
+    }
+  }
+
+  if(document.getElementById("scoreLevel") || document.getElementById("scoreClass")){
+    if(!Array.isArray(scoreOptionsData) || scoreOptionsData.length === 0){
+      loadScoreOptions();
+    } else {
+      updateScoreClassOptions();
+      renderNewAssignmentClassDeadlineOptions();
+      updateNewAssignmentMaxGroupMembersVisibility();
+    }
+  }
+
+  loadHideViewedWorksSetting();
+  loadScoreTableSettings();
+}
+
+function ensureTeacherPageData(page){
+  if(page === "assignment" || page === "check" || page === "groupIndividual"){
+    if(!Array.isArray(teacherTopicsData) || teacherTopicsData.length === 0){
+      loadTopics();
+    }
+  }
+
+  if(page === "score" || page === "assignment"){
+    if(!Array.isArray(scoreOptionsData) || scoreOptionsData.length === 0){
+      loadScoreOptions();
+    }
+  }
+}
 
 function login(){
 
@@ -183,6 +234,7 @@ function login(){
 
     if(data.status === "success"){
       saveLoginSession(data);
+      restoreLoginSessionHasRun = true;
       applyLoggedInUser(data);
     }
 
@@ -320,6 +372,7 @@ function toggleTeacherSidebar(){
   if(shell){
     shell.classList.toggle("sidebar-collapsed");
   }
+  scheduleSyncFixedTeacherLayout();
 }
 
 function toggleStudentSidebar(){
@@ -327,6 +380,37 @@ function toggleStudentSidebar(){
   if(shell){
     shell.classList.toggle("sidebar-collapsed");
   }
+}
+
+
+function getActiveTeacherFixedToolbar(){
+  const activePage = document.querySelector("#teacherPanel .teacher-page.active");
+  if(!activePage){ return null; }
+  return activePage.querySelector(
+    ":scope > .assignment-command-toolbar, :scope > .teacher-work-control-card, :scope > .score-header-bar, :scope > .name-search-panel"
+  );
+}
+
+function syncFixedTeacherLayout(){
+  const panel = document.getElementById("teacherPanel");
+  if(!panel){ return; }
+
+  const toolbar = getActiveTeacherFixedToolbar();
+  const toolbarHeight = toolbar ? Math.ceil(toolbar.getBoundingClientRect().height) : 0;
+  panel.style.setProperty("--mx-current-toolbar-height", `${toolbarHeight}px`);
+}
+
+function scheduleSyncFixedTeacherLayout(){
+  if(typeof requestAnimationFrame === "function"){
+    requestAnimationFrame(syncFixedTeacherLayout);
+  }
+  setTimeout(syncFixedTeacherLayout, 80);
+  setTimeout(syncFixedTeacherLayout, 320);
+}
+
+if(typeof window !== "undefined"){
+  window.addEventListener("load", scheduleSyncFixedTeacherLayout);
+  window.addEventListener("resize", scheduleSyncFixedTeacherLayout);
 }
 
 function toggleAssignmentSection(id, button){
@@ -567,13 +651,26 @@ function switchTeacherPage(page){
     }
   });
 
+  ensureTeacherPageData(page);
+
   if(page === "assignment"){
     renderAssignmentSettingsList();
+  }
+
+  if(page === "check"){
+    renderWorkTopicOptions();
+    updateWorkClassFilterByTopic();
+  }
+
+  if(page === "score"){
+    updateScoreClassOptions();
   }
 
   if(page === "groupIndividual"){
     prepareNameSearchPage();
   }
+
+  scheduleSyncFixedTeacherLayout();
 }
 
 
@@ -1257,8 +1354,10 @@ function loadTopics(){
       `<option value="">กำลังโหลดระดับชั้น...</option>`;
   }
 
-  topicSelect.innerHTML =
-    `<option value="">กำลังโหลดหัวข้องาน...</option>`;
+  if(topicSelect){
+    topicSelect.innerHTML =
+      `<option value="">กำลังโหลดหัวข้องาน...</option>`;
+  }
 
   fetch(API_URL + "?action=topics")
 
@@ -1288,8 +1387,10 @@ function loadTopics(){
           `<option value="">ทุกระดับชั้น</option>`;
       }
 
-      topicSelect.innerHTML =
-        `<option value="">โหลดหัวข้องานไม่สำเร็จ</option>`;
+      if(topicSelect){
+        topicSelect.innerHTML =
+          `<option value="">โหลดหัวข้องานไม่สำเร็จ</option>`;
+      }
 
       console.log("Topics API Response:", response);
       return;
@@ -1303,8 +1404,10 @@ function loadTopics(){
           `<option value="">ทุกระดับชั้น</option>`;
       }
 
-      topicSelect.innerHTML =
-        `<option value="">ยังไม่มีหัวข้องาน</option>`;
+      if(topicSelect){
+        topicSelect.innerHTML =
+          `<option value="">ยังไม่มีหัวข้องาน</option>`;
+      }
       return;
     }
 
@@ -1323,8 +1426,10 @@ function loadTopics(){
         `<option value="">ทุกระดับชั้น</option>`;
     }
 
-    topicSelect.innerHTML =
-      `<option value="">โหลดหัวข้องานไม่สำเร็จ</option>`;
+    if(topicSelect){
+      topicSelect.innerHTML =
+        `<option value="">โหลดหัวข้องานไม่สำเร็จ</option>`;
+    }
   });
 }
 
@@ -3979,11 +4084,18 @@ function renderWorkCards(){
 
   const workBox = document.getElementById("work");
 
+  if(!workBox){
+    return;
+  }
+
+  const classFilterEl = document.getElementById("classFilter");
+  const noFilterEl = document.getElementById("noFilter");
+
   const selectedClass =
-    document.getElementById("classFilter").value;
+    classFilterEl ? String(classFilterEl.value || "").trim() : "";
 
   const selectedNo =
-    document.getElementById("noFilter").value.trim();
+    noFilterEl ? String(noFilterEl.value || "").trim() : "";
 
   const sortedWorkData =
     getSortedWorkData(currentWorkData);
@@ -4680,11 +4792,15 @@ function loadScoreOptions(){
   const classSelect =
     document.getElementById("scoreClass");
 
-  levelSelect.innerHTML =
-    `<option value="">กำลังโหลดระดับชั้น...</option>`;
+  if(levelSelect){
+    levelSelect.innerHTML =
+      `<option value="">กำลังโหลดระดับชั้น...</option>`;
+  }
 
-  classSelect.innerHTML =
-    `<option value="">ทุกห้อง</option>`;
+  if(classSelect){
+    classSelect.innerHTML =
+      `<option value="">ทุกห้อง</option>`;
+  }
 
   fetch(API_URL + "?action=scoreOptions")
 
@@ -4696,8 +4812,10 @@ function loadScoreOptions(){
       response.status !== "success" ||
       !Array.isArray(response.data)
     ){
-      levelSelect.innerHTML =
-        `<option value="">โหลดระดับชั้นไม่สำเร็จ</option>`;
+      if(levelSelect){
+        levelSelect.innerHTML =
+          `<option value="">โหลดระดับชั้นไม่สำเร็จ</option>`;
+      }
       return;
     }
 
@@ -4708,8 +4826,10 @@ function loadScoreOptions(){
     renderAssignmentSettingsList();
 
     if(scoreOptionsData.length === 0){
-      levelSelect.innerHTML =
-        `<option value="">ยังไม่มีข้อมูลระดับชั้น</option>`;
+      if(levelSelect){
+        levelSelect.innerHTML =
+          `<option value="">ยังไม่มีข้อมูลระดับชั้น</option>`;
+      }
       return;
     }
 
@@ -4724,16 +4844,19 @@ function loadScoreOptions(){
       `;
     });
 
-    levelSelect.innerHTML = html;
-
-    levelSelect.onchange =
-      updateScoreClassOptions;
+    if(levelSelect){
+      levelSelect.innerHTML = html;
+      levelSelect.onchange =
+        updateScoreClassOptions;
+    }
   })
 
   .catch(error => {
     console.error(error);
-    levelSelect.innerHTML =
-      `<option value="">โหลดระดับชั้นไม่สำเร็จ</option>`;
+    if(levelSelect){
+      levelSelect.innerHTML =
+        `<option value="">โหลดระดับชั้นไม่สำเร็จ</option>`;
+    }
   });
 }
 
